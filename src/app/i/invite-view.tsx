@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { dict, formatDeadline, formatEventDate, type Lang } from "@/lib/i18n";
-import { parseSchedule, type SiteSettings } from "@/lib/model";
+import { fmt, formatDeadline, formatEventDate, type GuestTexts, type Lang } from "@/lib/i18n";
+import { mergeTexts, parseSchedule, type SiteSettings } from "@/lib/model";
 import { getSupabase, withBase } from "@/lib/supabase";
 
 type Props = {
@@ -12,6 +12,7 @@ type Props = {
   status: "pending" | "accepted" | "declined";
   partySize: number | null;
   note: string | null;
+  personalNote: string | null;
   locked: boolean;
   settings: SiteSettings;
 };
@@ -40,8 +41,20 @@ function Thread() {
   );
 }
 
-function Countdown({ target, lang }: { target: string; lang: Lang }) {
-  const t = dict[lang].countdown;
+/** "Tansu & Arda" with the ampersand in script-gold, whatever the names are. */
+function CoupleNames({ value }: { value: string }) {
+  const idx = value.indexOf("&");
+  if (idx < 0) return <>{value}</>;
+  return (
+    <>
+      {value.slice(0, idx).trim()}{" "}
+      <span style={{ fontFamily: "var(--script)", color: "var(--gold)", fontWeight: 500 }}>&amp;</span>{" "}
+      {value.slice(idx + 1).trim()}
+    </>
+  );
+}
+
+function Countdown({ target, t }: { target: string; t: GuestTexts }) {
   const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
@@ -61,10 +74,10 @@ function Countdown({ target, lang }: { target: string; lang: Lang }) {
   if (diff === 0) return null;
 
   const cells: [number, string][] = [
-    [days, t.days],
-    [hours, t.hours],
-    [minutes, t.minutes],
-    [seconds, t.seconds],
+    [days, t.cdDays],
+    [hours, t.cdHours],
+    [minutes, t.cdMinutes],
+    [seconds, t.cdSeconds],
   ];
 
   return (
@@ -132,7 +145,7 @@ export function InviteView(props: Props) {
     } catch {}
   };
 
-  const t = dict[lang];
+  const t = useMemo(() => mergeTexts(lang, s), [lang, s]);
 
   const submit = async () => {
     if (!answer || pending) return;
@@ -146,11 +159,7 @@ export function InviteView(props: Props) {
         p_note: note,
       });
       if (rpcError) {
-        if (rpcError.message.includes("locked")) {
-          setError(lang === "tr" ? "Katılım bildirimi süresi doldu." : "The RSVP period has ended.");
-        } else {
-          setError(t.error);
-        }
+        setError(rpcError.message.includes("locked") ? t.lockedNoAnswer : t.error);
         return;
       }
       const row = (data as { status: "accepted" | "declined"; party_size: number }[] | null)?.[0];
@@ -178,7 +187,7 @@ export function InviteView(props: Props) {
       </div>
       <div style={{ position: "fixed", top: 16, right: 16, zIndex: 90 }}>
         <a className="pill-btn" href={withBase(s.storyUrl)}>
-          {t.story} ♥
+          {t.storyButton} ♥
         </a>
       </div>
 
@@ -209,7 +218,7 @@ export function InviteView(props: Props) {
               lineHeight: 1.08,
             }}
           >
-            Tansu <span style={{ fontFamily: "var(--script)", color: "var(--gold)", fontWeight: 500 }}>&amp;</span> Arda
+            <CoupleNames value={s.coupleNames} />
           </h1>
 
           <div className="divider">
@@ -225,18 +234,34 @@ export function InviteView(props: Props) {
             {t.inviteLine}
           </p>
 
-          <Countdown target={s.eventDate} lang={lang} />
+          {props.personalNote && (
+            <p
+              style={{
+                fontFamily: "var(--script)",
+                fontSize: "clamp(19px, 3vw, 23px)",
+                lineHeight: 1.55,
+                color: "var(--brown-soft)",
+                margin: "16px auto 4px",
+                maxWidth: "42ch",
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {props.personalNote}
+            </p>
+          )}
+
+          <Countdown target={s.eventDate} t={t} />
 
           {/* Date & venue */}
           <div style={{ margin: "26px 0 4px" }}>
             <div className="field-label" style={{ margin: "0 0 4px", textAlign: "center" as const }}>
-              {t.date}
+              {t.dateLabel}
             </div>
             <div style={{ fontFamily: "var(--script)", fontSize: "clamp(24px, 4vw, 32px)", color: "var(--gold)" }}>
               {formatEventDate(s.eventDate, lang)}
             </div>
             <div className="field-label" style={{ margin: "18px 0 4px", textAlign: "center" as const }}>
-              {t.venue}
+              {t.venueLabel}
             </div>
             <div style={{ fontFamily: "var(--serif)", fontSize: 22, fontWeight: 600, color: "var(--brown)" }}>
               {s.venueName}
@@ -251,14 +276,14 @@ export function InviteView(props: Props) {
               rel="noopener noreferrer"
               style={{ marginTop: 12 }}
             >
-              📍 {t.map}
+              📍 {t.mapButton}
             </a>
           </div>
 
           {schedule.length > 0 && (
             <div style={{ margin: "28px 0 0" }}>
               <div className="field-label" style={{ margin: "0 0 10px", textAlign: "center" as const }}>
-                {t.schedule}
+                {t.scheduleLabel}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
                 {schedule.map((item, i) => (
@@ -287,11 +312,15 @@ export function InviteView(props: Props) {
           {props.locked ? (
             <div>
               <div style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 15, color: "var(--brown-mid)" }}>
-                {saved ? t.locked : t.lockedNone}
+                {saved ? t.lockedWithAnswer : t.lockedNoAnswer}
               </div>
               {saved && (
                 <div style={{ fontFamily: "var(--script)", fontSize: 26, color: "var(--gold)", marginTop: 8 }}>
-                  {saved.status === "accepted" ? t.answerAccepted(saved.partySize) : t.answerDeclined}
+                  {saved.status === "accepted"
+                    ? saved.partySize > 1
+                      ? fmt(t.answerAcceptedMany, { n: saved.partySize })
+                      : t.answerAcceptedOne
+                    : t.answerDeclined}
                 </div>
               )}
             </div>
@@ -324,7 +353,11 @@ export function InviteView(props: Props) {
                     textAlign: "center",
                   }}
                 >
-                  {saved.status === "accepted" ? t.savedAccepted(saved.partySize) : t.savedDeclined}
+                  {saved.status === "accepted"
+                    ? saved.partySize > 1
+                      ? fmt(t.savedAcceptedMany, { n: saved.partySize })
+                      : t.savedAcceptedOne
+                    : t.savedDeclined}
                 </div>
               )}
 
@@ -348,7 +381,7 @@ export function InviteView(props: Props) {
               {answer === "accepted" && (
                 <div>
                   <label className="field-label" htmlFor="party-size">
-                    {t.partySize}
+                    {t.partySizeLabel}
                   </label>
                   {props.maxGuests != null ? (
                     <>
@@ -365,7 +398,7 @@ export function InviteView(props: Props) {
                         ))}
                       </select>
                       <div style={{ fontFamily: "var(--sans)", fontSize: 12, color: "var(--brown-soft)", marginTop: 6 }}>
-                        {t.partySizeHint(props.maxGuests)}
+                        {fmt(t.partySizeHint, { max: props.maxGuests })}
                       </div>
                     </>
                   ) : (
@@ -407,14 +440,14 @@ export function InviteView(props: Props) {
                   {pending ? "…" : saved ? t.update : t.send}
                 </button>
                 <div style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 12, color: "var(--brown-soft)", marginTop: 12 }}>
-                  {t.editUntil(formatDeadline(s.rsvpDeadline, lang))}
+                  {fmt(t.editUntil, { date: formatDeadline(s.rsvpDeadline, lang) })}
                 </div>
               </div>
             </div>
           )}
 
           <div style={{ fontFamily: "var(--script)", fontSize: 20, color: "var(--gold)", marginTop: 34 }}>
-            Ad astra per aspera
+            {t.closing}
           </div>
         </div>
       </div>

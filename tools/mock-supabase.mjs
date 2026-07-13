@@ -152,7 +152,16 @@ const server = http.createServer(async (req, res) => {
       res,
       200,
       inv
-        ? [{ name: inv.name, max_guests: inv.max_guests, status: inv.status, party_size: inv.party_size, note: inv.note }]
+        ? [
+            {
+              name: inv.name,
+              max_guests: inv.max_guests,
+              status: inv.status,
+              party_size: inv.party_size,
+              note: inv.note,
+              personal_note: inv.personal_note,
+            },
+          ]
         : []
     );
   }
@@ -204,6 +213,7 @@ const server = http.createServer(async (req, res) => {
           status: "pending",
           party_size: null,
           note: null,
+          personal_note: row.personal_note ?? null,
           responded_at: null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),

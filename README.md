@@ -29,13 +29,19 @@ row-level security and two locked-down SQL functions.
   story site so the language follows guests across both
 
 ### Admin features (`/admin`)
-- Supabase email/password login (create the account in the Supabase dashboard)
+- Supabase email/password login (accounts created in the Supabase dashboard;
+  allowed emails are listed in the `admin_emails` table)
 - Bulk import: paste one invitee per line — `Name, maxGuests`
   (e.g. `Ayşe & Mehmet Yılmaz, 4`, `John Smith, unlimited`, default max 1)
-- Add / edit / delete single invitations
+- Add / edit / delete single invitations, each with an optional **personal
+  message** shown only on that guest's card
 - Accepted / declined / no-response filters, party sizes, notes, total
   confirmed headcount, per-guest copy-link button, CSV export
-- Settings: RSVP deadline, wedding date/time, venue, maps link, schedule
+- Settings: RSVP deadline, wedding date/time, venue, maps link, schedule,
+  couple names
+- **Invitation texts editor**: every string guests see (greeting, intro,
+  buttons, confirmation/locked messages, closing motto, …) editable per
+  language (TR/EN); clearing a field restores the default
 
 ## Setup (once)
 
@@ -44,10 +50,12 @@ row-level security and two locked-down SQL functions.
 1. Create a project at [supabase.com](https://supabase.com).
 2. **SQL Editor → New query** → paste the whole of
    [`supabase/setup.sql`](supabase/setup.sql) → **Run**.
-   ⚠️ First edit the `admin_emails` insert near the top to your own email.
-3. **Authentication → Users → Add user** — create your admin account with
-   that same email and a strong password. That's what you'll log into
-   `/admin` with.
+   ⚠️ First check the `admin_emails` insert near the top — those emails get
+   dashboard access. The script is idempotent: re-run it after edits or
+   upgrades (existing data is kept).
+3. **Authentication → Users → Add user** — create an admin account (email +
+   strong password) for **each** email in `admin_emails`. Those are the
+   logins for `/admin`.
 4. **Authentication → Sign In / Up** — turn OFF "Allow new users to sign up".
 5. **Settings → API** — copy the *Project URL* and the *anon public* key.
 

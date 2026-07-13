@@ -1,6 +1,8 @@
 // Client-side domain types + helpers (the source of truth for validation
 // lives in supabase/setup.sql — everything here is UX-side convenience).
 
+import { defaultTexts, type GuestTexts, type Lang } from "./i18n";
+
 export type Invitation = {
   id: number;
   token: string;
@@ -9,6 +11,8 @@ export type Invitation = {
   status: "pending" | "accepted" | "declined";
   party_size: number | null;
   note: string | null;
+  /** Optional per-guest message written by the couple, shown on the card */
+  personal_note: string | null;
   responded_at: string | null;
 };
 
@@ -22,6 +26,11 @@ export type SiteSettings = {
   schedule: string;
   /** Where the story/timeline site lives (hosted at /story/ by default) */
   storyUrl: string;
+  /** Heading on the invitation card; an "&" gets the script styling */
+  coupleNames: string;
+  /** JSON overrides of the guest-facing texts (see GuestTexts) */
+  textsTr: string;
+  textsEn: string;
 };
 
 // Defaults pulled from the timeline site (Chapter Ten): 28 June 2026, 14:30,
@@ -35,7 +44,25 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   mapsUrl: "https://maps.google.com/?q=Germencik+Belediyesi,+Ayd%C4%B1n",
   schedule: "14:30 | Nikah Töreni | Ceremony",
   storyUrl: "/story/",
+  coupleNames: "Tansu & Arda",
+  textsTr: "",
+  textsEn: "",
 };
+
+/** Guest texts for a language: dashboard overrides merged over defaults. */
+export function mergeTexts(lang: Lang, s: SiteSettings): GuestTexts {
+  const raw = lang === "tr" ? s.textsTr : s.textsEn;
+  let overrides: Partial<GuestTexts> = {};
+  try {
+    if (raw) overrides = JSON.parse(raw);
+  } catch {}
+  const merged: GuestTexts = { ...defaultTexts[lang] };
+  for (const k of Object.keys(merged) as (keyof GuestTexts)[]) {
+    const v = overrides[k];
+    if (typeof v === "string" && v.trim() !== "") merged[k] = v;
+  }
+  return merged;
+}
 
 export function settingsFromRows(rows: { key: string; value: string }[]): SiteSettings {
   const out = { ...DEFAULT_SETTINGS };

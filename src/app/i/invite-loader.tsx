@@ -12,12 +12,12 @@ import { getSupabase, supabaseConfigured } from "@/lib/supabase";
 import { InviteView } from "./invite-view";
 import { NotFoundView } from "./not-found-view";
 
-type Guest = Pick<Invitation, "name" | "max_guests" | "status" | "party_size" | "note">;
+type Guest = Pick<Invitation, "name" | "max_guests" | "status" | "party_size" | "note" | "personal_note">;
 
 type State =
   | { phase: "loading" }
   | { phase: "unconfigured" }
-  | { phase: "notfound" }
+  | { phase: "notfound"; settings?: SiteSettings }
   | { phase: "ready"; guest: Guest; settings: SiteSettings };
 
 export function InviteLoader() {
@@ -44,11 +44,11 @@ export function InviteLoader() {
         ]);
         if (cancelled) return;
         const guest = (invRes.data as Guest[] | null)?.[0];
+        const settings = settingsFromRows(setRes.data ?? []);
         if (invRes.error || !guest) {
-          setState({ phase: "notfound" });
+          setState({ phase: "notfound", settings: setRes.data ? settings : undefined });
           return;
         }
-        const settings = settingsFromRows(setRes.data ?? []);
         setState({ phase: "ready", guest, settings });
       } catch {
         if (!cancelled) setState({ phase: "notfound" });
@@ -83,7 +83,7 @@ export function InviteLoader() {
     );
   }
 
-  if (state.phase === "notfound") return <NotFoundView />;
+  if (state.phase === "notfound") return <NotFoundView settings={state.settings} />;
 
   return (
     <InviteView
@@ -93,6 +93,7 @@ export function InviteLoader() {
       status={state.guest.status}
       partySize={state.guest.party_size}
       note={state.guest.note}
+      personalNote={state.guest.personal_note}
       locked={deadlinePassed(state.settings)}
       settings={state.settings}
     />

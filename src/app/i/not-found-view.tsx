@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { dict, type Lang } from "@/lib/i18n";
+import { defaultTexts, type Lang } from "@/lib/i18n";
+import { mergeTexts, type SiteSettings } from "@/lib/model";
 
-export function NotFoundView() {
+export function NotFoundView({ settings }: { settings?: SiteSettings }) {
   const [lang, setLang] = useState<Lang>("tr");
 
   useEffect(() => {
@@ -13,7 +14,7 @@ export function NotFoundView() {
     } catch {}
   }, []);
 
-  const t = dict[lang];
+  const t = settings ? mergeTexts(lang, settings) : defaultTexts[lang];
 
   return (
     <div
@@ -22,7 +23,7 @@ export function NotFoundView() {
     >
       <div style={{ textAlign: "center", maxWidth: 480 }}>
         <div className="kicker" style={{ fontSize: 26 }}>
-          Tansu &amp; Arda
+          {settings?.coupleNames ?? "Tansu & Arda"}
         </div>
         <h1 style={{ fontFamily: "var(--serif)", fontWeight: 600, fontSize: 32, color: "var(--brown)", margin: "10px 0" }}>
           {t.notFoundTitle}

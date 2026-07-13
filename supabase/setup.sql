@@ -25,10 +25,14 @@ create table if not exists public.invitations (
     check (status in ('pending', 'accepted', 'declined')),
   party_size integer,
   note text,
+  personal_note text,                    -- optional message from the couple
   responded_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- For projects that ran an earlier version of this script:
+alter table public.invitations add column if not exists personal_note text;
 
 create table if not exists public.settings (
   key text primary key,
@@ -40,9 +44,12 @@ create table if not exists public.admin_emails (
   email text primary key
 );
 
--- ⚠️ CHANGE THIS to the email of the admin user you create:
+-- ⚠️ These emails may use the admin dashboard. Each also needs a user
+-- account created under Authentication → Users with the same email.
 insert into public.admin_emails (email)
-values ('arda.theodore@gmail.com')
+values
+  ('arda.theodore@gmail.com'),
+  ('tansubicakcioglu@gmail.com')
 on conflict do nothing;
 
 -- Default event settings (edit later from the admin dashboard).
@@ -53,7 +60,8 @@ insert into public.settings (key, value) values
   ('venueAddress', 'Germencik, Aydın'),
   ('mapsUrl',      'https://maps.google.com/?q=Germencik+Belediyesi,+Ayd%C4%B1n'),
   ('schedule',     '14:30 | Nikah Töreni | Ceremony'),
-  ('storyUrl',     '/story/')
+  ('storyUrl',     '/story/'),
+  ('coupleNames',  'Tansu & Arda')
 on conflict do nothing;
 
 -- ── Row Level Security ───────────────────────────────────────
@@ -103,18 +111,22 @@ create policy "admin writes settings" on public.settings
 -- SECURITY DEFINER: they bypass RLS, but only ever touch the single row
 -- matching the caller's unguessable token.
 
-create or replace function public.get_invitation(p_token text)
+-- (dropped first because the return type changed between versions —
+-- CREATE OR REPLACE cannot alter a function's return type)
+drop function if exists public.get_invitation(text);
+create function public.get_invitation(p_token text)
 returns table (
   name text,
   max_guests integer,
   status text,
   party_size integer,
-  note text
+  note text,
+  personal_note text
 )
 language sql stable security definer
 set search_path = public
 as $$
-  select i.name, i.max_guests, i.status, i.party_size, i.note
+  select i.name, i.max_guests, i.status, i.party_size, i.note, i.personal_note
   from public.invitations i
   where i.token = p_token;
 $$;
