@@ -3,88 +3,102 @@
 A bilingual (TR/EN) wedding invitation site with per-guest invitation links,
 an admin dashboard, and the couple's story/timeline site hosted alongside it.
 
-Built with Next.js (App Router) + SQLite (via libSQL) — no external services
-needed; designed for simple self-hosting.
+**Architecture: static site (GitHub Pages) + Supabase.** The whole site is a
+Next.js static export — nothing to keep running yourself. All data lives in a
+free Supabase project, accessed straight from the browser and protected by
+row-level security and two locked-down SQL functions.
 
 ## What's inside
 
 | Route | What it is |
 | --- | --- |
 | `/` | Small landing page (guests arrive via their personal links) |
-| `/i/<token>` | A guest's personal invitation + RSVP form (TR/EN toggle) |
-| `/story` | The timeline / love-story site (static, from the Claude design project) |
-| `/admin` | Password-protected dashboard |
-| `/admin/export` | CSV export of all responses |
+| `/i/?t=<token>` | A guest's personal invitation + RSVP form (TR/EN toggle) |
+| `/story/` | The timeline / love-story site (static, from the Claude design project) |
+| `/admin/` | Login-protected dashboard |
 
 ### Guest features
 - Personal unguessable link per invitation (one link can cover a household)
 - Accept / decline, party size (capped at the per-invitation max, or free-form
   for "unlimited" invitees), free-text note (dietary needs / message)
 - Guests can re-open their link and edit their answer **until the RSVP
-  deadline**; after that the page shows their answer but locks editing
+  deadline** — enforced inside the database, not just the UI; after the
+  deadline the page shows their answer but locks editing
 - Countdown, date/venue with Google Maps link, optional schedule
 - Turkish/English toggle — shares the `ta-love-lang` preference with the
   story site so the language follows guests across both
 
 ### Admin features (`/admin`)
-- Single shared password (`ADMIN_PASSWORD` env var), signed session cookie
+- Supabase email/password login (create the account in the Supabase dashboard)
 - Bulk import: paste one invitee per line — `Name, maxGuests`
   (e.g. `Ayşe & Mehmet Yılmaz, 4`, `John Smith, unlimited`, default max 1)
 - Add / edit / delete single invitations
-- Accepted / declined / no-response lists, party sizes, notes, total confirmed
-  headcount, per-guest copy-link button, CSV export
-- Settings: RSVP deadline, wedding date/time, venue, maps link, schedule,
-  story URL
+- Accepted / declined / no-response filters, party sizes, notes, total
+  confirmed headcount, per-guest copy-link button, CSV export
+- Settings: RSVP deadline, wedding date/time, venue, maps link, schedule
 
-## Running it
+## Setup (once)
+
+### 1. Supabase (~5 minutes, free tier)
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. **SQL Editor → New query** → paste the whole of
+   [`supabase/setup.sql`](supabase/setup.sql) → **Run**.
+   ⚠️ First edit the `admin_emails` insert near the top to your own email.
+3. **Authentication → Users → Add user** — create your admin account with
+   that same email and a strong password. That's what you'll log into
+   `/admin` with.
+4. **Authentication → Sign In / Up** — turn OFF "Allow new users to sign up".
+5. **Settings → API** — copy the *Project URL* and the *anon public* key.
+
+Security model: guests never touch the tables — they only call
+`get_invitation(token)` and `submit_rsvp(...)`, which look up a single row by
+its unguessable token and enforce the deadline + party-size cap in SQL. The
+tables themselves are only accessible to logged-in users whose email is in
+`admin_emails`.
+
+### 2. GitHub Pages
+
+1. Repo **Settings → Secrets and variables → Actions → Variables** — add:
+   - `NEXT_PUBLIC_SUPABASE_URL` — the project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — the anon key (public by design)
+   - `NEXT_PUBLIC_BASE_PATH` — `/t-t-wedding` for
+     `username.github.io/t-t-wedding`; leave empty/unset for a custom domain
+2. Repo **Settings → Pages** — set *Source* to **GitHub Actions**.
+3. Merge to `main` (or run the workflow manually). The
+   [`deploy.yml`](.github/workflows/deploy.yml) workflow builds the static
+   export and publishes it.
+
+Invitation links look like `https://…/i/?t=<token>` (the admin copy-link
+button produces them). The prettier `/i/<token>` form also works — a small
+`404.html` redirect handles it.
+
+## Local development
 
 ```bash
-cp .env.example .env   # set ADMIN_PASSWORD
+cp .env.example .env.local   # fill in your Supabase URL + anon key
 npm install
-npm run dev            # http://localhost:3000
+npm run dev                  # http://localhost:3000
 ```
 
-The database is a plain SQLite file created automatically at
-`data/wedding.db` — tables are created on first use, nothing to migrate.
-**Back up that one file and you've backed up every RSVP.**
-
-### Self-hosting (production)
+To test without a real Supabase project, run the bundled mock backend and
+build against it:
 
 ```bash
-npm install
-npm run build
-ADMIN_PASSWORD=your-secret npm start   # port 3000
+node tools/mock-supabase.mjs                       # terminal 1
+NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321 \
+NEXT_PUBLIC_SUPABASE_ANON_KEY=mock-anon npm run dev  # terminal 2
 ```
 
-Or with Docker:
-
-```bash
-docker build -t tt-wedding .
-docker run -d -p 3000:3000 -e ADMIN_PASSWORD=your-secret \
-  -v tt-wedding-data:/app/data tt-wedding
-```
-
-Put it behind your reverse proxy (Caddy/nginx) with HTTPS — the admin cookie
-is `secure` in production, so HTTPS is required for admin login.
-
-> **GitHub Pages note:** Pages only serves static files, so the RSVP app
-> (database + per-guest forms) can't run there. The `/story` site *is* fully
-> static though — the contents of `public/story/` can be deployed to Pages on
-> their own if you ever want that. For the full site, use any box that can run
-> Node (or the Docker image above).
-
-### Optional: hosted database
-
-Set `DATABASE_URL` (and `DATABASE_AUTH_TOKEN`) to a Turso/libSQL database to
-use a hosted DB instead of the local file — useful if you ever move to a
-serverless platform.
+(Mock admin login: `admin@example.com` / `test-pass-123`.)
 
 ## Story site assets
 
-`public/story/` contains the timeline site from the Claude design project.
-Copy its images into `public/story/assets/` (see the README in that folder),
-plus the `.image-slots.state.json` sidecar if you have one, so the dropped
-photos appear.
+`public/story/` contains the timeline site from the Claude design project
+(React is vendored locally — no CDN dependency). Copy its images into
+`public/story/assets/` (see the README in that folder), plus the
+`.image-slots.state.json` sidecar if you have one, so the dropped photos
+appear.
 
 ## Things to double-check
 

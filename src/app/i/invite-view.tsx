@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { dict, formatDeadline, formatEventDate, type Lang } from "@/lib/i18n";
-import type { ScheduleItem } from "@/lib/settings";
-import { sendRsvp } from "./actions";
+import { parseSchedule, type SiteSettings } from "@/lib/model";
+import { getSupabase, withBase } from "@/lib/supabase";
 
 type Props = {
   token: string;
@@ -13,13 +13,7 @@ type Props = {
   partySize: number | null;
   note: string | null;
   locked: boolean;
-  eventDate: string;
-  rsvpDeadline: string;
-  venueName: string;
-  venueAddress: string;
-  mapsUrl: string;
-  schedule: ScheduleItem[];
-  storyUrl: string;
+  settings: SiteSettings;
 };
 
 /** Red thread + gold pin, same motif the timeline hangs its polaroids on */
@@ -109,6 +103,8 @@ function Countdown({ target, lang }: { target: string; lang: Lang }) {
 }
 
 export function InviteView(props: Props) {
+  const s = props.settings;
+  const schedule = useMemo(() => parseSchedule(s.schedule), [s.schedule]);
   const [lang, setLang] = useState<Lang>("tr");
   const [answer, setAnswer] = useState<"accepted" | "declined" | null>(
     props.status === "pending" ? null : props.status
@@ -119,7 +115,7 @@ export function InviteView(props: Props) {
     props.status !== "pending" ? { status: props.status, partySize: props.partySize ?? 1 } : null
   );
   const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
 
   // Share the language choice with the timeline site (same localStorage key).
   useEffect(() => {
@@ -138,23 +134,35 @@ export function InviteView(props: Props) {
 
   const t = dict[lang];
 
-  const submit = () => {
-    if (!answer) return;
+  const submit = async () => {
+    if (!answer || pending) return;
     setError(null);
-    startTransition(async () => {
-      try {
-        const res = await sendRsvp(props.token, answer, partySize, note);
-        if (res.ok) {
-          setSaved({ status: res.status, partySize: res.partySize });
-        } else if (res.error === "locked") {
+    setPending(true);
+    try {
+      const { data, error: rpcError } = await getSupabase().rpc("submit_rsvp", {
+        p_token: props.token,
+        p_answer: answer,
+        p_party_size: partySize,
+        p_note: note,
+      });
+      if (rpcError) {
+        if (rpcError.message.includes("locked")) {
           setError(lang === "tr" ? "Katılım bildirimi süresi doldu." : "The RSVP period has ended.");
         } else {
           setError(t.error);
         }
-      } catch {
-        setError(t.error);
+        return;
       }
-    });
+      const row = (data as { status: "accepted" | "declined"; party_size: number }[] | null)?.[0];
+      setSaved({
+        status: row?.status ?? answer,
+        partySize: row?.party_size && row.party_size > 0 ? row.party_size : partySize,
+      });
+    } catch {
+      setError(t.error);
+    } finally {
+      setPending(false);
+    }
   };
 
   return (
@@ -169,7 +177,7 @@ export function InviteView(props: Props) {
         </button>
       </div>
       <div style={{ position: "fixed", top: 16, right: 16, zIndex: 90 }}>
-        <a className="pill-btn" href={props.storyUrl}>
+        <a className="pill-btn" href={withBase(s.storyUrl)}>
           {t.story} ♥
         </a>
       </div>
@@ -217,7 +225,7 @@ export function InviteView(props: Props) {
             {t.inviteLine}
           </p>
 
-          <Countdown target={props.eventDate} lang={lang} />
+          <Countdown target={s.eventDate} lang={lang} />
 
           {/* Date & venue */}
           <div style={{ margin: "26px 0 4px" }}>
@@ -225,20 +233,20 @@ export function InviteView(props: Props) {
               {t.date}
             </div>
             <div style={{ fontFamily: "var(--script)", fontSize: "clamp(24px, 4vw, 32px)", color: "var(--gold)" }}>
-              {formatEventDate(props.eventDate, lang)}
+              {formatEventDate(s.eventDate, lang)}
             </div>
             <div className="field-label" style={{ margin: "18px 0 4px", textAlign: "center" as const }}>
               {t.venue}
             </div>
             <div style={{ fontFamily: "var(--serif)", fontSize: 22, fontWeight: 600, color: "var(--brown)" }}>
-              {props.venueName}
+              {s.venueName}
             </div>
             <div style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 14, color: "var(--brown-mid)", marginTop: 4 }}>
-              {props.venueAddress}
+              {s.venueAddress}
             </div>
             <a
               className="pill-btn"
-              href={props.mapsUrl}
+              href={s.mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
               style={{ marginTop: 12 }}
@@ -247,13 +255,13 @@ export function InviteView(props: Props) {
             </a>
           </div>
 
-          {props.schedule.length > 0 && (
+          {schedule.length > 0 && (
             <div style={{ margin: "28px 0 0" }}>
               <div className="field-label" style={{ margin: "0 0 10px", textAlign: "center" as const }}>
                 {t.schedule}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
-                {props.schedule.map((item, i) => (
+                {schedule.map((item, i) => (
                   <div key={i} style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
                     <span style={{ fontFamily: "var(--serif)", fontWeight: 700, fontSize: 15, color: "var(--gold)" }}>
                       {item.time}
@@ -399,7 +407,7 @@ export function InviteView(props: Props) {
                   {pending ? "…" : saved ? t.update : t.send}
                 </button>
                 <div style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 12, color: "var(--brown-soft)", marginTop: 12 }}>
-                  {t.editUntil(formatDeadline(props.rsvpDeadline, lang))}
+                  {t.editUntil(formatDeadline(s.rsvpDeadline, lang))}
                 </div>
               </div>
             </div>

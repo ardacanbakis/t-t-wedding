@@ -1,9 +1,6 @@
-import { getSettings } from "@/lib/settings";
+import { withBase } from "@/lib/supabase";
 
-export const dynamic = "force-dynamic";
-
-export default async function Home() {
-  const s = await getSettings();
+export default function Home() {
   return (
     <div
       className="fade-in"
@@ -30,11 +27,8 @@ export default async function Home() {
           <span className="heart">♥</span>
           <div className="line-r" />
         </div>
-        <p style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 15, lineHeight: 1.8, color: "var(--brown-mid)" }}>
-          28 Haziran 2026 · {s.venueName} · Aydın
-        </p>
         <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 20, flexWrap: "wrap" }}>
-          <a className="pill-btn" href={s.storyUrl}>
+          <a className="pill-btn" href={withBase("/story/")}>
             Hikâyemiz · Our Story
           </a>
         </div>

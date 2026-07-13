@@ -1,18 +1,16 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import type { Invitation } from "@/lib/schema";
-import type { SiteSettings } from "@/lib/settings";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  addInvitationAction,
-  deleteInvitationAction,
-  importAction,
-  logoutAction,
-  saveSettingsAction,
-  updateInvitationAction,
-} from "./actions";
-
-type Props = { invitations: Invitation[]; settings: SiteSettings };
+  DEFAULT_SETTINGS,
+  newToken,
+  parseImportLines,
+  parseMaxGuests,
+  settingsFromRows,
+  type Invitation,
+  type SiteSettings,
+} from "@/lib/model";
+import { BASE_PATH, getSupabase } from "@/lib/supabase";
 
 type Filter = "all" | "accepted" | "declined" | "pending";
 
@@ -21,10 +19,14 @@ function StatusBadge({ status }: { status: Invitation["status"] }) {
   return <span className={`status-badge status-${status}`}>{label}</span>;
 }
 
+function inviteUrl(token: string): string {
+  return `${window.location.origin}${BASE_PATH}/i/?t=${token}`;
+}
+
 function CopyLinkButton({ token }: { token: string }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
-    const url = `${window.location.origin}/i/${token}`;
+    const url = inviteUrl(token);
     try {
       await navigator.clipboard.writeText(url);
     } catch {
@@ -40,16 +42,10 @@ function CopyLinkButton({ token }: { token: string }) {
   );
 }
 
-function EditRow({
-  inv,
-  onDone,
-}: {
-  inv: Invitation;
-  onDone: () => void;
-}) {
+function EditRow({ inv, onSave, onCancel }: { inv: Invitation; onSave: (name: string, max: string) => Promise<void>; onCancel: () => void }) {
   const [name, setName] = useState(inv.name);
-  const [max, setMax] = useState(inv.maxGuests == null ? "unlimited" : String(inv.maxGuests));
-  const [pending, start] = useTransition();
+  const [max, setMax] = useState(inv.max_guests == null ? "unlimited" : String(inv.max_guests));
+  const [pending, setPending] = useState(false);
   return (
     <tr style={{ background: "rgba(191,155,95,.08)" }}>
       <td colSpan={7}>
@@ -64,18 +60,20 @@ function EditRow({
           />
           <button
             className="mini-btn"
-            disabled={pending}
-            onClick={() =>
-              start(async () => {
-                await updateInvitationAction(inv.id, name, max);
-                onDone();
-              })
-            }
+            disabled={pending || !name.trim()}
+            onClick={async () => {
+              setPending(true);
+              try {
+                await onSave(name, max);
+              } finally {
+                setPending(false);
+              }
+            }}
             type="button"
           >
             {pending ? "…" : "Save"}
           </button>
-          <button className="mini-btn" onClick={onDone} type="button">
+          <button className="mini-btn" onClick={onCancel} type="button">
             Cancel
           </button>
         </div>
@@ -84,22 +82,76 @@ function EditRow({
   );
 }
 
-export function Dashboard({ invitations, settings }: Props) {
+function toCsv(invitations: Invitation[]): string {
+  const cell = (value: string | number | null | undefined): string => {
+    const s = value == null ? "" : String(value);
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const header = ["Name", "Status", "Party size", "Max guests", "Note", "Responded at", "Link"];
+  const rows = invitations.map((inv) => [
+    cell(inv.name),
+    cell(inv.status),
+    cell(inv.status === "accepted" ? inv.party_size ?? 1 : inv.status === "declined" ? 0 : ""),
+    cell(inv.max_guests == null ? "unlimited" : inv.max_guests),
+    cell(inv.note),
+    cell(inv.responded_at),
+    cell(inviteUrl(inv.token)),
+  ]);
+  return "﻿" + [header.join(","), ...rows.map((r) => r.join(","))].join("\r\n");
+}
+
+export function Dashboard() {
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [importText, setImportText] = useState("");
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
   const [newMax, setNewMax] = useState("1");
-  const [s, setS] = useState<SiteSettings>(settings);
+  const [s, setS] = useState<SiteSettings>(DEFAULT_SETTINGS);
   const [settingsMsg, setSettingsMsg] = useState<string | null>(null);
-  const [pending, start] = useTransition();
+  const [pending, setPending] = useState(false);
+
+  const reload = useCallback(async () => {
+    const supabase = getSupabase();
+    const [invRes, setRes] = await Promise.all([
+      supabase.from("invitations").select("*").order("name", { ascending: true }),
+      supabase.from("settings").select("key, value"),
+    ]);
+    if (invRes.error) {
+      setLoadError(
+        invRes.error.message +
+          " — make sure supabase/setup.sql has been run and your login email is in admin_emails."
+      );
+      return;
+    }
+    setLoadError(null);
+    setInvitations((invRes.data as Invitation[]) ?? []);
+    if (setRes.data) setS(settingsFromRows(setRes.data));
+  }, []);
+
+  useEffect(() => {
+    reload();
+  }, [reload]);
+
+  const run = async (fn: () => Promise<void>) => {
+    setPending(true);
+    try {
+      await fn();
+      await reload();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : String(e));
+    } finally {
+      setPending(false);
+    }
+  };
 
   const stats = useMemo(() => {
     const accepted = invitations.filter((i) => i.status === "accepted");
     const declined = invitations.filter((i) => i.status === "declined");
     const pendingInv = invitations.filter((i) => i.status === "pending");
-    const headcount = accepted.reduce((sum, i) => sum + (i.partySize ?? 1), 0);
+    const headcount = accepted.reduce((sum, i) => sum + (i.party_size ?? 1), 0);
     return { accepted, declined, pendingInv, headcount };
   }, [invitations]);
 
@@ -109,28 +161,46 @@ export function Dashboard({ invitations, settings }: Props) {
   }, [invitations, filter]);
 
   const doImport = () =>
-    start(async () => {
-      if (!importText.trim()) return;
-      const res = await importAction(importText);
-      setImportMsg(`Imported ${res.count} invitation${res.count === 1 ? "" : "s"}.`);
+    run(async () => {
+      const parsed = parseImportLines(importText);
+      if (!parsed.length) return;
+      const rows = parsed.map(({ name, maxGuests }) => ({ name, max_guests: maxGuests, token: newToken() }));
+      const { error } = await getSupabase().from("invitations").insert(rows);
+      if (error) throw new Error(error.message);
+      setImportMsg(`Imported ${rows.length} invitation${rows.length === 1 ? "" : "s"}.`);
       setImportText("");
       setTimeout(() => setImportMsg(null), 4000);
     });
 
   const doAdd = () =>
-    start(async () => {
+    run(async () => {
       if (!newName.trim()) return;
-      await addInvitationAction(newName, newMax);
+      const { error } = await getSupabase()
+        .from("invitations")
+        .insert({ name: newName.trim(), max_guests: parseMaxGuests(newMax), token: newToken() });
+      if (error) throw new Error(error.message);
       setNewName("");
       setNewMax("1");
     });
 
   const doSaveSettings = () =>
-    start(async () => {
-      await saveSettingsAction(s);
+    run(async () => {
+      const rows = Object.entries(s).map(([key, value]) => ({ key, value }));
+      const { error } = await getSupabase().from("settings").upsert(rows, { onConflict: "key" });
+      if (error) throw new Error(error.message);
       setSettingsMsg("Saved.");
       setTimeout(() => setSettingsMsg(null), 3000);
     });
+
+  const doDownloadCsv = () => {
+    const blob = new Blob([toCsv(invitations)], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `rsvp-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const deadlineOver = new Date() > new Date(s.rsvpDeadline);
 
@@ -143,14 +213,31 @@ export function Dashboard({ invitations, settings }: Props) {
           <span style={{ fontWeight: 400, fontSize: 18, color: "var(--brown-soft)" }}>· RSVP admin</span>
         </h1>
         <div style={{ display: "flex", gap: 8 }}>
-          <a className="mini-btn" href="/admin/export" style={{ textDecoration: "none" }}>
+          <button className="mini-btn" onClick={doDownloadCsv} type="button">
             Export CSV
-          </a>
-          <button className="mini-btn" onClick={() => start(() => logoutAction())} type="button">
+          </button>
+          <button className="mini-btn" onClick={() => getSupabase().auth.signOut()} type="button">
             Sign out
           </button>
         </div>
       </div>
+
+      {loadError && (
+        <div
+          style={{
+            background: "rgba(168,50,50,.08)",
+            border: "1px solid rgba(168,50,50,.25)",
+            borderRadius: 12,
+            padding: "10px 16px",
+            margin: "18px 0",
+            fontFamily: "var(--sans)",
+            fontSize: 13,
+            color: "#a83232",
+          }}
+        >
+          {loadError}
+        </div>
+      )}
 
       {/* Stats */}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", margin: "20px 0" }}>
@@ -203,7 +290,7 @@ export function Dashboard({ invitations, settings }: Props) {
             {(["all", "accepted", "declined", "pending"] as Filter[]).map((f) => (
               <button
                 key={f}
-                className={`mini-btn${filter === f ? " active" : ""}`}
+                className="mini-btn"
                 style={filter === f ? { background: "var(--gold)", color: "#fffdf8", borderColor: "var(--gold)" } : undefined}
                 onClick={() => setFilter(f)}
                 type="button"
@@ -236,15 +323,28 @@ export function Dashboard({ invitations, settings }: Props) {
               )}
               {visible.map((inv) =>
                 editingId === inv.id ? (
-                  <EditRow key={inv.id} inv={inv} onDone={() => setEditingId(null)} />
+                  <EditRow
+                    key={inv.id}
+                    inv={inv}
+                    onCancel={() => setEditingId(null)}
+                    onSave={async (name, max) => {
+                      const { error } = await getSupabase()
+                        .from("invitations")
+                        .update({ name: name.trim(), max_guests: parseMaxGuests(max), updated_at: new Date().toISOString() })
+                        .eq("id", inv.id);
+                      if (error) throw new Error(error.message);
+                      setEditingId(null);
+                      await reload();
+                    }}
+                  />
                 ) : (
                   <tr key={inv.id}>
                     <td style={{ fontWeight: 600, color: "var(--brown)" }}>{inv.name}</td>
-                    <td>{inv.maxGuests == null ? "∞" : inv.maxGuests}</td>
+                    <td>{inv.max_guests == null ? "∞" : inv.max_guests}</td>
                     <td>
                       <StatusBadge status={inv.status} />
                     </td>
-                    <td>{inv.status === "accepted" ? inv.partySize ?? 1 : inv.status === "declined" ? 0 : "—"}</td>
+                    <td>{inv.status === "accepted" ? inv.party_size ?? 1 : inv.status === "declined" ? 0 : "—"}</td>
                     <td style={{ maxWidth: 260, whiteSpace: "pre-wrap", fontSize: 13 }}>{inv.note || "—"}</td>
                     <td>
                       <CopyLinkButton token={inv.token} />
@@ -258,7 +358,10 @@ export function Dashboard({ invitations, settings }: Props) {
                           className="mini-btn danger"
                           onClick={() => {
                             if (window.confirm(`Delete invitation for "${inv.name}"?`))
-                              start(() => deleteInvitationAction(inv.id));
+                              run(async () => {
+                                const { error } = await getSupabase().from("invitations").delete().eq("id", inv.id);
+                                if (error) throw new Error(error.message);
+                              });
                           }}
                           type="button"
                         >
