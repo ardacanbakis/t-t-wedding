@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,500&amp;family=Dancing+Script:wght@500;600&amp;family=Mulish:wght@300;400;600&amp;display=swap" rel="stylesheet">
+  <style>
+    html, body { margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: #fdf8f0; }
+    image-slot { display: block; width: 100%; height: 100%; }
+    @keyframes viewIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(7px); } }
+    @keyframes catAcross { from { transform: translateX(-30vw); } to { transform: translateX(118vw); } }
+    @keyframes catAcrossR { from { transform: translateX(118vw); } to { transform: translateX(-35vw); } }
+    @keyframes catBob { from { transform: translateY(0); } to { transform: translateY(-5px); } }
+    @keyframes gallop { from { transform: rotate(26deg); } to { transform: rotate(-26deg); } }
+    @keyframes tailSway { from { transform: rotate(-10deg); } to { transform: rotate(16deg); } }
+    @keyframes headBob { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+    @keyframes heartPop { 0% { opacity: 0; transform: translateY(8px) scale(.5); } 30% { opacity: .9; } 100% { opacity: 0; transform: translateY(-30px) scale(1.15); } }
+    @keyframes heartBeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+    @keyframes frameSway { 0% { transform: rotate(2.2deg); } 22% { transform: rotate(-1.5deg); } 45% { transform: rotate(0.9deg); } 68% { transform: rotate(-0.45deg); } 85% { transform: rotate(0.2deg); } 100% { transform: rotate(0deg); } }
+    @keyframes twinkleA { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+    @keyframes twinkleB { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+  </style>
+</helmet>
+
+<div ref="{{ bgRef }}" style="position:fixed; inset:0; z-index:0; background:linear-gradient(180deg,#fdf8f0,#f8eee1);"></div>
+<canvas ref="{{ petalCanvasRef }}" style="position:fixed; inset:0; width:100%; height:100%; z-index:55; pointer-events:none;"></canvas>
+
+<div style="position:fixed; top:16px; right:16px; z-index:90; display:flex; gap:4px; padding:5px; border-radius:999px; background:{{ navShellBg }}; backdrop-filter:blur(10px); border:1px solid {{ navShellBorder }}; box-shadow:0 10px 30px -14px rgba(40,26,20,.4); transition:background .6s ease, border-color .6s ease;">
+  <button onClick="{{ showStory }}" style="font-family:'Mulish',sans-serif; font-weight:600; font-size:12px; letter-spacing:.16em; text-transform:uppercase; padding:10px 18px; border:none; border-radius:999px; cursor:pointer; transition:all .35s; background:{{ storyBg }}; color:{{ storyFg }};">{{ tNavStory }}</button>
+  <button onClick="{{ showTimeline }}" style="font-family:'Mulish',sans-serif; font-weight:600; font-size:12px; letter-spacing:.16em; text-transform:uppercase; padding:10px 18px; border:none; border-radius:999px; cursor:pointer; transition:all .35s; background:{{ tlBg }}; color:{{ tlFg }};">{{ tNavTimeline }}</button>
+</div>
+
+<div style="position:fixed; top:16px; left:16px; z-index:90;">
+  <button onClick="{{ toggleSettings }}" title="Language · Dil" style="width:42px; height:42px; border-radius:50%; border:1px solid rgba(191,155,95,.4); background:rgba(255,251,243,.85); backdrop-filter:blur(10px); color:#8a5a3b; cursor:pointer; font-family:'Mulish',sans-serif; font-weight:600; font-size:11px; letter-spacing:.1em; box-shadow:0 10px 30px -14px rgba(120,72,40,.45); transition:all .3s;" style-hover="background:rgba(191,155,95,.18)">{{ langLabel }}</button>
+  <sc-if value="{{ settingsOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; top:50px; left:0; background:rgba(255,251,243,.97); border:1px solid rgba(191,155,95,.35); border-radius:14px; padding:14px 16px 16px; box-shadow:0 18px 44px -18px rgba(120,72,40,.5); min-width:170px; animation:viewIn .25s ease both;">
+      <div style="font-family:'Mulish',sans-serif; font-weight:600; font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:#8a5a3b; margin-bottom:10px;">Language · Dil</div>
+      <div style="display:flex; gap:6px;">
+        <button onClick="{{ setTR }}" style="flex:1; font-family:'Mulish',sans-serif; font-size:12px; padding:8px 12px; border:1px solid rgba(191,155,95,.4); border-radius:999px; cursor:pointer; transition:all .3s; background:{{ trBg }}; color:{{ trFg }};">Türkçe</button>
+        <button onClick="{{ setEN }}" style="flex:1; font-family:'Mulish',sans-serif; font-size:12px; padding:8px 12px; border:1px solid rgba(191,155,95,.4); border-radius:999px; cursor:pointer; transition:all .3s; background:{{ enBg }}; color:{{ enFg }};">English</button>
+      </div>
+    </div>
+  </sc-if>
+</div>
+
+<sc-if value="{{ showRail }}" hint-placeholder-val="{{ false }}">
+  <div onMouseEnter="{{ railEnter }}" onMouseLeave="{{ railLeave }}" style="position:fixed; left:8px; top:50%; transform:translateY(-50%); height:min(72vh,640px); width:140px; z-index:40;">
+    <svg ref="{{ ferulaRef }}" viewBox="0 0 80 640" preserveAspectRatio="xMidYMax meet" style="position:absolute; left:0; top:0; height:100%; width:66px; overflow:visible; opacity:{{ ferulaOpacity }}; transition:opacity .5s;">
+      <path data-stem="1" d="M40 640 C 37 545, 43 450, 40 350 C 37 250, 42 155, 40 60" fill="none" stroke="#6c7a45" stroke-width="3.4" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke .6s;"></path>
+      <path data-branch="1" data-t="0.03" d="M40 522 C 33 505, 26 493, 19 481" fill="none" stroke="#6c7a45" stroke-width="2.2" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke .6s;"></path>
+      <path data-branch="1" data-t="0.08" d="M40 465 C 47 448, 54 436, 61 425" fill="none" stroke="#6c7a45" stroke-width="2.2" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke .6s;"></path>
+      <path data-branch="1" data-t="0.13" d="M40 403 C 34 387, 27 375, 20 363" fill="none" stroke="#6c7a45" stroke-width="2.3" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke .6s;"></path>
+      <path data-branch="1" data-t="0.20" d="M40 294 C 47 278, 54 266, 61 254" fill="none" stroke="#6c7a45" stroke-width="2.3" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke .6s;"></path>
+      <path data-branch="1" data-t="0.28" d="M40 240 C 35 216, 29 195, 23 178" fill="none" stroke="#6c7a45" stroke-width="2.4" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke .6s;"></path>
+      <path data-branch="1" data-t="0.38" d="M40 181 C 45 159, 52 143, 58 129" fill="none" stroke="#6c7a45" stroke-width="2.4" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke .6s;"></path>
+      <path data-branch="1" data-t="0.50" d="M40 126 C 36 107, 29 93, 22 81" fill="none" stroke="#6c7a45" stroke-width="2.4" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke .6s;"></path>
+      <path data-branch="1" data-t="0.62" d="M40 91 C 44 72, 50 58, 56 46" fill="none" stroke="#6c7a45" stroke-width="2.4" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke .6s;"></path>
+      <path data-branch="1" data-t="0.74" d="M40 74 C 36 60, 31 50, 26 40" fill="none" stroke="#6c7a45" stroke-width="2.3" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke .6s;"></path>
+      <path data-branch="1" data-t="0.84" d="M40 62 C 40 44, 40 30, 40 16" fill="none" stroke="#6c7a45" stroke-width="2.6" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke .6s;"></path>
+      <g data-umbel="1" data-t="0.06" transform="translate(19,477)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-9 -4 M0 0 L-4 -9 M0 0 L1 -12 M0 0 L7 -8 M0 0 L10 -3" stroke="#98a05a" stroke-width="1.3" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-9" cy="-4" r="2.5" fill="#d3ae4a"></circle><circle cx="-4" cy="-9" r="2.5" fill="#d3ae4a"></circle><circle cx="1" cy="-12" r="2.5" fill="#d3ae4a"></circle><circle cx="7" cy="-8" r="2.5" fill="#d3ae4a"></circle><circle cx="10" cy="-3" r="2.5" fill="#d3ae4a"></circle>
+      </g>
+      <g data-umbel="1" data-t="0.11" transform="translate(61,421)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-9 -4 M0 0 L-4 -9 M0 0 L1 -12 M0 0 L7 -8 M0 0 L10 -3" stroke="#98a05a" stroke-width="1.3" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-9" cy="-4" r="2.5" fill="#d3ae4a"></circle><circle cx="-4" cy="-9" r="2.5" fill="#d3ae4a"></circle><circle cx="1" cy="-12" r="2.5" fill="#d3ae4a"></circle><circle cx="7" cy="-8" r="2.5" fill="#d3ae4a"></circle><circle cx="10" cy="-3" r="2.5" fill="#d3ae4a"></circle>
+      </g>
+      <g data-umbel="1" data-t="0.16" transform="translate(20,359)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-9 -4 M0 0 L-4 -9 M0 0 L1 -12 M0 0 L7 -8 M0 0 L10 -3" stroke="#98a05a" stroke-width="1.3" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-9" cy="-4" r="2.5" fill="#d3ae4a"></circle><circle cx="-4" cy="-9" r="2.5" fill="#d3ae4a"></circle><circle cx="1" cy="-12" r="2.5" fill="#d3ae4a"></circle><circle cx="7" cy="-8" r="2.5" fill="#d3ae4a"></circle><circle cx="10" cy="-3" r="2.5" fill="#d3ae4a"></circle>
+      </g>
+      <g data-umbel="1" data-t="0.24" transform="translate(61,250)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-10 -4 M0 0 L-5 -10 M0 0 L1 -13 M0 0 L8 -9 M0 0 L11 -3" stroke="#98a05a" stroke-width="1.4" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-10" cy="-4" r="2.8" fill="#d3ae4a"></circle><circle cx="-5" cy="-10" r="2.8" fill="#d3ae4a"></circle><circle cx="1" cy="-13" r="2.8" fill="#d3ae4a"></circle><circle cx="8" cy="-9" r="2.8" fill="#d3ae4a"></circle><circle cx="11" cy="-3" r="2.8" fill="#d3ae4a"></circle>
+      </g>
+      <g data-umbel="1" data-t="0.33" transform="translate(23,174)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-10 -4 M0 0 L-5 -10 M0 0 L1 -13 M0 0 L8 -9 M0 0 L11 -3" stroke="#98a05a" stroke-width="1.4" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-10" cy="-4" r="2.8" fill="#d3ae4a"></circle><circle cx="-5" cy="-10" r="2.8" fill="#d3ae4a"></circle><circle cx="1" cy="-13" r="2.8" fill="#d3ae4a"></circle><circle cx="8" cy="-9" r="2.8" fill="#d3ae4a"></circle><circle cx="11" cy="-3" r="2.8" fill="#d3ae4a"></circle>
+      </g>
+      <g data-umbel="1" data-t="0.43" transform="translate(58,125)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-10 -4 M0 0 L-5 -10 M0 0 L1 -13 M0 0 L8 -9 M0 0 L11 -3" stroke="#98a05a" stroke-width="1.4" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-10" cy="-4" r="2.8" fill="#d3ae4a"></circle><circle cx="-5" cy="-10" r="2.8" fill="#d3ae4a"></circle><circle cx="1" cy="-13" r="2.8" fill="#d3ae4a"></circle><circle cx="8" cy="-9" r="2.8" fill="#d3ae4a"></circle><circle cx="11" cy="-3" r="2.8" fill="#d3ae4a"></circle>
+      </g>
+      <g data-umbel="1" data-t="0.55" transform="translate(22,77)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-10 -4 M0 0 L-5 -10 M0 0 L1 -13 M0 0 L8 -9 M0 0 L11 -3" stroke="#98a05a" stroke-width="1.4" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-10" cy="-4" r="2.8" fill="#d3ae4a"></circle><circle cx="-5" cy="-10" r="2.8" fill="#d3ae4a"></circle><circle cx="1" cy="-13" r="2.8" fill="#d3ae4a"></circle><circle cx="8" cy="-9" r="2.8" fill="#d3ae4a"></circle><circle cx="11" cy="-3" r="2.8" fill="#d3ae4a"></circle>
+      </g>
+      <g data-umbel="1" data-t="0.67" transform="translate(56,42)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-10 -4 M0 0 L-5 -10 M0 0 L1 -13 M0 0 L8 -9 M0 0 L11 -3" stroke="#98a05a" stroke-width="1.4" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-10" cy="-4" r="2.8" fill="#d3ae4a"></circle><circle cx="-5" cy="-10" r="2.8" fill="#d3ae4a"></circle><circle cx="1" cy="-13" r="2.8" fill="#d3ae4a"></circle><circle cx="8" cy="-9" r="2.8" fill="#d3ae4a"></circle><circle cx="11" cy="-3" r="2.8" fill="#d3ae4a"></circle>
+      </g>
+      <g data-umbel="1" data-t="0.79" transform="translate(26,36)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-9 -4 M0 0 L-4 -9 M0 0 L1 -12 M0 0 L7 -8 M0 0 L10 -3" stroke="#98a05a" stroke-width="1.3" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-9" cy="-4" r="2.5" fill="#d3ae4a"></circle><circle cx="-4" cy="-9" r="2.5" fill="#d3ae4a"></circle><circle cx="1" cy="-12" r="2.5" fill="#d3ae4a"></circle><circle cx="7" cy="-8" r="2.5" fill="#d3ae4a"></circle><circle cx="10" cy="-3" r="2.5" fill="#d3ae4a"></circle>
+      </g>
+      <g data-umbel="1" data-t="0.90" transform="translate(40,12)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-13 -5 M0 0 L-8 -12 M0 0 L0 -16 M0 0 L8 -12 M0 0 L13 -5" stroke="#98a05a" stroke-width="1.5" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-13" cy="-5" r="3.3" fill="#d9b34c"></circle><circle cx="-8" cy="-12" r="3.3" fill="#d9b34c"></circle><circle cx="0" cy="-16" r="3.3" fill="#d9b34c"></circle><circle cx="8" cy="-12" r="3.3" fill="#d9b34c"></circle><circle cx="13" cy="-5" r="3.3" fill="#d9b34c"></circle>
+      </g>
+    </svg>
+    <div style="position:absolute; left:54px; top:0; bottom:0; display:flex; flex-direction:column; justify-content:space-between; padding:4px 0;">
+      <sc-for list="{{ chapters }}" as="ch" hint-placeholder-count="6">
+        <div onClick="{{ ch.go }}" onMouseEnter="{{ ch.enter }}" onMouseLeave="{{ ch.leave }}" title="{{ ch.title }}" style="display:flex; align-items:center; gap:9px; cursor:pointer; padding:4px 0;">
+          <span style="width:10px; height:10px; border-radius:50%; border:1.5px solid {{ railBorder }}; flex:none; background:{{ ch.dotBg }}; transform:scale({{ ch.dotScale }}); transition:all .35s;"></span>
+          <span style="font-family:'Mulish',sans-serif; font-weight:600; font-size:{{ ch.labelSize }}; letter-spacing:.16em; text-transform:uppercase; color:{{ ch.labelColor }}; background:{{ ch.labelBg }}; padding:3px 9px; border-radius:999px; white-space:nowrap; transition:all .25s;">{{ ch.short }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ showTopBtn }}" hint-placeholder-val="{{ false }}">
+  <button onClick="{{ goTop }}" title="{{ tTop }}" style="position:fixed; right:18px; bottom:18px; z-index:85; width:52px; height:52px; border-radius:50%; border:1px solid rgba(191,155,95,.45); background:rgba(255,251,243,.9); backdrop-filter:blur(8px); cursor:pointer; box-shadow:0 12px 32px -14px rgba(120,72,40,.5); display:flex; align-items:center; justify-content:center; animation:viewIn .3s ease both;">
+    <span style="font-size:20px; color:#d47f8a; display:inline-block; animation:heartBeat 1.6s ease-in-out infinite; line-height:1;">♥</span>
+  </button>
+</sc-if>
+
+<sc-if value="{{ isStory }}" hint-placeholder-val="{{ true }}">
+<div ref="{{ storyRef }}" onClick="{{ storyClick }}" style="position:relative; z-index:1; animation:viewIn .5s ease both;">
+
+  <section id="hero" data-screen-label="Hero" style="position:relative; min-height:100svh; display:flex; align-items:center; justify-content:center; overflow:hidden; background:radial-gradient(900px 480px at 50% 8%, rgba(238,196,170,.4), transparent 65%), linear-gradient(180deg, #fbf3e6, #fdf8f0);">
+    <div data-thread-start="1" style="position:absolute; top:0; left:50%; transform:translateX(-50%); z-index:3; pointer-events:none; display:flex; flex-direction:column; align-items:center;">
+      <svg width="92" height="58" viewBox="0 0 92 58" style="overflow:visible; filter:drop-shadow(0 4px 8px rgba(50,32,20,.35));">
+        <defs>
+          <linearGradient id="wgTop" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffffff"></stop>
+            <stop offset="0.3" stop-color="#dcdce8"></stop>
+            <stop offset="0.55" stop-color="#a8a8bd"></stop>
+            <stop offset="0.75" stop-color="#e9e2d2"></stop>
+            <stop offset="1" stop-color="#fbf9f2"></stop>
+          </linearGradient>
+          <linearGradient id="wgTop2" x1="1" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#f6f4ec"></stop>
+            <stop offset="0.4" stop-color="#b8b8ca"></stop>
+            <stop offset="0.7" stop-color="#dcd6c6"></stop>
+            <stop offset="1" stop-color="#ffffff"></stop>
+          </linearGradient>
+        </defs>
+        <circle cx="36" cy="29" r="19.6" fill="none" stroke="rgba(90,90,110,.3)" stroke-width="0.8"></circle>
+        <circle cx="56" cy="29" r="19.6" fill="none" stroke="rgba(90,90,110,.3)" stroke-width="0.8"></circle>
+        <circle cx="36" cy="29" r="17" fill="none" stroke="url(#wgTop)" stroke-width="5.2"></circle>
+        <circle cx="56" cy="29" r="17" fill="none" stroke="url(#wgTop2)" stroke-width="5.2"></circle>
+        <circle cx="36" cy="29" r="14.4" fill="none" stroke="rgba(70,70,92,.35)" stroke-width="0.7"></circle>
+        <circle cx="56" cy="29" r="14.4" fill="none" stroke="rgba(70,70,92,.35)" stroke-width="0.7"></circle>
+        <path d="M24.5 21 A 17 17 0 0 1 33 12.5" stroke="rgba(255,255,255,.95)" stroke-width="1.8" fill="none" stroke-linecap="round"></path>
+        <path d="M60 45 A 17 17 0 0 0 71.5 34" stroke="rgba(255,255,255,.8)" stroke-width="1.4" fill="none" stroke-linecap="round"></path>
+        <path d="M46 13 C 44 20, 44 38, 46 45" fill="none" stroke="#a83232" stroke-width="1.8"></path>
+        <path d="M30 8.4 L31 11 L33.6 12 L31 13 L30 15.6 L29 13 L26.4 12 L29 11 Z" fill="#ffffff" opacity="0.95"></path>
+        <path d="M63 44 L63.7 45.8 L65.5 46.5 L63.7 47.2 L63 49 L62.3 47.2 L60.5 46.5 L62.3 45.8 Z" fill="#ffffff" opacity="0.8"></path>
+      </svg>
+    </div>
+    <div style="position:relative; z-index:2; text-align:center; width:100%; margin:110px 0 48px; padding:clamp(36px,6vh,64px) 24px; pointer-events:none; box-sizing:border-box; background:rgba(250,240,228,.8); backdrop-filter:blur(7px); border-top:1px solid rgba(191,155,95,.25); border-bottom:1px solid rgba(191,155,95,.25);">
+      <div style="font-family:'Dancing Script',cursive; font-size:clamp(22px,3vw,30px); color:#bf9b5f;">{{ tHeroKicker }}</div>
+      <h1 style="font-family:'Playfair Display',serif; font-weight:600; font-size:clamp(44px,8.5vw,96px); color:#4a3226; margin:10px 0 4px; line-height:1.08;">Tansu <span style="font-family:'Dancing Script',cursive; color:#bf9b5f; font-weight:500;">&amp;</span> Arda</h1>
+      <div style="display:flex; align-items:center; justify-content:center; gap:14px; margin:22px auto 0; width:min(360px,70vw);">
+        <div style="flex:1; height:1px; background:linear-gradient(90deg, transparent, #bf9b5f);"></div>
+        <span style="color:#bf9b5f; font-size:15px;">♥</span>
+        <div style="flex:1; height:1px; background:linear-gradient(90deg, #bf9b5f, transparent);"></div>
+      </div>
+    </div>
+  </section>
+
+  <sc-for list="{{ dayChapters }}" as="ch" hint-placeholder-count="8">
+    <section id="{{ ch.id }}" data-screen-label="{{ ch.label }}" style="display:flex; align-items:center; justify-content:center; padding:clamp(52px,8vh,90px) clamp(20px,5vw,100px) clamp(52px,8vh,90px) clamp(56px,10vw,120px); background:{{ ch.bg }};">
+      <div data-reveal="1" style="position:relative; z-index:2; display:flex; flex-direction:{{ ch.dir }}; flex-wrap:wrap; align-items:center; justify-content:center; gap:clamp(32px,6vw,84px); max-width:1080px;">
+        <div style="flex:1 1 380px; min-width:290px; display:flex; justify-content:center; padding-top:26px;">
+          <div data-thread="1" style="position:relative;">
+            <div data-swing="1" style="position:relative; transform-origin:50% -14px;">
+              <svg viewBox="0 0 200 40" preserveAspectRatio="none" style="position:absolute; top:-14px; left:2%; width:96%; height:44px; z-index:0;">
+                <path d="M4 42 L100 4 L196 42" fill="none" stroke="#a83232" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+              </svg>
+              <div style="position:relative; background:#fffdf8; padding:14px 14px 46px; border-radius:5px; box-shadow:0 8px 22px -12px rgba(120,72,40,.3), 0 26px 62px -22px rgba(120,72,40,.38); transform:rotate({{ ch.tilt }}deg);">
+                <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ ch.slot }}" src="{{ ch.src }}" shape="rounded" radius="4" placeholder="{{ ch.ph }}" style="display:block; width:min(400px,74vw); height:300px;" hint-size="400px,300px"></x-import>
+                <div style="font-family:'Dancing Script',cursive; color:#8a6a4d; text-align:center; margin-top:12px; font-size:20px;">{{ ch.cap }}</div>
+              </div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 18 18" style="position:absolute; top:-22px; left:50%; transform:translateX(-50%); z-index:3; overflow:visible;">
+              <circle cx="9" cy="9" r="5.6" fill="#c9a24e"></circle>
+              <circle cx="7.4" cy="7.4" r="1.9" fill="#f3e3b5"></circle>
+            </svg>
+          </div>
+        </div>
+        <div style="flex:1 1 360px; min-width:280px; position:relative; padding-top:34px;">
+          <div style="position:absolute; top:-28px; left:-14px; font-family:'Playfair Display',serif; font-weight:700; font-size:clamp(90px,10vw,132px); color:rgba(191,155,95,.15); line-height:1; pointer-events:none; user-select:none;">{{ ch.num }}</div>
+          <div style="position:relative; font-family:'Mulish',sans-serif; font-weight:600; font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:#bf9b5f;">{{ ch.kicker }}</div>
+          <div style="font-family:'Dancing Script',cursive; font-size:clamp(28px,4vw,40px); color:#bf9b5f; margin-top:8px;">{{ ch.date }}</div>
+          <h2 style="font-family:'Playfair Display',serif; font-size:clamp(32px,4.6vw,48px); font-weight:600; color:#4a3226; margin:6px 0 0;">{{ ch.title }}</h2>
+          <div style="width:76px; height:1px; background:linear-gradient(90deg,#bf9b5f,transparent); margin:18px 0;"></div>
+          <p style="font-family:'Mulish',sans-serif; font-weight:300; font-size:17px; line-height:1.85; color:#6b543f; max-width:48ch; text-wrap:pretty; margin:0;">{{ ch.body }}</p>
+        </div>
+      </div>
+    </section>
+  </sc-for>
+
+  <div style="position:relative; background:radial-gradient(720px 340px at 50% 1%, rgba(242,166,118,.5), transparent 62%), radial-gradient(1100px 620px at 70% 26%, rgba(96,72,140,.35), transparent 62%), radial-gradient(900px 520px at 26% 58%, rgba(120,84,150,.22), transparent 65%), linear-gradient(180deg, #f1c9bd 0%, #dda6a2 4%, #a5758f 8.5%, #57446e 13%, #2a2140 20%, #191428 46%, #14101f 70%, #1c1631 100%);">
+    <canvas ref="{{ nightCanvasRef }}" style="position:absolute; inset:0; width:100%; height:100%; z-index:0; pointer-events:none;"></canvas>
+
+    <div data-screen-label="Dusk" style="position:relative; z-index:2; height:44vh; display:flex; align-items:center; justify-content:center;">
+      <div style="display:flex; align-items:center; gap:16px; opacity:.85;">
+        <div style="width:min(110px,18vw); height:1px; background:linear-gradient(90deg, transparent, #e8b98a);"></div>
+        <span style="color:#f0c9a0; font-size:13px;">✦</span>
+        <span style="color:#e4c284; font-size:9px;">✦</span>
+        <span style="color:#f0c9a0; font-size:12px;">✦</span>
+        <div style="width:min(110px,18vw); height:1px; background:linear-gradient(90deg, #e8b98a, transparent);"></div>
+      </div>
+    </div>
+
+    <section id="c9" data-screen-label="09 · The Invitation" style="position:relative; display:flex; align-items:center; justify-content:center; padding:clamp(40px,7vh,80px) clamp(20px,5vw,100px) clamp(80px,11vh,120px) clamp(56px,10vw,120px);">
+      <div data-reveal="1" style="position:relative; z-index:2; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:clamp(36px,6vw,90px); max-width:1080px;">
+        <div style="flex:0 1 400px; min-width:280px; display:flex; justify-content:center; padding-top:26px;">
+          <div data-thread="1" style="position:relative;">
+            <div data-swing="1" style="position:relative; transform-origin:50% -14px;">
+              <svg viewBox="0 0 200 40" preserveAspectRatio="none" style="position:absolute; top:-14px; left:2%; width:96%; height:44px; z-index:0;">
+                <path d="M4 42 L100 4 L196 42" fill="none" stroke="#a83232" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+              </svg>
+              <img src="assets/invitation.png" alt="Wedding invitation of Tansu and Arda" style="position:relative; width:min(380px,78vw); border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.65); transform:rotate(-1.4deg); display:block;">
+            </div>
+            <svg width="18" height="18" viewBox="0 0 18 18" style="position:absolute; top:-22px; left:50%; transform:translateX(-50%); z-index:3; overflow:visible;">
+              <circle cx="9" cy="9" r="5.6" fill="#c9a24e"></circle>
+              <circle cx="7.4" cy="7.4" r="1.9" fill="#f3e3b5"></circle>
+            </svg>
+          </div>
+        </div>
+        <div style="flex:1 1 340px; min-width:280px; position:relative; padding-top:34px;">
+          <div style="position:absolute; top:-28px; left:-14px; font-family:'Playfair Display',serif; font-weight:700; font-size:clamp(90px,10vw,132px); color:rgba(233,205,140,.1); line-height:1; pointer-events:none; user-select:none;">09</div>
+          <div style="position:relative; font-family:'Mulish',sans-serif; font-weight:600; font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:#d9b36c;">{{ invKicker }}</div>
+          <div style="font-family:'Dancing Script',cursive; font-size:clamp(28px,4vw,40px); color:#e4c284; margin-top:8px;">Ad astra per aspera</div>
+          <h2 style="font-family:'Playfair Display',serif; font-size:clamp(32px,4.6vw,48px); font-weight:600; color:#f0e2c8; margin:6px 0 0;">{{ invTitle }}</h2>
+          <div style="width:76px; height:1px; background:linear-gradient(90deg,#d9b36c,transparent); margin:18px 0;"></div>
+          <p style="font-family:'Mulish',sans-serif; font-weight:300; font-size:17px; line-height:1.85; color:rgba(240,226,200,.88); max-width:48ch; text-wrap:pretty; margin:0;">{{ invBody }}</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="c10" data-screen-label="10 · Our Wedding" style="position:relative; display:flex; align-items:center; justify-content:center; padding:clamp(80px,11vh,120px) clamp(20px,5vw,100px) clamp(80px,11vh,120px) clamp(56px,10vw,120px);">
+      <div data-reveal="1" style="position:relative; z-index:2; display:flex; flex-direction:row-reverse; flex-wrap:wrap; align-items:center; justify-content:center; gap:clamp(36px,6vw,90px); max-width:1080px;">
+        <div style="flex:1 1 380px; min-width:290px; display:flex; justify-content:center; padding-top:26px;">
+          <div data-thread="1" style="position:relative;">
+            <div data-swing="1" style="position:relative; transform-origin:50% -14px;">
+              <svg viewBox="0 0 200 40" preserveAspectRatio="none" style="position:absolute; top:-14px; left:2%; width:96%; height:44px; z-index:0;">
+                <path d="M4 42 L100 4 L196 42" fill="none" stroke="#a83232" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+              </svg>
+              <div style="position:relative; background:#fffdf8; padding:14px 14px 46px; border-radius:5px; box-shadow:0 0 0 1px rgba(217,179,108,.35), 0 34px 80px -20px rgba(0,0,0,.6); transform:rotate(1.8deg);">
+                <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="ph-wedding" shape="rounded" radius="4" placeholder="Drop a photo — the big day" style="display:block; width:min(400px,74vw); height:300px;" hint-size="400px,300px"></x-import>
+                <div style="font-family:'Dancing Script',cursive; color:#8a6a4d; text-align:center; margin-top:12px; font-size:20px;">{{ wedCap }}</div>
+              </div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 18 18" style="position:absolute; top:-22px; left:50%; transform:translateX(-50%); z-index:3; overflow:visible;">
+              <circle cx="9" cy="9" r="5.6" fill="#c9a24e"></circle>
+              <circle cx="7.4" cy="7.4" r="1.9" fill="#f3e3b5"></circle>
+            </svg>
+          </div>
+        </div>
+        <div style="flex:1 1 340px; min-width:280px; position:relative; padding-top:34px;">
+          <div style="position:absolute; top:-28px; left:-14px; font-family:'Playfair Display',serif; font-weight:700; font-size:clamp(90px,10vw,132px); color:rgba(233,205,140,.1); line-height:1; pointer-events:none; user-select:none;">10</div>
+          <div style="position:relative; font-family:'Mulish',sans-serif; font-weight:600; font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:#d9b36c;">{{ wedKicker }}</div>
+          <div style="font-family:'Dancing Script',cursive; font-size:clamp(30px,4.4vw,44px); color:#e4c284; margin-top:8px;">{{ wedDate }}</div>
+          <h2 style="font-family:'Playfair Display',serif; font-size:clamp(32px,4.6vw,48px); font-weight:600; color:#f0e2c8; margin:6px 0 0;">{{ wedTitle }}</h2>
+          <div style="font-family:'Mulish',sans-serif; font-weight:300; font-size:13px; letter-spacing:.22em; text-transform:uppercase; color:rgba(240,226,200,.7); margin-top:10px;">Germencik Belediyesi · Aydın</div>
+          <div style="width:76px; height:1px; background:linear-gradient(90deg,#d9b36c,transparent); margin:18px 0;"></div>
+          <p style="font-family:'Mulish',sans-serif; font-weight:300; font-size:17px; line-height:1.85; color:rgba(240,226,200,.88); max-width:48ch; text-wrap:pretty; margin:0;">{{ wedBody }}</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="c11" data-screen-label="11 · To Be Continued" style="position:relative; min-height:92vh; display:flex; align-items:center; justify-content:center; text-align:center; padding:100px 24px 48px;">
+      <div data-reveal="1" style="position:relative; z-index:2; max-width:640px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+        <div style="display:flex; align-items:center; justify-content:center; gap:14px; width:min(360px,70vw); margin-bottom:14px;">
+          <div style="flex:1; height:1px; background:linear-gradient(90deg, transparent, #d9b36c);"></div>
+          <span style="color:#d9b36c; font-size:15px;">♥</span>
+          <div style="flex:1; height:1px; background:linear-gradient(90deg, #d9b36c, transparent);"></div>
+        </div>
+        <div style="font-family:'Dancing Script',cursive; font-size:clamp(40px,7vw,64px); color:#e4c284; line-height:1.15;">Ad astra per aspera</div>
+        <div style="font-family:'Playfair Display',serif; font-style:italic; font-size:clamp(19px,2.6vw,24px); color:rgba(240,226,200,.85); margin-top:6px;">{{ closeSub }}</div>
+        <div style="font-family:'Mulish',sans-serif; font-weight:300; font-size:12px; letter-spacing:.26em; text-transform:uppercase; color:rgba(240,226,200,.55); margin-top:22px;">{{ closeCredit }}</div>
+        <button onClick="{{ releaseCats }}" style="margin-top:34px; font-family:'Dancing Script',cursive; font-size:20px; color:#d9b36c; background:transparent; border:1px solid rgba(217,179,108,.45); border-radius:999px; padding:12px 26px; cursor:pointer; transition:all .3s;" style-hover="background:rgba(217,179,108,.12)">{{ closeBtn }}</button>
+        <div data-thread-end="1" style="margin-top:64px; display:flex; justify-content:center; filter:drop-shadow(0 4px 10px rgba(0,0,0,.4));">
+          <svg width="124" height="88" viewBox="0 0 124 88" style="overflow:visible;">
+            <path d="M62 28 C 44 8, 20 14, 26 30 C 30 42, 50 38, 62 28" fill="none" stroke="#a83232" stroke-width="2.4"></path>
+            <path d="M62 28 C 80 8, 104 14, 98 30 C 94 42, 74 38, 62 28" fill="none" stroke="#a83232" stroke-width="2.4"></path>
+            <path d="M62 28 C 57 40, 51 50, 47 60" fill="none" stroke="#a83232" stroke-width="1.9"></path>
+            <path d="M62 28 C 66 40, 72 50, 75 58" fill="none" stroke="#a83232" stroke-width="1.9"></path>
+            <circle cx="62" cy="28" r="3.6" fill="#a83232"></circle>
+            <defs>
+              <linearGradient id="wgBot" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#ffffff"></stop>
+                <stop offset="0.3" stop-color="#dcdce8"></stop>
+                <stop offset="0.55" stop-color="#a8a8bd"></stop>
+                <stop offset="0.75" stop-color="#e9e2d2"></stop>
+                <stop offset="1" stop-color="#fbf9f2"></stop>
+              </linearGradient>
+              <linearGradient id="wgBot2" x1="1" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#f6f4ec"></stop>
+                <stop offset="0.4" stop-color="#b8b8ca"></stop>
+                <stop offset="0.7" stop-color="#dcd6c6"></stop>
+                <stop offset="1" stop-color="#ffffff"></stop>
+              </linearGradient>
+            </defs>
+            <circle cx="52" cy="68" r="15" fill="none" stroke="rgba(233,205,140,.25)" stroke-width="0.7"></circle>
+            <circle cx="71" cy="68" r="15" fill="none" stroke="rgba(233,205,140,.25)" stroke-width="0.7"></circle>
+            <circle cx="52" cy="68" r="13" fill="none" stroke="url(#wgBot)" stroke-width="4.4"></circle>
+            <circle cx="71" cy="68" r="13" fill="none" stroke="url(#wgBot2)" stroke-width="4.4"></circle>
+            <circle cx="52" cy="68" r="10.9" fill="none" stroke="rgba(70,70,92,.4)" stroke-width="0.6"></circle>
+            <circle cx="71" cy="68" r="10.9" fill="none" stroke="rgba(70,70,92,.4)" stroke-width="0.6"></circle>
+            <path d="M43 62 A 13 13 0 0 1 49.5 55.5" stroke="rgba(255,255,255,.95)" stroke-width="1.5" fill="none" stroke-linecap="round"></path>
+            <path d="M74 80 A 13 13 0 0 0 83 71.5" stroke="rgba(255,255,255,.8)" stroke-width="1.2" fill="none" stroke-linecap="round"></path>
+            <path d="M47 51.5 L47.8 53.7 L50 54.5 L47.8 55.3 L47 57.5 L46.2 55.3 L44 54.5 L46.2 53.7 Z" fill="#ffffff" opacity="0.95"></path>
+            <path d="M77 78 L77.6 79.5 L79 80 L77.6 80.6 L77 82 L76.4 80.6 L75 80 L76.4 79.5 Z" fill="#ffffff" opacity="0.75"></path>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <footer data-noadv="1" style="position:relative; z-index:2; padding:8px 20px 34px; display:flex; flex-direction:column; align-items:center; gap:12px;">
+      <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+        <a href="https://ardacanbakis.com" target="_blank" rel="noopener noreferrer" title="Website" style="padding:8px; border-radius:50%; color:#8b8fa3; display:flex; transition:all .3s;" style-hover="color:#ffffff; background:rgba(255,255,255,.08)">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"></path></svg>
+        </a>
+        <a href="https://github.com/ardacanbakis" target="_blank" rel="noopener noreferrer" title="GitHub" style="padding:8px; border-radius:50%; color:#8b8fa3; display:flex; transition:all .3s;" style-hover="color:#ffffff; background:rgba(255,255,255,.08)">
+          <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"></path></svg>
+        </a>
+        <a href="https://www.instagram.com/arda.canbakiss/" target="_blank" rel="noopener noreferrer" title="Instagram" style="padding:8px; border-radius:50%; color:#8b8fa3; display:flex; transition:all .3s;" style-hover="color:#ffffff; background:rgba(255,255,255,.08)">
+          <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"></path></svg>
+        </a>
+        <a href="https://www.youtube.com/@arda.canbakis" target="_blank" rel="noopener noreferrer" title="YouTube" style="padding:8px; border-radius:50%; color:#8b8fa3; display:flex; transition:all .3s;" style-hover="color:#ffffff; background:rgba(255,255,255,.08)">
+          <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"></path></svg>
+        </a>
+        <a href="https://open.spotify.com/user/11146430303" target="_blank" rel="noopener noreferrer" title="Spotify" style="padding:8px; border-radius:50%; color:#8b8fa3; display:flex; transition:all .3s;" style-hover="color:#ffffff; background:rgba(255,255,255,.08)">
+          <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"></path></svg>
+        </a>
+        <a href="http://linkedin.com/in/ardacanbakis" target="_blank" rel="noopener noreferrer" title="LinkedIn" style="padding:8px; border-radius:50%; color:#8b8fa3; display:flex; transition:all .3s;" style-hover="color:#ffffff; background:rgba(255,255,255,.08)">
+          <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"></path></svg>
+        </a>
+      </div>
+      <p style="font-family:'Mulish',sans-serif; font-weight:300; font-size:12px; color:#6b7280; margin:0; text-align:center;">Created with <svg width="12" height="12" viewBox="0 0 24 24" fill="#ef4444" style="display:inline-block; vertical-align:-1px;"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg> by <a href="https://ardacanbakis.com" target="_blank" rel="noopener noreferrer" style="color:#8b8fa3; text-decoration:none; transition:color .3s;" style-hover="color:#e4b84a">Arda Canbakis</a> © 2026</p>
+    </footer>
+  </div>
+
+  <svg ref="{{ threadRef }}" style="position:absolute; top:0; left:0; z-index:1; pointer-events:none; overflow:visible; opacity:{{ threadOpacity }}; transition:opacity .5s;">
+    <path ref="{{ threadPathRef }}" fill="none" stroke="#a83232" stroke-width="2" stroke-linecap="round" opacity="0.85"></path>
+  </svg>
+
+</div>
+</sc-if>
+
+<sc-if value="{{ isTimeline }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Timeline view" style="position:fixed; inset:0; z-index:20; display:flex; flex-direction:column; animation:viewIn .5s ease both; background:{{ tlBackdrop }}; transition:background 1s ease;">
+  <div style="position:absolute; inset:0; pointer-events:none; opacity:{{ tlStarsOpacity }}; transition:opacity 1s ease;">
+    <canvas ref="{{ tlNightCanvasRef }}" style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none;"></canvas>
+    <div style="position:absolute; inset:0; animation:twinkleA 5.5s ease-in-out infinite; background:radial-gradient(1.5px 1.5px at 12% 20%, rgba(240,220,160,.9), transparent 55%), radial-gradient(1.7px 1.7px at 52% 16%, rgba(255,240,200,.9), transparent 55%), radial-gradient(1.5px 1.5px at 84% 24%, rgba(240,220,160,.85), transparent 55%), radial-gradient(1.3px 1.3px at 38% 42%, rgba(240,220,160,.7), transparent 55%), radial-gradient(1.4px 1.4px at 72% 62%, rgba(255,240,200,.7), transparent 55%);"></div>
+    <div style="position:absolute; inset:0; animation:twinkleB 7.5s ease-in-out infinite; background:radial-gradient(1.2px 1.2px at 30% 60%, rgba(233,205,140,.7), transparent 55%), radial-gradient(1.1px 1.1px at 68% 46%, rgba(233,205,140,.7), transparent 55%), radial-gradient(1.2px 1.2px at 92% 66%, rgba(233,205,140,.7), transparent 55%), radial-gradient(1.1px 1.1px at 18% 78%, rgba(233,205,140,.6), transparent 55%), radial-gradient(1.3px 1.3px at 58% 82%, rgba(233,205,140,.6), transparent 55%);"></div>
+    <div style="position:absolute; inset:0; background:radial-gradient(1000px 600px at 50% 0%, rgba(96,72,140,.28), transparent 65%);"></div>
+  </div>
+  <div ref="{{ tlViewportRef }}" onPointerDown="{{ tlDown }}" style="flex:1; overflow:hidden; display:flex; cursor:grab; touch-action:pan-y; user-select:none; position:relative; z-index:1;">
+    <div style="display:flex; width:100%; height:100%; transform:translateX({{ tlShift }}%); transition:{{ tlTransition }}; will-change:transform;">
+      <sc-for list="{{ slides }}" as="s" hint-placeholder-count="3">
+        <div style="flex:0 0 100%; min-width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:min(76px,9vh) 28px 16px; box-sizing:border-box;">
+          <div style="font-family:'Dancing Script',cursive; font-size:clamp(24px,3.4vw,34px); color:{{ s.dateColor }};">{{ s.date }}</div>
+          <h2 style="font-family:'Playfair Display',serif; font-size:clamp(26px,4vw,40px); font-weight:600; color:{{ s.titleColor }}; margin:0; text-align:center;">{{ s.title }}</h2>
+          <div style="position:relative; margin-top:26px;">
+            <div data-swing="1" style="position:relative; transform-origin:50% -14px;">
+              <svg viewBox="0 0 200 40" preserveAspectRatio="none" style="position:absolute; top:-14px; left:2%; width:96%; height:44px; z-index:0;">
+                <path d="M4 42 L100 4 L196 42" fill="none" stroke="#a83232" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+              </svg>
+              <div style="position:relative; background:#fffdf8; padding:12px 12px 32px; border-radius:6px; box-shadow:0 28px 64px -24px rgba(60,36,20,.45); transform:rotate({{ s.tilt }}deg);">
+                <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ s.slot }}" src="{{ s.src }}" fit="{{ s.fit }}" shape="rounded" radius="4" placeholder="{{ s.ph }}" style="display:block; width:min(520px,80vw); height:clamp(150px,34vh,330px);" hint-size="520px,300px"></x-import>
+              </div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 18 18" style="position:absolute; top:-22px; left:50%; transform:translateX(-50%); z-index:3; overflow:visible;">
+              <circle cx="9" cy="9" r="5.6" fill="#c9a24e"></circle>
+              <circle cx="7.4" cy="7.4" r="1.9" fill="#f3e3b5"></circle>
+            </svg>
+          </div>
+          <p style="font-family:'Mulish',sans-serif; font-weight:300; font-size:16px; line-height:1.7; color:{{ s.capColor }}; max-width:56ch; text-align:center; text-wrap:pretty; margin:8px 0 0;">{{ s.caption }}</p>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  <button data-nodrag="1" onClick="{{ tlPrev }}" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); width:46px; height:46px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-size:20px; cursor:pointer; z-index:5; opacity:{{ prevOpacity }}; transition:opacity .3s; font-family:'Playfair Display',serif;">‹</button>
+  <button data-nodrag="1" onClick="{{ tlNext }}" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); width:46px; height:46px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-size:20px; cursor:pointer; z-index:5; opacity:{{ nextOpacity }}; transition:opacity .3s; font-family:'Playfair Display',serif;">›</button>
+  <sc-if value="{{ showTlFerula }}" hint-placeholder-val="{{ false }}">
+    <svg ref="{{ tlFerulaLRef }}" viewBox="0 0 80 420" preserveAspectRatio="xMidYMax meet" style="position:absolute; left:68px; bottom:140px; height:min(48vh,420px); width:58px; overflow:visible; z-index:2; pointer-events:none; opacity:.95;">
+      <path data-stem="1" d="M40 420 C 37 350, 43 280, 40 210 C 37 140, 42 90, 40 40" fill="none" stroke="#6c7a45" stroke-width="3.2" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke-dashoffset .7s ease, stroke .6s;"></path>
+      <path data-branch="1" data-t="0.10" d="M40 345 C 33 331, 26 321, 20 311" fill="none" stroke="#6c7a45" stroke-width="2.2" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke-dashoffset .7s ease, stroke .6s;"></path>
+      <path data-branch="1" data-t="0.26" d="M40 290 C 47 276, 54 266, 60 256" fill="none" stroke="#6c7a45" stroke-width="2.2" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke-dashoffset .7s ease, stroke .6s;"></path>
+      <path data-branch="1" data-t="0.44" d="M40 232 C 34 217, 28 207, 22 197" fill="none" stroke="#6c7a45" stroke-width="2.2" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke-dashoffset .7s ease, stroke .6s;"></path>
+      <path data-branch="1" data-t="0.62" d="M40 175 C 46 160, 52 150, 58 140" fill="none" stroke="#6c7a45" stroke-width="2.2" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke-dashoffset .7s ease, stroke .6s;"></path>
+      <path data-branch="1" data-t="0.80" d="M40 118 C 36 103, 31 93, 26 83" fill="none" stroke="#6c7a45" stroke-width="2.2" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke-dashoffset .7s ease, stroke .6s;"></path>
+      <g data-umbel="1" data-t="0.14" transform="translate(20,307)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-9 -4 M0 0 L-4 -9 M0 0 L1 -12 M0 0 L7 -8 M0 0 L10 -3" stroke="#98a05a" stroke-width="1.3" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-9" cy="-4" r="2.5" fill="#d3ae4a"></circle><circle cx="-4" cy="-9" r="2.5" fill="#d3ae4a"></circle><circle cx="1" cy="-12" r="2.5" fill="#d3ae4a"></circle><circle cx="7" cy="-8" r="2.5" fill="#d3ae4a"></circle><circle cx="10" cy="-3" r="2.5" fill="#d3ae4a"></circle>
+      </g>
+      <g data-umbel="1" data-t="0.30" transform="translate(60,252)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-9 -4 M0 0 L-4 -9 M0 0 L1 -12 M0 0 L7 -8 M0 0 L10 -3" stroke="#98a05a" stroke-width="1.3" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-9" cy="-4" r="2.5" fill="#d3ae4a"></circle><circle cx="-4" cy="-9" r="2.5" fill="#d3ae4a"></circle><circle cx="1" cy="-12" r="2.5" fill="#d3ae4a"></circle><circle cx="7" cy="-8" r="2.5" fill="#d3ae4a"></circle><circle cx="10" cy="-3" r="2.5" fill="#d3ae4a"></circle>
+      </g>
+      <g data-umbel="1" data-t="0.48" transform="translate(22,193)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-9 -4 M0 0 L-4 -9 M0 0 L1 -12 M0 0 L7 -8 M0 0 L10 -3" stroke="#98a05a" stroke-width="1.3" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-9" cy="-4" r="2.5" fill="#d3ae4a"></circle><circle cx="-4" cy="-9" r="2.5" fill="#d3ae4a"></circle><circle cx="1" cy="-12" r="2.5" fill="#d3ae4a"></circle><circle cx="7" cy="-8" r="2.5" fill="#d3ae4a"></circle><circle cx="10" cy="-3" r="2.5" fill="#d3ae4a"></circle>
+      </g>
+      <g data-umbel="1" data-t="0.66" transform="translate(58,136)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-9 -4 M0 0 L-4 -9 M0 0 L1 -12 M0 0 L7 -8 M0 0 L10 -3" stroke="#98a05a" stroke-width="1.3" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-9" cy="-4" r="2.5" fill="#d3ae4a"></circle><circle cx="-4" cy="-9" r="2.5" fill="#d3ae4a"></circle><circle cx="1" cy="-12" r="2.5" fill="#d3ae4a"></circle><circle cx="7" cy="-8" r="2.5" fill="#d3ae4a"></circle><circle cx="10" cy="-3" r="2.5" fill="#d3ae4a"></circle>
+      </g>
+      <g data-umbel="1" data-t="0.84" transform="translate(26,79)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-9 -4 M0 0 L-4 -9 M0 0 L1 -12 M0 0 L7 -8 M0 0 L10 -3" stroke="#98a05a" stroke-width="1.3" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-9" cy="-4" r="2.5" fill="#d3ae4a"></circle><circle cx="-4" cy="-9" r="2.5" fill="#d3ae4a"></circle><circle cx="1" cy="-12" r="2.5" fill="#d3ae4a"></circle><circle cx="7" cy="-8" r="2.5" fill="#d3ae4a"></circle><circle cx="10" cy="-3" r="2.5" fill="#d3ae4a"></circle>
+      </g>
+      <g data-umbel="1" data-t="0.94" transform="translate(40,36)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-12 -5 M0 0 L-7 -11 M0 0 L0 -15 M0 0 L7 -11 M0 0 L12 -5" stroke="#98a05a" stroke-width="1.4" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-12" cy="-5" r="3" fill="#d9b34c"></circle><circle cx="-7" cy="-11" r="3" fill="#d9b34c"></circle><circle cx="0" cy="-15" r="3" fill="#d9b34c"></circle><circle cx="7" cy="-11" r="3" fill="#d9b34c"></circle><circle cx="12" cy="-5" r="3" fill="#d9b34c"></circle>
+      </g>
+    </svg>
+    <svg ref="{{ tlFerulaRRef }}" viewBox="0 0 80 420" preserveAspectRatio="xMidYMax meet" style="position:absolute; right:68px; bottom:140px; height:min(48vh,420px); width:58px; overflow:visible; z-index:2; pointer-events:none; opacity:.95; transform:scaleX(-1);">
+      <path data-stem="1" d="M40 420 C 37 350, 43 280, 40 210 C 37 140, 42 90, 40 40" fill="none" stroke="#6c7a45" stroke-width="3.2" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke-dashoffset .7s ease, stroke .6s;"></path>
+      <path data-branch="1" data-t="0.10" d="M40 345 C 33 331, 26 321, 20 311" fill="none" stroke="#6c7a45" stroke-width="2.2" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke-dashoffset .7s ease, stroke .6s;"></path>
+      <path data-branch="1" data-t="0.26" d="M40 290 C 47 276, 54 266, 60 256" fill="none" stroke="#6c7a45" stroke-width="2.2" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke-dashoffset .7s ease, stroke .6s;"></path>
+      <path data-branch="1" data-t="0.44" d="M40 232 C 34 217, 28 207, 22 197" fill="none" stroke="#6c7a45" stroke-width="2.2" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke-dashoffset .7s ease, stroke .6s;"></path>
+      <path data-branch="1" data-t="0.62" d="M40 175 C 46 160, 52 150, 58 140" fill="none" stroke="#6c7a45" stroke-width="2.2" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke-dashoffset .7s ease, stroke .6s;"></path>
+      <path data-branch="1" data-t="0.80" d="M40 118 C 36 103, 31 93, 26 83" fill="none" stroke="#6c7a45" stroke-width="2.2" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke-dashoffset .7s ease, stroke .6s;"></path>
+      <g data-umbel="1" data-t="0.14" transform="translate(20,307)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-9 -4 M0 0 L-4 -9 M0 0 L1 -12 M0 0 L7 -8 M0 0 L10 -3" stroke="#98a05a" stroke-width="1.3" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-9" cy="-4" r="2.5" fill="#d3ae4a"></circle><circle cx="-4" cy="-9" r="2.5" fill="#d3ae4a"></circle><circle cx="1" cy="-12" r="2.5" fill="#d3ae4a"></circle><circle cx="7" cy="-8" r="2.5" fill="#d3ae4a"></circle><circle cx="10" cy="-3" r="2.5" fill="#d3ae4a"></circle>
+      </g>
+      <g data-umbel="1" data-t="0.30" transform="translate(60,252)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-9 -4 M0 0 L-4 -9 M0 0 L1 -12 M0 0 L7 -8 M0 0 L10 -3" stroke="#98a05a" stroke-width="1.3" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-9" cy="-4" r="2.5" fill="#d3ae4a"></circle><circle cx="-4" cy="-9" r="2.5" fill="#d3ae4a"></circle><circle cx="1" cy="-12" r="2.5" fill="#d3ae4a"></circle><circle cx="7" cy="-8" r="2.5" fill="#d3ae4a"></circle><circle cx="10" cy="-3" r="2.5" fill="#d3ae4a"></circle>
+      </g>
+      <g data-umbel="1" data-t="0.48" transform="translate(22,193)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-9 -4 M0 0 L-4 -9 M0 0 L1 -12 M0 0 L7 -8 M0 0 L10 -3" stroke="#98a05a" stroke-width="1.3" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-9" cy="-4" r="2.5" fill="#d3ae4a"></circle><circle cx="-4" cy="-9" r="2.5" fill="#d3ae4a"></circle><circle cx="1" cy="-12" r="2.5" fill="#d3ae4a"></circle><circle cx="7" cy="-8" r="2.5" fill="#d3ae4a"></circle><circle cx="10" cy="-3" r="2.5" fill="#d3ae4a"></circle>
+      </g>
+      <g data-umbel="1" data-t="0.66" transform="translate(58,136)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-9 -4 M0 0 L-4 -9 M0 0 L1 -12 M0 0 L7 -8 M0 0 L10 -3" stroke="#98a05a" stroke-width="1.3" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-9" cy="-4" r="2.5" fill="#d3ae4a"></circle><circle cx="-4" cy="-9" r="2.5" fill="#d3ae4a"></circle><circle cx="1" cy="-12" r="2.5" fill="#d3ae4a"></circle><circle cx="7" cy="-8" r="2.5" fill="#d3ae4a"></circle><circle cx="10" cy="-3" r="2.5" fill="#d3ae4a"></circle>
+      </g>
+      <g data-umbel="1" data-t="0.84" transform="translate(26,79)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-9 -4 M0 0 L-4 -9 M0 0 L1 -12 M0 0 L7 -8 M0 0 L10 -3" stroke="#98a05a" stroke-width="1.3" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-9" cy="-4" r="2.5" fill="#d3ae4a"></circle><circle cx="-4" cy="-9" r="2.5" fill="#d3ae4a"></circle><circle cx="1" cy="-12" r="2.5" fill="#d3ae4a"></circle><circle cx="7" cy="-8" r="2.5" fill="#d3ae4a"></circle><circle cx="10" cy="-3" r="2.5" fill="#d3ae4a"></circle>
+      </g>
+      <g data-umbel="1" data-t="0.94" transform="translate(40,36)" opacity="0" style="transition:opacity .8s ease;">
+        <path data-ustem="1" d="M0 0 L-12 -5 M0 0 L-7 -11 M0 0 L0 -15 M0 0 L7 -11 M0 0 L12 -5" stroke="#98a05a" stroke-width="1.4" fill="none" style="transition:stroke .6s;"></path>
+        <circle cx="-12" cy="-5" r="3" fill="#d9b34c"></circle><circle cx="-7" cy="-11" r="3" fill="#d9b34c"></circle><circle cx="0" cy="-15" r="3" fill="#d9b34c"></circle><circle cx="7" cy="-11" r="3" fill="#d9b34c"></circle><circle cx="12" cy="-5" r="3" fill="#d9b34c"></circle>
+      </g>
+    </svg>
+  </sc-if>
+  <div style="padding:8px 20px 30px; display:flex; justify-content:center; position:relative; z-index:1;">
+    <div style="position:relative; width:min(900px,88vw);">
+      <div style="position:absolute; left:0; right:0; top:9px; height:1.5px; background:linear-gradient(90deg, rgba(191,155,95,.2), rgba(191,155,95,.55), rgba(191,155,95,.2));"></div>
+      <div style="position:absolute; left:0; top:9px; height:1.5px; width:{{ tlProgress }}%; background:#bf9b5f; transition:width .5s ease;"></div>
+      <div style="position:relative; display:flex; justify-content:space-between;">
+        <sc-for list="{{ slides }}" as="s" hint-placeholder-count="5">
+          <div data-nodrag="1" onClick="{{ s.go }}" title="{{ s.title }}" style="display:flex; flex-direction:column; align-items:center; gap:7px; cursor:pointer; padding:0 2px;">
+            <span style="width:11px; height:11px; border-radius:50%; border:1.5px solid #bf9b5f; background:{{ s.dotBg }}; transform:scale({{ s.dotScale }}); transition:all .3s; margin-top:3px;"></span>
+            <span style="font-family:'Mulish',sans-serif; font-weight:600; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:{{ s.labelColor }}; white-space:nowrap; transition:color .3s;">{{ s.short }}</span>
+            <span style="font-family:'Dancing Script',cursive; font-size:12px; line-height:1.15; text-align:center; max-width:88px; color:{{ s.subColor }}; transition:color .3s;">{{ s.dateShort }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ catsRunning }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed; left:0; bottom:0; width:100%; height:150px; z-index:70; pointer-events:none; overflow:hidden;">
+
+    <div style="position:absolute; bottom:12px; left:0; transform:translateX(-30vw); animation:{{ cat1Anim }};">
+      <div style="position:relative; animation:catBob .3s ease-in-out infinite alternate;">
+        <div style="position:absolute; left:34px; top:-14px; font-size:15px; color:#e08a9b; opacity:0; animation:heartPop 1.3s ease-out .2s infinite;">♥</div>
+        <div style="position:absolute; left:76px; top:-10px; font-size:11px; color:#d9b36c; opacity:0; animation:heartPop 1.5s ease-out .8s infinite;">♥</div>
+        <svg viewBox="0 0 150 96" style="width:126px; height:80px; display:block; overflow:visible; transform:{{ catFlip }};">
+          <g style="transform-box:fill-box; transform-origin:100% 100%; animation:tailSway .5s ease-in-out infinite alternate;">
+            <path d="M28 52 C 12 46, 4 30, 12 12" fill="none" stroke="#17120e" stroke-width="8" stroke-linecap="round"></path>
+          </g>
+          <g style="transform-box:fill-box; transform-origin:top center; animation:gallop .2s ease-in-out infinite alternate;">
+            <path d="M40 58 L 33 84" stroke="#17120e" stroke-width="8" stroke-linecap="round"></path>
+          </g>
+          <g style="transform-box:fill-box; transform-origin:top center; animation:gallop .2s ease-in-out infinite alternate; animation-delay:.1s;">
+            <path d="M52 58 L 47 84" stroke="#17120e" stroke-width="8" stroke-linecap="round"></path>
+          </g>
+          <g style="transform-box:fill-box; transform-origin:top center; animation:gallop .2s ease-in-out infinite alternate; animation-delay:.05s;">
+            <path d="M96 58 L 91 84" stroke="#17120e" stroke-width="8" stroke-linecap="round"></path>
+          </g>
+          <g style="transform-box:fill-box; transform-origin:top center; animation:gallop .2s ease-in-out infinite alternate; animation-delay:.15s;">
+            <path d="M108 58 L 103 84" stroke="#17120e" stroke-width="8" stroke-linecap="round"></path>
+          </g>
+          <rect x="26" y="34" width="92" height="30" rx="15" fill="#17120e"></rect>
+          <g style="transform-box:fill-box; transform-origin:center 80%; animation:headBob .3s ease-in-out infinite alternate;">
+            <polygon points="112,22 116,2 128,16" fill="#17120e"></polygon>
+            <polygon points="128,15 140,4 142,22" fill="#17120e"></polygon>
+            <polygon points="115,19 117,9 124,16" fill="#c76a6a"></polygon>
+            <circle cx="127" cy="30" r="17" fill="#17120e"></circle>
+            <circle cx="133" cy="27" r="2.4" fill="#e4c284"></circle>
+            <path d="M112 44 C 118 50, 132 50, 138 44" fill="none" stroke="#a33d3d" stroke-width="4" stroke-linecap="round"></path>
+            <circle cx="125" cy="49" r="4" fill="#e0b34c"></circle>
+            <circle cx="125" cy="49" r="1.4" fill="#8a5a1c"></circle>
+          </g>
+        </svg>
+        <div style="width:96px; height:9px; border-radius:50%; background:rgba(40,25,12,.16); filter:blur(3px); margin:3px 0 0 16px;"></div>
+      </div>
+    </div>
+
+    <div style="position:absolute; bottom:10px; left:0; transform:translateX(-30vw); animation:{{ cat2Anim }};">
+      <div style="position:relative; animation:catBob .26s ease-in-out infinite alternate;">
+        <div style="position:absolute; left:26px; top:-10px; font-size:11px; color:#e08a9b; opacity:0; animation:heartPop 1.4s ease-out .5s infinite;">♥</div>
+        <svg viewBox="0 0 150 96" style="width:78px; height:50px; display:block; overflow:visible; transform:{{ catFlip }};">
+          <defs>
+            <clipPath id="didiBody"><rect x="26" y="34" width="92" height="30" rx="15"></rect></clipPath>
+          </defs>
+          <g style="transform-box:fill-box; transform-origin:100% 100%; animation:tailSway .42s ease-in-out infinite alternate;">
+            <path d="M28 52 C 12 46, 6 32, 16 16" fill="none" stroke="#d68a4e" stroke-width="8" stroke-linecap="round"></path>
+            <path d="M18 22 C 15 20, 14 18, 16 16" fill="none" stroke="#241d18" stroke-width="8" stroke-linecap="round"></path>
+          </g>
+          <g style="transform-box:fill-box; transform-origin:top center; animation:gallop .17s ease-in-out infinite alternate;">
+            <path d="M40 58 L 33 84" stroke="#e9e0d2" stroke-width="8" stroke-linecap="round"></path>
+          </g>
+          <g style="transform-box:fill-box; transform-origin:top center; animation:gallop .17s ease-in-out infinite alternate; animation-delay:.085s;">
+            <path d="M52 58 L 47 84" stroke="#d68a4e" stroke-width="8" stroke-linecap="round"></path>
+          </g>
+          <g style="transform-box:fill-box; transform-origin:top center; animation:gallop .17s ease-in-out infinite alternate; animation-delay:.04s;">
+            <path d="M96 58 L 91 84" stroke="#e9e0d2" stroke-width="8" stroke-linecap="round"></path>
+          </g>
+          <g style="transform-box:fill-box; transform-origin:top center; animation:gallop .17s ease-in-out infinite alternate; animation-delay:.13s;">
+            <path d="M108 58 L 103 84" stroke="#241d18" stroke-width="8" stroke-linecap="round"></path>
+          </g>
+          <rect x="26" y="34" width="92" height="30" rx="15" fill="#f0e9db" stroke="#cfc2ab" stroke-width="1"></rect>
+          <g clip-path="url(#didiBody)">
+            <ellipse cx="50" cy="40" rx="17" ry="12" fill="#d68a4e"></ellipse>
+            <ellipse cx="82" cy="58" rx="15" ry="11" fill="#241d18"></ellipse>
+            <ellipse cx="108" cy="38" rx="12" ry="9" fill="#d68a4e"></ellipse>
+          </g>
+          <g style="transform-box:fill-box; transform-origin:center 80%; animation:headBob .26s ease-in-out infinite alternate;">
+            <polygon points="112,22 116,2 128,16" fill="#d68a4e"></polygon>
+            <polygon points="128,15 140,4 142,22" fill="#241d18"></polygon>
+            <polygon points="115,19 117,9 124,16" fill="#e0a9a0"></polygon>
+            <circle cx="127" cy="30" r="17" fill="#f0e9db" stroke="#cfc2ab" stroke-width="1"></circle>
+            <path d="M113 18 A 17 17 0 0 1 128 13 L 130 26 Z" fill="#d68a4e"></path>
+            <path d="M138 16 A 17 17 0 0 1 144 30 L 130 28 Z" fill="#241d18"></path>
+            <circle cx="133" cy="28" r="2.4" fill="#3d2a18"></circle>
+            <circle cx="121" cy="28" r="2.2" fill="#3d2a18"></circle>
+            <path d="M124 37 L 127 34 L 130 37" fill="none" stroke="#d98a92" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M114 44 C 120 49, 132 49, 138 44" fill="none" stroke="#b98a80" stroke-width="2.6" stroke-linecap="round"></path>
+          </g>
+        </svg>
+        <div style="width:58px; height:7px; border-radius:50%; background:rgba(40,25,12,.14); filter:blur(2px); margin:2px 0 0 10px;"></div>
+      </div>
+    </div>
+
+  </div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;petalStyle&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;sakura&quot;, &quot;rose&quot;, &quot;stardust&quot;, &quot;fireflies&quot;], &quot;default&quot;: &quot;sakura&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Ambience&quot;}, &quot;petalDensity&quot;: {&quot;editor&quot;: &quot;range&quot;, &quot;min&quot;: 0, &quot;max&quot;: 100, &quot;step&quot;: 5, &quot;default&quot;: 45, &quot;unit&quot;: &quot;&quot;, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Ambience&quot;}, &quot;showFerula&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Ambience&quot;}, &quot;showThread&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Ambience&quot;}}">
+class Component extends DCLogic {
+  state = { view: 'story', tlIndex: 0, activeCh: 0, hoverCh: -1, railHover: false, dragPct: 0, dragging: false, catsRunning: false, catsDir: 'ltr', settingsOpen: false, isNarrow: false, lang: 'tr', showTop: false };
+
+  constructor(props) {
+    super(props);
+    this.bgRef = React.createRef();
+    this.petalCanvasRef = React.createRef();
+    this.nightCanvasRef = React.createRef();
+    this.tlNightCanvasRef = React.createRef();
+    this.ferulaRef = React.createRef();
+    this.tlViewportRef = React.createRef();
+    this.tlFerulaLRef = React.createRef();
+    this.tlFerulaRRef = React.createRef();
+    this.storyRef = React.createRef();
+    this.threadRef = React.createRef();
+    this.threadPathRef = React.createRef();
+    this._p = 0;
+    this._fw = [];
+    this._shoot = [];
+    this._weddingBurstDone = false;
+    try {
+      const saved = localStorage.getItem('ta-love-lang');
+      if (saved === 'tr' || saved === 'en') this.state.lang = saved;
+    } catch (e) {}
+
+    this._dayBgs = ['#fdf8f0', '#faf3e6', '#f9ece4', '#f7e4de', '#f6dcd4', '#f5d5c8', '#f3cfc4', '#f1c9bd'];
+
+    this._defs = [
+      { id: 'c1', slot: 'ph-first-meet', ph: 'Drop a photo — the very beginning', tilt: -2 },
+      { id: 'c2', slot: 'ph-first-date', ph: 'Drop a photo — first date', tilt: 2 },
+      { id: 'c3', slot: 'ph-first-kiss', ph: 'Drop a photo — or a place that reminds you of it', tilt: -1.5 },
+      { id: 'c4', slot: 'ph-hecate', src: 'assets/hecate.jpeg', ph: 'Hecate', tilt: 1.8 },
+      { id: 'c5', slot: 'ph-trips', ph: 'Drop a photo — a trip you loved', tilt: -2.2 },
+      { id: 'c6', slot: 'ph-didi', src: 'assets/didi.jpeg', ph: 'Didi', tilt: 2.2 },
+      { id: 'c7', slot: 'ph-proposal', ph: 'Drop a photo — the proposal', tilt: -1.6 },
+      { id: 'c8', slot: 'ph-newchapter', ph: 'Drop a photo — the new venture', tilt: 1.4 },
+      { id: 'c9', slot: 'ph-invite', src: 'assets/invitation.png', fit: 'contain', ph: 'Invitation', tilt: -1.4 },
+      { id: 'c10', slot: 'ph-wedding', ph: 'Drop a photo — the big day', tilt: 1.8 }
+    ];
+
+    this._L = {
+      en: {
+        navStory: 'Our Story', navTimeline: 'Timeline', scroll: 'scroll', top: 'back to the beginning',
+        heroKicker: 'the story of', heroTagline: 'Ad astra per aspera — a story written in small, ordinary miracles.',
+        nav: ['Start', 'Meet', 'Date', 'Kiss', 'Hecate', 'Trips', 'Didi', 'Proposal', 'Anew', 'Invite', 'Wedding', 'Forever'],
+        closeSub: '…to be continued.', closeCredit: 'Tansu & Arda — and Hecate & Didi, of course', closeBtn: 'release the cats',
+        ch: [
+          { kicker: 'Chapter One', date: 'Autumn 2019', title: 'First Meet', cap: 'where it all began',
+            body: 'A crowded room, a shared joke, and two people who suddenly forgot what they had been saying. Neither of us remembers who spoke first — only that the evening felt far too short. Some stories don\u2019t begin with fireworks; ours began with a smile that stayed.',
+            tl: 'A crowded room, a shared joke, and an evening that felt far too short.' },
+          { kicker: 'Chapter Two', date: 'A few weeks later', title: 'First Date', cap: 'the longest short evening',
+            body: 'One coffee became dinner, and dinner became a slow walk that neither of us wanted to end. The caf\u00e9 closed around us and we barely noticed. We still argue, gently, about who was more nervous.',
+            tl: 'One coffee became dinner, and dinner became a walk neither of us wanted to end.' },
+          { kicker: 'Chapter Three', date: 'Not long after', title: 'First Kiss', cap: 'under a kind streetlight',
+            body: 'A goodnight that took its time. The street was quiet, the air was cool, and for one long second the whole city seemed to look away politely. After that, there was no going back — and we never wanted to.',
+            tl: 'A goodnight that took its time, under a kind streetlight.' },
+          { kicker: 'Chapter Four', date: 'The day she chose us', title: 'Enter Hecate', cap: 'Hecate, keeper of the house',
+            body: 'A black shadow with golden eyes and a small red bell. They say black cats choose their people — Hecate simply walked in, inspected us thoroughly, and decided we would do. Two became three.',
+            tl: 'A black shadow with golden eyes walked in, inspected us, and decided to stay.' },
+          { kicker: 'Chapter Five', date: 'The years in between', title: 'Aegean Summers', cap: 'salt, pine, and slow evenings',
+            body: 'Road trips with bad playlists and good company. Sea water still drying on our shoulders at dinner. Somewhere between all those small journeys, home stopped being a place and started being each other.',
+            tl: 'Somewhere between the road trips, home stopped being a place and became each other.' },
+          { kicker: 'Chapter Six', date: 'A tiny, loud miracle', title: 'Enter Didi', cap: 'Didi, small but in charge',
+            body: 'Palm-sized, bottle-fed, and utterly convinced she runs the place. Didi arrived weighing less than a teacup and immediately doubled the noise in the house. Hecate pretended to disapprove for exactly one week.',
+            tl: 'Palm-sized, bottle-fed, and utterly convinced she runs the place.' },
+          { kicker: 'Chapter Seven', date: 'One knee, one question', title: 'The Proposal', cap: 'she said yes',
+            body: 'The ring had been hiding for weeks; the speech evaporated on arrival. In the end it was four shaky words and one certain answer. Zorluklardan y\u0131ld\u0131zlara — through hardships, to the stars.',
+            tl: 'Four shaky words and one certain answer. Zorluklardan y\u0131ld\u0131zlara.' },
+          { kicker: 'Chapter Eight', date: 'A brave decision', title: 'A New Chapter', cap: 'building it together',
+            body: 'Tansu closed one door to open ours: she left her job to build something of our own, together. It was a leap — and like every good leap in this story, we took it holding hands.',
+            tl: 'Tansu closed one door to open ours — a leap we took holding hands.' },
+          { kicker: 'Chapter Nine', date: 'Ad astra per aspera', title: 'The Invitation', cap: '',
+            body: 'We drew our story in the stars — tarot cards, rockets, one black cat and one small one — and sent it out into the world. Hecate and Didi made the poster, of course. They practically run the family.',
+            tl: 'Our story drawn in the stars — with Hecate and Didi on the poster, naturally.' },
+          { kicker: 'Chapter Ten', date: '28 June 2026', title: 'Our Wedding', cap: 'the easiest yes',
+            body: 'On a warm June afternoon, surrounded by everyone we love, we said the easiest yes of our lives. Seven years of small ordinary miracles, signed and sealed at half past two.',
+            tl: 'Germencik Belediyesi, Ayd\u0131n — the easiest yes of our lives.' }
+        ]
+      },
+      tr: {
+        navStory: 'Hik\u00e2yemiz', navTimeline: 'Zaman T\u00fcneli', scroll: 'kayd\u0131r', top: 'ba\u015fa d\u00f6n',
+        heroKicker: 'bir a\u015fk hik\u00e2yesi', heroTagline: 'Ad astra per aspera — k\u00fc\u00e7\u00fck, s\u0131radan mucizelerle yaz\u0131lm\u0131\u015f bir hik\u00e2ye.',
+        nav: ['Ba\u015flang\u0131\u00e7', 'Tan\u0131\u015fma', 'Bulu\u015fma', '\u00d6p\u00fcc\u00fck', 'Hecate', 'Yazlar', 'Didi', 'Teklif', 'Yeni', 'Davetiye', 'D\u00fc\u011f\u00fcn', 'Sonsuza'],
+        closeSub: '…devam edecek.', closeCredit: 'Tansu & Arda — ve tabii ki Hecate ile Didi', closeBtn: 'kedileri sal\u0131ver',
+        ch: [
+          { kicker: 'Birinci B\u00f6l\u00fcm', date: 'Sonbahar 2019', title: '\u0130lk Kar\u015f\u0131la\u015fma', cap: 'her \u015feyin ba\u015flad\u0131\u011f\u0131 yer',
+            body: 'Kalabal\u0131k bir oda, ortak bir \u015faka ve s\u00f6ylediklerini birden unutan iki ki\u015fi. \u0130lk kim konu\u015ftu, ikimiz de hat\u0131rlam\u0131yoruz — yaln\u0131zca ak\u015fam\u0131n fazlas\u0131yla k\u0131sa geldi\u011fini. Baz\u0131 hik\u00e2yeler havai fi\u015feklerle ba\u015flamaz; bizimki kal\u0131c\u0131 bir g\u00fcl\u00fcmsemeyle ba\u015flad\u0131.',
+            tl: 'Kalabal\u0131k bir oda, ortak bir \u015faka ve fazlas\u0131yla k\u0131sa gelen bir ak\u015fam.' },
+          { kicker: '\u0130kinci B\u00f6l\u00fcm', date: 'Birka\u00e7 hafta sonra', title: '\u0130lk Bulu\u015fma', cap: 'en uzun k\u0131sa ak\u015fam',
+            body: 'Bir kahve yeme\u011fe, yemek de hi\u00e7birimizin bitmesini istemedi\u011fi yava\u015f bir y\u00fcr\u00fcy\u00fc\u015fe d\u00f6n\u00fc\u015ft\u00fc. Kafe etraf\u0131m\u0131zda kapand\u0131, fark etmedik bile. Kimin daha heyecanl\u0131 oldu\u011funu h\u00e2l\u00e2 tatl\u0131 tatl\u0131 tart\u0131\u015f\u0131yoruz.',
+            tl: 'Bir kahve yeme\u011fe, yemek de bitmesin istedi\u011fimiz bir y\u00fcr\u00fcy\u00fc\u015fe d\u00f6n\u00fc\u015ft\u00fc.' },
+          { kicker: '\u00dc\u00e7\u00fcnc\u00fc B\u00f6l\u00fcm', date: 'K\u0131sa bir s\u00fcre sonra', title: '\u0130lk \u00d6p\u00fcc\u00fck', cap: 'nazik bir sokak lambas\u0131n\u0131n alt\u0131nda',
+            body: 'Acele etmeyen bir iyi geceler. Sokak sessizdi, hava serindi ve uzun bir saniye boyunca b\u00fct\u00fcn \u015fehir kibarca ba\u015fka tarafa bakt\u0131. Ondan sonra geri d\u00f6n\u00fc\u015f yoktu — istemedik de.',
+            tl: 'Acele etmeyen bir iyi geceler, nazik bir sokak lambas\u0131n\u0131n alt\u0131nda.' },
+          { kicker: 'D\u00f6rd\u00fcnc\u00fc B\u00f6l\u00fcm', date: 'Bizi se\u00e7ti\u011fi g\u00fcn', title: 'Hecate Geliyor', cap: 'Hecate, evin bek\u00e7isi',
+            body: 'Alt\u0131n g\u00f6zl\u00fc, k\u00fc\u00e7\u00fck k\u0131rm\u0131z\u0131 \u00e7\u0131ng\u0131rakl\u0131 kara bir g\u00f6lge. Kara kedilerin insanlar\u0131n\u0131 se\u00e7ti\u011fini s\u00f6ylerler — Hecate i\u00e7eri y\u00fcr\u00fcd\u00fc, bizi iyice tefti\u015f etti ve idare edece\u011fimize karar verdi. \u0130ki, \u00fc\u00e7 oldu.',
+            tl: 'Alt\u0131n g\u00f6zl\u00fc kara bir g\u00f6lge i\u00e7eri girdi, bizi tefti\u015f etti ve kalmaya karar verdi.' },
+          { kicker: 'Be\u015finci B\u00f6l\u00fcm', date: 'Aradaki y\u0131llar', title: 'Ege Yazlar\u0131', cap: 'tuz, \u00e7am ve yava\u015f ak\u015famlar',
+            body: 'K\u00f6t\u00fc \u00e7alma listeleri ve iyi arkada\u015fl\u0131kla yol maceralar\u0131. Ak\u015fam yeme\u011finde omuzlar\u0131m\u0131zda h\u00e2l\u00e2 kuruyan deniz suyu. O k\u00fc\u00e7\u00fck yolculuklar\u0131n aras\u0131nda bir yerde ev, bir mek\u00e2n olmaktan \u00e7\u0131k\u0131p birbirimiz oldu.',
+            tl: 'Yol maceralar\u0131n\u0131n aras\u0131nda bir yerde ev, birbirimiz oldu.' },
+          { kicker: 'Alt\u0131nc\u0131 B\u00f6l\u00fcm', date: 'K\u00fc\u00e7\u00fck, g\u00fcr\u00fclt\u00fcl\u00fc bir mucize', title: 'Didi Geliyor', cap: 'Didi, k\u00fc\u00e7\u00fck ama yetkili',
+            body: 'Avu\u00e7 i\u00e7i kadar, biberonla beslenen ve evi kendisinin y\u00f6netti\u011fine emin. Didi bir \u00e7ay fincan\u0131ndan hafif geldi ve evdeki g\u00fcr\u00fclt\u00fcy\u00fc an\u0131nda ikiye katlad\u0131. Hecate tam bir hafta boyunca onaylam\u0131yormu\u015f gibi yapt\u0131.',
+            tl: 'Avu\u00e7 i\u00e7i kadar, biberonla beslenen ve evi y\u00f6netti\u011fine emin.' },
+          { kicker: 'Yedinci B\u00f6l\u00fcm', date: 'Tek diz, tek soru', title: 'Evlilik Teklifi', cap: 'evet dedi',
+            body: 'Y\u00fcz\u00fck haftalarca sakland\u0131; haz\u0131rlanan konu\u015fma ise an\u0131nda buharla\u015ft\u0131. Sonunda d\u00f6rt titrek kelime ve son derece emin bir cevap kald\u0131. Zorluklardan y\u0131ld\u0131zlara.',
+            tl: 'D\u00f6rt titrek kelime ve emin bir cevap. Zorluklardan y\u0131ld\u0131zlara.' },
+          { kicker: 'Sekizinci B\u00f6l\u00fcm', date: 'Cesur bir karar', title: 'Yeni Bir Sayfa', cap: 'birlikte kuruyoruz',
+            body: 'Tansu bir kap\u0131y\u0131 kapat\u0131p bizimkini aralad\u0131: kendi i\u015fimizi birlikte kurmak i\u00e7in i\u015finden ayr\u0131ld\u0131. Bir s\u0131\u00e7ray\u0131\u015ft\u0131 — ve bu hik\u00e2yedeki her g\u00fczel s\u0131\u00e7ray\u0131\u015f gibi, el ele atlad\u0131k.',
+            tl: 'Tansu bir kap\u0131y\u0131 kapat\u0131p bizimkini aralad\u0131 — el ele atlad\u0131k.' },
+          { kicker: 'Dokuzuncu B\u00f6l\u00fcm', date: 'Ad astra per aspera', title: 'Davetiye', cap: '',
+            body: 'Hik\u00e2yemizi y\u0131ld\u0131zlara \u00e7izdik — tarot kartlar\u0131, roketler, bir kara kedi ve bir k\u00fc\u00e7\u00fck kedi — ve d\u00fcnyaya g\u00f6nderdik. Hecate ve Didi de tabii ki posterde: aileyi zaten onlar y\u00f6netiyor.',
+            tl: 'Y\u0131ld\u0131zlara \u00e7izilmi\u015f hik\u00e2yemiz — posterde Hecate ve Didi ile.' },
+          { kicker: 'Onuncu B\u00f6l\u00fcm', date: '28 Haziran 2026', title: 'D\u00fc\u011f\u00fcn\u00fcm\u00fcz', cap: 'en kolay evet',
+            body: 'S\u0131cak bir haziran \u00f6\u011fleden sonras\u0131nda, sevdi\u011fimiz herkesin aras\u0131nda hayat\u0131m\u0131z\u0131n en kolay evet\u2019ini s\u00f6yledik. Yedi y\u0131l\u0131n k\u00fc\u00e7\u00fck, s\u0131radan mucizeleri; saat iki bu\u00e7ukta imzaland\u0131 ve m\u00fch\u00fcrlendi.',
+            tl: 'Germencik Belediyesi, Ayd\u0131n — hayat\u0131m\u0131z\u0131n en kolay evet\u2019i.' }
+        ]
+      }
+    };
+    this._chIds = ['hero', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9', 'c10', 'c11'];
+  }
+
+  componentDidMount() {
+    this._onScroll = () => this._scrolled();
+    this._onResize = () => {
+      this._sizeCanvas();
+      this._scrolled();
+      const narrow = window.innerWidth < 880;
+      if (narrow !== this.state.isNarrow) this.setState({ isNarrow: narrow });
+    };
+    this._onKey = (e) => {
+      if (this.state.view !== 'timeline') return;
+      if (e.key === 'ArrowRight') this._go(this.state.tlIndex + 1);
+      if (e.key === 'ArrowLeft') this._go(this.state.tlIndex - 1);
+    };
+    window.addEventListener('scroll', this._onScroll, { passive: true });
+    window.addEventListener('resize', this._onResize);
+    window.addEventListener('keydown', this._onKey);
+    this._setupReveals();
+    this._setupWeddingBurst();
+    this._sizeCanvas();
+    this._spawnPetals();
+    this._loop();
+    this._scrolled();
+    this._scheduleCats();
+    this._attachThreadRO();
+    setTimeout(() => this._layoutThread(), 400);
+    setTimeout(() => this._layoutThread(), 1600);
+    if (window.innerWidth < 880) this.setState({ isNarrow: true });
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('scroll', this._onScroll);
+    window.removeEventListener('resize', this._onResize);
+    window.removeEventListener('keydown', this._onKey);
+    if (this._raf) cancelAnimationFrame(this._raf);
+    if (this._io) this._io.disconnect();
+    if (this._wedIo) this._wedIo.disconnect();
+    if (this._catTimer) clearTimeout(this._catTimer);
+    if (this._ro) this._ro.disconnect();
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps && (prevProps.petalStyle !== this.props.petalStyle || prevProps.petalDensity !== this.props.petalDensity)) {
+      this._spawnPetals();
+    }
+    if (this.state.view === 'timeline') {
+      requestAnimationFrame(() => this._growTlFerulas());
+    }
+  }
+
+  _growTlFerulas() {
+    const n = this._defs.length;
+    const p = n > 1 ? this.state.tlIndex / (n - 1) : 0;
+    const night = true;
+    [this.tlFerulaLRef.current, this.tlFerulaRRef.current].forEach((svg) => {
+      if (!svg) return;
+      const stem = svg.querySelector('[data-stem]');
+      const grow = Math.min(1, 0.07 + p * 1.05);
+      if (stem) stem.style.strokeDashoffset = String(Math.max(0, 1 - grow));
+      svg.querySelectorAll('[data-branch]').forEach((el) => {
+        const t0 = parseFloat(el.getAttribute('data-t'));
+        el.style.strokeDashoffset = String(1 - Math.min(1, Math.max(0, (p - t0) / 0.08)));
+      });
+      svg.querySelectorAll('[data-umbel]').forEach((el) => {
+        el.style.opacity = p >= parseFloat(el.getAttribute('data-t')) ? '1' : '0';
+      });
+      svg.querySelectorAll('[data-stem],[data-branch]').forEach((el) => el.setAttribute('stroke', night ? '#d9b36c' : '#6c7a45'));
+      svg.querySelectorAll('[data-ustem]').forEach((el) => el.setAttribute('stroke', night ? '#e4c284' : '#98a05a'));
+    });
+  }
+
+  // ---------- reveals + swings ----------
+  _setupReveals() {
+    if (this._io) this._io.disconnect();
+    this._io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if (en.isIntersecting) {
+          en.target.style.opacity = '1';
+          en.target.style.transform = 'translateY(0)';
+          en.target.querySelectorAll('[data-swing]').forEach((s) => this._swing(s));
+          this._io.unobserve(en.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('[data-reveal]').forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.top > window.innerHeight * 0.92) {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(30px)';
+        el.style.transition = 'opacity 1.1s ease, transform 1.1s cubic-bezier(.22,.8,.3,1)';
+        this._io.observe(el);
+      }
+    });
+  }
+
+  _swing(el) {
+    if (!el) return;
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = 'frameSway 3.2s cubic-bezier(.33,0,.2,1) both';
+  }
+
+  // ---------- red thread of fate ----------
+  _attachThreadRO() {
+    if (this._ro) this._ro.disconnect();
+    this._ro = new ResizeObserver(() => this._layoutThread());
+    if (this.storyRef.current) this._ro.observe(this.storyRef.current);
+  }
+
+  _smoothPath(pts) {
+    if (pts.length < 2) return '';
+    let d = 'M' + pts[0].x.toFixed(1) + ' ' + pts[0].y.toFixed(1);
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+      const c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
+      const c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
+      d += ' C ' + c1x.toFixed(1) + ' ' + c1y.toFixed(1) + ', ' + c2x.toFixed(1) + ' ' + c2y.toFixed(1) + ', ' + p2.x.toFixed(1) + ' ' + p2.y.toFixed(1);
+    }
+    return d;
+  }
+
+  _layoutThread() {
+    if (this.state.view !== 'story') return;
+    const cont = this.storyRef.current, svg = this.threadRef.current, path = this.threadPathRef.current;
+    if (!cont || !svg || !path) return;
+    const cr = cont.getBoundingClientRect();
+    const W = cont.clientWidth, H = cont.scrollHeight;
+    svg.setAttribute('width', W);
+    svg.setAttribute('height', H);
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    const pts = [];
+    const start = cont.querySelector('[data-thread-start]');
+    if (start) {
+      const r = start.getBoundingClientRect();
+      pts.push({ x: r.left + r.width / 2 - cr.left, y: r.bottom - cr.top - 6 });
+    }
+    cont.querySelectorAll('[data-thread]').forEach((el) => {
+      const r = el.getBoundingClientRect();
+      const cx = r.left + r.width / 2 - cr.left;
+      pts.push({ x: cx, y: r.top - cr.top - 14 });
+      pts.push({ x: cx, y: r.bottom - cr.top + 10 });
+    });
+    const end = cont.querySelector('[data-thread-end]');
+    if (end) {
+      const r = end.getBoundingClientRect();
+      pts.push({ x: r.left + r.width / 2 - cr.left, y: r.top - cr.top + 28 });
+    }
+    if (pts.length < 2) return;
+    path.setAttribute('d', this._smoothPath(pts));
+    try {
+      this._threadLen = path.getTotalLength();
+      path.style.strokeDasharray = String(this._threadLen);
+      this._updateThread();
+    } catch (e) {}
+  }
+
+  _updateThread() {
+    const path = this.threadPathRef.current, cont = this.storyRef.current;
+    if (!path || !cont || !this._threadLen) return;
+    const H = Math.max(1, cont.scrollHeight);
+    const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    let frac = Math.min(1, Math.max(0, (window.scrollY + window.innerHeight * 0.9) / H));
+    if (window.scrollY >= maxScroll - 6) frac = 1;
+    path.style.strokeDashoffset = String(this._threadLen * (1 - frac));
+  }
+
+  // ---------- cats: random + manual ----------
+  _scheduleCats() {
+    if (this._catTimer) clearTimeout(this._catTimer);
+    const delay = 16000 + Math.random() * 28000;
+    this._catTimer = setTimeout(() => {
+      this._releaseCats();
+      this._scheduleCats();
+    }, delay);
+  }
+
+  _releaseCats() {
+    if (this.state.catsRunning) return;
+    this.setState({ catsRunning: true, catsDir: Math.random() < 0.5 ? 'rtl' : 'ltr' });
+    setTimeout(() => this.setState({ catsRunning: false }), 7800);
+  }
+
+  // ---------- fireworks ----------
+  _isNight() {
+    return this.state.view === 'timeline' ? this.state.tlIndex >= 8 : this.state.activeCh >= 9;
+  }
+
+  _spawnFirework(opts) {
+    const night = this._isNight();
+    const w = window.innerWidth, h = window.innerHeight;
+    const x = (opts && opts.x) || w * (0.1 + Math.random() * 0.8);
+    const y = (opts && opts.y) || h * (0.1 + Math.random() * 0.42);
+    const dayCols = ['#dfb87a', '#e3a8a0', '#e8c98a', '#dd9a9a', '#d9ad92'];
+    const nightCols = ['#ffd98a', '#ffb3c1', '#c9a8ff', '#fff1c9', '#9ed4ff', '#f0a8b8'];
+    const cols = night ? nightCols : dayCols;
+    const col = cols[Math.floor(Math.random() * cols.length)];
+    const cnt = 34 + Math.floor(Math.random() * 26);
+    for (let i = 0; i < cnt; i++) {
+      const a = (i / cnt) * Math.PI * 2 + Math.random() * 0.25;
+      const sp = 1.1 + Math.random() * 2.7;
+      this._fw.push({
+        x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+        life: 1, decay: 0.008 + Math.random() * 0.009,
+        col, night, size: night ? 2.2 : 1.7
+      });
+    }
+  }
+
+  _setupWeddingBurst() {
+    if (this._wedIo) this._wedIo.disconnect();
+    this._wedIo = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if (en.isIntersecting && !this._weddingBurstDone) {
+          this._weddingBurstDone = true;
+          for (let i = 0; i < 6; i++) {
+            setTimeout(() => this._spawnFirework(), i * 320);
+          }
+          this._wedIo.disconnect();
+        }
+      });
+    }, { threshold: 0.4 });
+    const el = document.getElementById('c10');
+    if (el && !this._weddingBurstDone) this._wedIo.observe(el);
+  }
+
+  // ---------- scroll ----------
+  _scrolled() {
+    if (this.state.view !== 'story') return;
+    const doc = document.documentElement;
+    const max = Math.max(1, doc.scrollHeight - window.innerHeight);
+    const p = Math.min(1, Math.max(0, window.scrollY / max));
+    this._p = p;
+    const svg = this.ferulaRef.current;
+    if (svg) {
+      const grow = Math.min(1, 0.07 + p * 1.12);
+      const stem = svg.querySelector('[data-stem]');
+      if (stem) stem.style.strokeDashoffset = String(Math.max(0, 1 - grow));
+      svg.querySelectorAll('[data-branch]').forEach((el) => {
+        const t0 = parseFloat(el.getAttribute('data-t'));
+        const k = Math.min(1, Math.max(0, (p - t0) / 0.1));
+        el.style.strokeDashoffset = String(1 - k);
+      });
+      svg.querySelectorAll('[data-umbel]').forEach((el) => {
+        const t0 = parseFloat(el.getAttribute('data-t'));
+        el.style.opacity = p >= t0 ? '1' : '0';
+      });
+    }
+    let active = 0;
+    this._chIds.forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (el && el.getBoundingClientRect().top < window.innerHeight * 0.45) active = i;
+    });
+    const night = active >= 9;
+    if (svg && night !== this._ferulaNight) {
+      this._ferulaNight = night;
+      svg.querySelectorAll('[data-stem],[data-branch]').forEach((el) => el.setAttribute('stroke', night ? '#d9b36c' : '#6c7a45'));
+      svg.querySelectorAll('[data-ustem]').forEach((el) => el.setAttribute('stroke', night ? '#e4c284' : '#98a05a'));
+    }
+    this._updateThread();
+    const showTop = window.scrollY > window.innerHeight * 0.7;
+    if (active !== this.state.activeCh || showTop !== this.state.showTop) {
+      this.setState({ activeCh: active, showTop });
+    }
+  }
+
+  // ---------- canvases ----------
+  _sizeCanvas() {
+    const c = this.petalCanvasRef.current;
+    if (!c) return;
+    c.width = window.innerWidth;
+    c.height = window.innerHeight;
+  }
+
+  _spawnPetals() {
+    const style = this.props.petalStyle ?? 'sakura';
+    const density = this.props.petalDensity ?? 45;
+    const w = window.innerWidth, h = window.innerHeight;
+    const count = Math.round(density * 0.85 * Math.min(1.4, Math.max(0.55, w / 1100)));
+    const R = (a, b) => a + Math.random() * (b - a);
+    const palettes = {
+      sakura: ['#f6c9d2', '#f3b7c4', '#efaab9', '#f8d8de'],
+      rose: ['#dd9a89', '#d18570', '#c97b5d', '#e3ab9c'],
+      stardust: ['#e9cd8c', '#dfba6d', '#f0dca6'],
+      fireflies: ['#e8d27a', '#d9c065', '#f2e49a']
+    };
+    const cols = palettes[style] || palettes.sakura;
+    this._petals = Array.from({ length: count }, () => ({
+      x: R(0, w), y: R(-h, h), size: style === 'stardust' || style === 'fireflies' ? R(1, 2.6) : R(4, 9),
+      vy: style === 'fireflies' ? R(-0.5, -0.15) : style === 'stardust' ? R(0.15, 0.5) : R(0.5, 1.4),
+      vx: R(-0.25, 0.25), phase: R(0, Math.PI * 2), sway: R(0.4, 1.1),
+      rot: R(0, Math.PI * 2), spin: R(-0.02, 0.02),
+      color: cols[Math.floor(Math.random() * cols.length)], tw: R(1, 3)
+    }));
+  }
+
+  _hexToRgb(hex) {
+    return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
+  }
+
+  _drawNightStars(now, nc) {
+    if (!nc || !nc.parentElement) return;
+    const wrap = nc.parentElement;
+    const r = wrap.getBoundingClientRect();
+    if (r.bottom < -100 || r.top > window.innerHeight + 100) return;
+    const cw = Math.max(2, Math.floor(wrap.clientWidth / 2));
+    const chh = Math.max(2, Math.floor(wrap.clientHeight / 2));
+    if (nc.width !== cw || nc.height !== chh) {
+      nc.width = cw; nc.height = chh;
+      nc._stars = null;
+    }
+    if (!nc._stars) {
+      const count = Math.min(900, Math.round((cw * chh) / 4200));
+      const R = (a, b) => a + Math.random() * (b - a);
+      nc._stars = Array.from({ length: count }, () => {
+        const y = Math.random() * chh;
+        return {
+          x: Math.random() * cw, y,
+          r: Math.random() < 0.07 ? R(1.3, 2.1) : R(0.35, 1.05),
+          tw: R(0.4, 2.4), ph: R(0, Math.PI * 2),
+          base: R(0.35, 0.95) * Math.min(1, y / (chh * 0.14))
+        };
+      });
+    }
+    const ctx = nc.getContext('2d');
+    ctx.clearRect(0, 0, cw, chh);
+    const t = now * 0.001;
+    for (const s of nc._stars) {
+      const a = s.base * (0.3 + 0.7 * (0.5 + 0.5 * Math.sin(t * s.tw + s.ph)));
+      if (a < 0.03) continue;
+      ctx.globalAlpha = a;
+      ctx.fillStyle = '#fff3d8';
+      if (s.r > 1.2) { ctx.shadowColor = 'rgba(255,235,180,.9)'; ctx.shadowBlur = 6; } else { ctx.shadowBlur = 0; }
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+    if (!this._nextShoot) this._nextShoot = now + 4000 + Math.random() * 6000;
+    if (now > this._nextShoot) {
+      const fromLeft = Math.random() < 0.5;
+      const relTop = Math.max(0, -r.top / 2);
+      this._shoot.push({
+        x: fromLeft ? cw * Math.random() * 0.4 : cw * (0.6 + Math.random() * 0.4),
+        y: relTop + Math.random() * (window.innerHeight / 3),
+        vx: (fromLeft ? 1 : -1) * (2.6 + Math.random() * 2.2),
+        vy: 1.1 + Math.random() * 1.2,
+        life: 1
+      });
+      this._nextShoot = now + 5000 + Math.random() * 8000;
+    }
+    const alive = [];
+    for (const sh of this._shoot) {
+      sh.x += sh.vx; sh.y += sh.vy; sh.life -= 0.018;
+      if (sh.life <= 0) continue;
+      alive.push(sh);
+      const tailX = sh.x - sh.vx * 11, tailY = sh.y - sh.vy * 11;
+      const grad = ctx.createLinearGradient(sh.x, sh.y, tailX, tailY);
+      grad.addColorStop(0, 'rgba(255,244,214,' + (0.95 * sh.life) + ')');
+      grad.addColorStop(1, 'rgba(255,244,214,0)');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(sh.x, sh.y);
+      ctx.lineTo(tailX, tailY);
+      ctx.stroke();
+      ctx.globalAlpha = sh.life;
+      ctx.fillStyle = '#fff8e4';
+      ctx.shadowColor = 'rgba(255,240,200,.95)';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(sh.x, sh.y, 1.7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+    this._shoot = alive;
+    ctx.globalAlpha = 1;
+  }
+
+  _loop() {
+    const tick = (now) => {
+      this._raf = requestAnimationFrame(tick);
+      const c = this.petalCanvasRef.current;
+      if (!c || !this._petals) return;
+      const ctx = c.getContext('2d');
+      const w = c.width, h = c.height;
+      ctx.clearRect(0, 0, w, h);
+      const style = this.props.petalStyle ?? 'sakura';
+      const gold = [223, 184, 119];
+      const t = now * 0.001;
+
+      if (!this._nextFw) this._nextFw = now + 3000 + Math.random() * 4000;
+      if (now > this._nextFw) {
+        this._spawnFirework();
+        if (Math.random() < 0.3) setTimeout(() => this._spawnFirework(), 400);
+        this._nextFw = now + 4000 + Math.random() * 6000;
+      }
+
+      for (const p of this._petals) {
+        p.phase += 0.012 * p.sway;
+        p.x += p.vx + Math.sin(p.phase) * 0.45;
+        p.y += p.vy;
+        p.rot += p.spin;
+        if (p.y > h + 20) { p.y = -20; p.x = Math.random() * w; }
+        if (p.y < -30) { p.y = h + 20; p.x = Math.random() * w; }
+        if (p.x > w + 30) p.x = -20;
+        if (p.x < -30) p.x = w + 20;
+        const base = this._hexToRgb(p.color);
+        let rgb = base, alpha = 0.8;
+        if (style === 'sakura' || style === 'rose') {
+          const k = this._p * 0.75;
+          rgb = base.map((v, i) => Math.round(v + (gold[i] - v) * k));
+          alpha = 0.85;
+        } else {
+          alpha = 0.35 + 0.6 * Math.abs(Math.sin(t * p.tw + p.phase));
+        }
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = 'rgb(' + rgb.join(',') + ')';
+        if (style === 'stardust' || style === 'fireflies') {
+          ctx.shadowColor = 'rgba(233,205,140,.9)';
+          ctx.shadowBlur = 7;
+          ctx.beginPath();
+          ctx.arc(0, 0, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.rotate(p.rot);
+          ctx.beginPath();
+          ctx.ellipse(0, 0, p.size, p.size * 0.58, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = alpha * 0.5;
+          ctx.fillStyle = 'rgba(255,255,255,.65)';
+          ctx.beginPath();
+          ctx.ellipse(p.size * 0.24, -p.size * 0.12, p.size * 0.5, p.size * 0.3, 0.4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      if (this._fw.length) {
+        const alive = [];
+        for (const f of this._fw) {
+          f.vy += 0.022;
+          f.vx *= 0.985;
+          f.vy *= 0.992;
+          f.x += f.vx;
+          f.y += f.vy;
+          f.life -= f.decay;
+          if (f.life <= 0) continue;
+          alive.push(f);
+          ctx.save();
+          ctx.globalAlpha = f.life * (f.night ? 0.9 : 0.55);
+          ctx.fillStyle = f.col;
+          if (f.night) {
+            ctx.shadowColor = f.col;
+            ctx.shadowBlur = 8;
+          }
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.size * (0.5 + f.life * 0.7), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+        this._fw = alive;
+      }
+
+      if (this.state.view === 'story') this._drawNightStars(now, this.nightCanvasRef.current);
+      else if (this.state.view === 'timeline') this._drawNightStars(now, this.tlNightCanvasRef.current);
+    };
+    this._raf = requestAnimationFrame(tick);
+  }
+
+  // ---------- navigation ----------
+  _goChapter(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const y = el.getBoundingClientRect().top + window.scrollY - 8;
+    window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+  }
+
+  _nextSection() {
+    const i = Math.min(this._chIds.length - 1, this.state.activeCh + 1);
+    this._goChapter(this._chIds[i]);
+  }
+
+  _go(i) {
+    const n = this._defs.length;
+    const idx = Math.min(n - 1, Math.max(0, i));
+    const changed = idx !== this.state.tlIndex;
+    this.setState({ tlIndex: idx, dragPct: 0, dragging: false }, () => {
+      if (!changed) return;
+      setTimeout(() => {
+        const vp = this.tlViewportRef.current;
+        if (!vp) return;
+        const swings = vp.querySelectorAll('[data-swing]');
+        if (swings[idx]) this._swing(swings[idx]);
+      }, 380);
+    });
+  }
+
+  _setLang(lang) {
+    this.setState({ lang: lang, settingsOpen: false }, () => {
+      requestAnimationFrame(() => this._layoutThread());
+    });
+    try { localStorage.setItem('ta-love-lang', lang); } catch (e) {}
+  }
+
+  _storyClick = (e) => {
+    if (e.target.closest && e.target.closest('button, a, image-slot, img, svg, input, textarea, [data-noadv]')) return;
+    const sel = window.getSelection && window.getSelection();
+    if (sel && sel.toString()) return;
+    this._nextSection();
+  };
+
+  _tlDown = (e) => {
+    if (e.target.closest && e.target.closest('[data-nodrag], image-slot, button')) return;
+    if (e.isPrimary === false) return;
+    if (this._tlGesture) return;
+    this._tlGesture = true;
+    const vp = this.tlViewportRef.current;
+    if (!vp) { this._tlGesture = false; return; }
+    const pointerId = e.pointerId;
+    const startX = e.clientX;
+    const w = vp.offsetWidth || 1;
+    this.setState({ dragging: true, dragPct: 0 });
+    let done = false;
+    const finish = (ev) => {
+      if (done) return;
+      done = true;
+      this._tlGesture = false;
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      const now = Date.now();
+      const cooled = !this._lastNav || now - this._lastNav > 350;
+      const dx = ev.clientX - startX;
+      if (Math.abs(dx) < 8) {
+        this.setState({ dragging: false, dragPct: 0 });
+        if (cooled) {
+          this._lastNav = now;
+          if (ev.clientX < window.innerWidth / 2) this._go(this.state.tlIndex - 1);
+          else this._go(this.state.tlIndex + 1);
+        }
+      } else if (Math.abs(dx) > w * 0.11) {
+        if (cooled) {
+          this._lastNav = now;
+          this._go(this.state.tlIndex + (dx < 0 ? 1 : -1));
+        } else {
+          this.setState({ dragging: false, dragPct: 0 });
+        }
+      } else {
+        this.setState({ dragging: false, dragPct: 0 });
+      }
+    };
+    const move = (ev) => {
+      if (ev.pointerId !== pointerId) return;
+      const pct = ((ev.clientX - startX) / w) * 100;
+      this.setState({ dragPct: pct });
+    };
+    const up = (ev) => {
+      if (ev.pointerId !== pointerId) return;
+      finish(ev);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+  };
+
+  renderVals() {
+    const { view, tlIndex, activeCh, hoverCh, railHover, dragPct, dragging, catsRunning, settingsOpen, isNarrow, lang, showTop } = this.state;
+    const L = this._L[lang] || this._L.tr;
+    const isStory = view === 'story';
+    const n = this._defs.length;
+    const numerals = ['01', '02', '03', '04', '05', '06', '07', '08'];
+    const storyNight = activeCh >= 9;
+    const tlNightNow = true;
+
+    const chapters = this._chIds.map((id, i) => {
+      const title = i === 0 ? 'Tansu & Arda' : (i <= 10 ? L.ch[i - 1].title : L.closeSub);
+      const vis = i === activeCh || i === hoverCh || railHover;
+      return {
+        short: L.nav[i], title: title,
+        go: () => this._goChapter(id),
+        enter: () => this.setState({ hoverCh: i }),
+        leave: () => this.setState({ hoverCh: -1 }),
+        dotBg: i === activeCh ? (storyNight ? '#d9b36c' : '#bf9b5f') : 'rgba(191,155,95,.1)',
+        dotScale: i === hoverCh ? 1.6 : (i === activeCh ? 1.35 : 1),
+        labelColor: vis ? (storyNight ? '#e4c284' : '#8a5a3b') : 'transparent',
+        labelBg: vis ? (storyNight ? 'rgba(20,16,31,.78)' : 'rgba(255,251,243,.94)') : 'transparent',
+        labelSize: i === hoverCh ? '12px' : '10px'
+      };
+    });
+
+    const dayChapters = this._defs.slice(0, 8).map((d, i) => {
+      const c = L.ch[i];
+      return {
+        id: d.id, slot: d.slot, src: d.src, ph: d.ph, num: numerals[i],
+        label: numerals[i] + ' \u00b7 ' + c.title,
+        dir: i % 2 === 0 ? 'row' : 'row-reverse',
+        bg: this._dayBgs[i],
+        tilt: d.tilt, kicker: c.kicker, date: c.date, title: c.title, cap: c.cap, body: c.body
+      };
+    });
+
+    const tlNight = [
+      'radial-gradient(1.4px 1.4px at 18% 24%, rgba(233,205,140,.9), transparent 55%), radial-gradient(1.2px 1.2px at 74% 14%, rgba(233,205,140,.75), transparent 55%), radial-gradient(1.6px 1.6px at 86% 62%, rgba(233,205,140,.7), transparent 55%), radial-gradient(1.1px 1.1px at 32% 78%, rgba(233,205,140,.6), transparent 55%), radial-gradient(1100px 620px at 70% 26%, rgba(96,72,140,.35), transparent 62%), radial-gradient(900px 520px at 26% 58%, rgba(120,84,150,.22), transparent 65%), linear-gradient(180deg, #2a2140 0%, #191428 46%, #14101f 78%, #1c1631 100%)',
+      'radial-gradient(1.5px 1.5px at 12% 34%, rgba(233,205,140,.85), transparent 55%), radial-gradient(1.2px 1.2px at 64% 20%, rgba(233,205,140,.7), transparent 55%), radial-gradient(1.4px 1.4px at 88% 74%, rgba(233,205,140,.65), transparent 55%), radial-gradient(1.1px 1.1px at 40% 86%, rgba(233,205,140,.55), transparent 55%), radial-gradient(900px 500px at 30% 10%, rgba(120,84,140,.3), transparent 62%), radial-gradient(1100px 620px at 70% 40%, rgba(96,72,140,.28), transparent 65%), linear-gradient(180deg, #2a2140 0%, #191428 40%, #14101f 72%, #1c1631 100%)'
+    ];
+    const tlBackdrops = this._defs.map((d, i) => tlNight[i >= 9 ? 1 : 0]);
+
+    const slides = this._defs.map((d, i) => {
+      const c = L.ch[i];
+      const night = true;
+      return {
+        short: L.nav[i + 1], date: c.date, title: c.title, caption: c.tl,
+        slot: d.slot, src: d.src, fit: d.fit || 'cover',
+        ph: d.ph || c.title, tilt: i % 2 === 0 ? -1.6 : 1.6,
+        dateColor: night ? '#e4c284' : '#bf9b5f',
+        titleColor: night ? '#f0e2c8' : '#4a3226',
+        capColor: night ? 'rgba(240,226,200,.85)' : '#6b543f',
+        go: () => this._go(i),
+        dotBg: i === tlIndex ? '#bf9b5f' : 'rgba(191,155,95,.1)',
+        dotScale: i === tlIndex ? 1.35 : 1,
+        labelColor: i === tlIndex ? (tlNightNow ? '#e4c284' : '#8a5a3b') : (tlNightNow ? 'rgba(228,194,132,.55)' : 'rgba(138,90,59,.55)'),
+        subColor: i === tlIndex ? (tlNightNow ? '#e4c284' : '#bf9b5f') : (tlNightNow ? 'rgba(228,194,132,.42)' : 'rgba(138,90,59,.42)'),
+        dateShort: c.date
+      };
+    });
+
+    return {
+      bgRef: this.bgRef, petalCanvasRef: this.petalCanvasRef, nightCanvasRef: this.nightCanvasRef, tlNightCanvasRef: this.tlNightCanvasRef,
+      ferulaRef: this.ferulaRef, tlViewportRef: this.tlViewportRef,
+      storyRef: this.storyRef, threadRef: this.threadRef, threadPathRef: this.threadPathRef,
+      isStory, isTimeline: !isStory,
+      showRail: isStory && !isNarrow,
+      showTopBtn: isStory && showTop,
+      goTop: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
+      tTop: L.top,
+      storyClick: this._storyClick,
+      railEnter: () => this.setState({ railHover: true }),
+      railLeave: () => this.setState({ railHover: false, hoverCh: -1 }),
+      railBorder: storyNight ? '#d9b36c' : '#bf9b5f',
+      railHover: storyNight ? '#e4c284' : '#8a5a3b',
+      showStory: () => {
+        if (isStory) return;
+        this.setState({ view: 'story' }, () => {
+          requestAnimationFrame(() => {
+            const target = document.getElementById(this._chIds[Math.min(this._chIds.length - 1, tlIndex + 1)]);
+            const y = target ? target.getBoundingClientRect().top + window.scrollY - 8 : (this._savedY || 0);
+            window.scrollTo({ top: Math.max(0, y), behavior: 'auto' });
+            requestAnimationFrame(() => {
+              this._setupReveals();
+              this._setupWeddingBurst();
+              this._attachThreadRO();
+              this._layoutThread();
+              this._scrolled();
+            });
+          });
+        });
+      },
+      showTimeline: () => {
+        if (!isStory) return;
+        this._savedY = window.scrollY;
+        const idx = Math.min(this._defs.length - 1, Math.max(0, activeCh - 1));
+        this.setState({ view: 'timeline', tlIndex: idx, settingsOpen: false });
+      },
+      navShellBg: (isStory ? storyNight : tlNightNow) ? 'rgba(22,17,34,.55)' : 'rgba(255,251,243,.85)',
+      navShellBorder: (isStory ? storyNight : tlNightNow) ? 'rgba(217,179,108,.3)' : 'rgba(191,155,95,.4)',
+      storyBg: isStory ? ((isStory ? storyNight : tlNightNow) ? '#d9b36c' : '#bf9b5f') : 'transparent',
+      storyFg: isStory ? ((isStory ? storyNight : tlNightNow) ? '#1c1631' : '#fffaf0') : ((isStory ? storyNight : tlNightNow) ? 'rgba(228,194,132,.85)' : '#8a5a3b'),
+      tlBg: !isStory ? ((isStory ? storyNight : tlNightNow) ? '#d9b36c' : '#bf9b5f') : 'transparent',
+      tlFg: !isStory ? ((isStory ? storyNight : tlNightNow) ? '#1c1631' : '#fffaf0') : ((isStory ? storyNight : tlNightNow) ? 'rgba(228,194,132,.85)' : '#8a5a3b'),
+      tNavStory: L.navStory, tNavTimeline: L.navTimeline,
+      tHeroKicker: L.heroKicker, tHeroTagline: L.heroTagline, tScroll: L.scroll,
+      invKicker: L.ch[8].kicker, invTitle: L.ch[8].title, invBody: L.ch[8].body,
+      wedKicker: L.ch[9].kicker, wedDate: L.ch[9].date, wedTitle: L.ch[9].title, wedBody: L.ch[9].body, wedCap: L.ch[9].cap,
+      closeSub: L.closeSub, closeCredit: L.closeCredit, closeBtn: L.closeBtn,
+      settingsOpen,
+      toggleSettings: () => this.setState({ settingsOpen: !settingsOpen }),
+      langLabel: lang.toUpperCase(),
+      setEN: () => this._setLang('en'),
+      setTR: () => this._setLang('tr'),
+      enBg: lang === 'en' ? '#bf9b5f' : 'transparent',
+      enFg: lang === 'en' ? '#fffaf0' : '#8a5a3b',
+      trBg: lang === 'tr' ? '#bf9b5f' : 'transparent',
+      trFg: lang === 'tr' ? '#fffaf0' : '#8a5a3b',
+      ferulaOpacity: (this.props.showFerula ?? true) ? 0.95 : 0,
+      threadOpacity: (this.props.showThread ?? true) ? 1 : 0,
+      chapters, dayChapters, slides,
+      tlBackdrop: tlBackdrops[tlIndex],
+      tlStarsOpacity: tlNightNow ? 1 : 0,
+      tlHover: tlNightNow ? '#e4c284' : '#8a5a3b',
+      tlShift: -(tlIndex * 100) + dragPct,
+      tlTransition: dragging ? 'none' : 'transform .55s cubic-bezier(.22,.8,.3,1)',
+      tlProgress: n > 1 ? (tlIndex / (n - 1)) * 100 : 0,
+      tlPrev: () => this._go(tlIndex - 1),
+      tlNext: () => this._go(tlIndex + 1),
+      prevOpacity: tlIndex === 0 ? 0.25 : 1,
+      nextOpacity: tlIndex === n - 1 ? 0.25 : 1,
+      tlDown: this._tlDown,
+      tlFerulaLRef: this.tlFerulaLRef,
+      tlFerulaRRef: this.tlFerulaRRef,
+      showTlFerula: !isNarrow,
+      catsRunning,
+      cat1Anim: (this.state.catsDir === 'rtl' ? 'catAcrossR' : 'catAcross') + ' 5.6s cubic-bezier(.35,.02,.65,.98) forwards',
+      cat2Anim: (this.state.catsDir === 'rtl' ? 'catAcrossR' : 'catAcross') + ' 6.3s cubic-bezier(.35,.02,.65,.98) .7s forwards',
+      catFlip: this.state.catsDir === 'rtl' ? 'scaleX(-1)' : 'none',
+      releaseCats: () => this._releaseCats()
+    };
+  }
+}
+</script>
+</body>
+</html>
