@@ -181,9 +181,26 @@
                 <path d="M4 42 L100 4 L196 42" fill="none" stroke="#a83232" stroke-width="2" vector-effect="non-scaling-stroke"></path>
               </svg>
               <sc-if value="{{ ch.bare }}" hint-placeholder-val="{{ false }}">
-              <div style="position:relative; transform:rotate({{ ch.tilt }}deg);">
-                <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" style="display:block; width:{{ ch.frameW }}; height:auto; max-width:82vw; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
-                <sc-if value="{{ ch.cap }}" hint-placeholder-val="{{ false }}"><sc-if value="{{ ch.cap }}" hint-placeholder-val="{{ false }}"><div style="font-family:'Dancing Script',cursive; color:#8a6a4d; text-align:center; margin-top:12px; font-size:20px;">{{ ch.cap }}</div></sc-if></sc-if>
+              <div style="position:relative; text-align:center; transform:rotate({{ ch.tilt }}deg);">
+                <div style="position:relative; line-height:0; display:inline-block; max-width:100%;" onPointerDown="{{ ch.swipeDown }}">
+                  <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" style="display:block; width:{{ ch.frameW }}; height:auto; max-width:82vw; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
+                  <sc-if value="{{ ch.showNav }}" hint-placeholder-val="{{ false }}">
+                    <button onClick="{{ ch.prev }}" aria-label="Previous photo" style="position:absolute; left:0; top:0; width:50%; height:100%; border:0; background:transparent; padding:0 0 0 6px; cursor:pointer; z-index:4; display:flex; align-items:center; justify-content:flex-start;">
+                      <span style="width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:30px; text-align:center; display:block; pointer-events:none;">&lsaquo;</span>
+                    </button>
+                    <button onClick="{{ ch.next }}" aria-label="Next photo" style="position:absolute; right:0; top:0; width:50%; height:100%; border:0; background:transparent; padding:0 6px 0 0; cursor:pointer; z-index:4; display:flex; align-items:center; justify-content:flex-end;">
+                      <span style="width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:30px; text-align:center; display:block; pointer-events:none;">&rsaquo;</span>
+                    </button>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ ch.showDots }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; justify-content:center; gap:6px; margin-top:9px;">
+                    <sc-for list="{{ ch.dots }}" as="d" hint-placeholder-count="0">
+                      <span onClick="{{ d.go }}" style="{{ d.style }}"></span>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ ch.cap }}" hint-placeholder-val="{{ false }}"><div style="font-family:'Dancing Script',cursive; color:rgba(240,226,200,.9); text-align:center; margin-top:12px; font-size:20px;">{{ ch.cap }}</div></sc-if>
               </div>
               </sc-if>
               <sc-if value="{{ ch.matted }}" hint-placeholder-val="{{ true }}">
@@ -432,8 +449,25 @@
                 <path d="M4 42 L100 4 L196 42" fill="none" stroke="#a83232" stroke-width="2" vector-effect="non-scaling-stroke"></path>
               </svg>
               <sc-if value="{{ s.bare }}" hint-placeholder-val="{{ false }}">
-              <div style="position:relative; transform:rotate({{ s.tilt }}deg);">
-                <img src="{{ s.curSrc }}" alt="{{ s.alt }}" draggable="false" style="display:block; width:{{ s.frameW }}; height:auto; max-width:82vw; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
+              <div style="position:relative; text-align:center; transform:rotate({{ s.tilt }}deg);">
+                <div style="position:relative; line-height:0; display:inline-block; max-width:100%;" onPointerDown="{{ s.swipeDown }}">
+                  <img src="{{ s.curSrc }}" alt="{{ s.alt }}" draggable="false" style="display:block; width:auto; height:auto; max-width:82vw; max-height:46vh; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
+                  <sc-if value="{{ s.showNav }}" hint-placeholder-val="{{ false }}">
+                    <button onClick="{{ s.prev }}" aria-label="Previous photo" style="position:absolute; left:0; top:0; width:50%; height:100%; border:0; background:transparent; padding:0 0 0 6px; cursor:pointer; z-index:4; display:flex; align-items:center; justify-content:flex-start;">
+                      <span style="width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:30px; text-align:center; display:block; pointer-events:none;">&lsaquo;</span>
+                    </button>
+                    <button onClick="{{ s.next }}" aria-label="Next photo" style="position:absolute; right:0; top:0; width:50%; height:100%; border:0; background:transparent; padding:0 6px 0 0; cursor:pointer; z-index:4; display:flex; align-items:center; justify-content:flex-end;">
+                      <span style="width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:30px; text-align:center; display:block; pointer-events:none;">&rsaquo;</span>
+                    </button>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ s.showDots }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; justify-content:center; gap:6px; margin-top:9px;">
+                    <sc-for list="{{ s.dots }}" as="d" hint-placeholder-count="0">
+                      <span onClick="{{ d.go }}" style="{{ d.style }}"></span>
+                    </sc-for>
+                  </div>
+                </sc-if>
               </div>
               </sc-if>
               <sc-if value="{{ s.matted }}" hint-placeholder-val="{{ true }}">
@@ -823,7 +857,7 @@ class Component extends DCLogic {
         this._chapters = rows.map((r) => ({
           slug: String(r.slug || ''),
           photos: Array.isArray(r.photos) ? r.photos.filter((x) => typeof x === 'string' && x.trim()) : [],
-          photoLayout: ['carousel', 'stack', 'grid', 'single'].indexOf(r.photo_layout) >= 0 ? r.photo_layout : 'carousel',
+          photoLayout: ['carousel', 'carousel-bare', 'stack', 'grid', 'single'].indexOf(r.photo_layout) >= 0 ? r.photo_layout : 'carousel',
           photoFit: r.photo_fit === 'contain' ? 'contain' : 'cover',
           tilt: typeof r.tilt === 'number' ? r.tilt : 0,
           visible: r.visible !== false,
@@ -891,8 +925,13 @@ class Component extends DCLogic {
     // image at its natural aspect, no white mat, no arrows or dots. Honoured
     // even with a single photo (so it isn't collapsed into 'carousel').
     const single = c.photoLayout === 'single';
-    const layout = single ? 'single' : (n > 1 ? c.photoLayout : 'carousel');
-    const bare = single && n > 0;
+    // 'carousel-bare' shows several photos at native size/ratio (no white
+    // frame) with the same tap-left/right + dots navigation as the carousel.
+    const bareCarousel = c.photoLayout === 'carousel-bare';
+    const nativeOnly = single || bareCarousel;
+    const layout = nativeOnly ? c.photoLayout : (n > 1 ? c.photoLayout : 'carousel');
+    const bare = nativeOnly && n > 0;
+    const navLayout = layout === 'carousel' || layout === 'carousel-bare';
     const shown = single ? 0 : idx;
     let items = [];
     if (layout === 'stack') {
@@ -930,11 +969,11 @@ class Component extends DCLogic {
       empty: n === 0,
       curSrc: n ? url(c.photos[shown]) : '',
       items: items,
-      showNav: n > 1 && layout === 'carousel',
-      showDots: n > 1 && (layout === 'carousel' || layout === 'stack'),
+      showNav: n > 1 && navLayout,
+      showDots: n > 1 && (navLayout || layout === 'stack'),
       prev: () => this._setPhoto(c.slug, idx - 1, n),
       next: () => this._setPhoto(c.slug, idx + 1, n),
-      swipeDown: this._swipeHandler(c.slug, layout === 'carousel' ? n : 0),
+      swipeDown: this._swipeHandler(c.slug, navLayout ? n : 0),
       dots: c.photos.map((f, i) => ({
         go: () => this._setPhoto(c.slug, i, n),
         style: 'width:7px; height:7px; border-radius:50%; cursor:pointer; transition:all .25s;' +

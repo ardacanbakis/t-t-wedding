@@ -16,6 +16,7 @@ import { parseLayout, type Layout } from "@/lib/blocks";
 import { BASE_PATH, getSupabase } from "@/lib/supabase";
 import { GeneralCard } from "./general-card";
 import { LayoutCard } from "./layout-card";
+import { SocialCard } from "./social-card";
 import { StoryCard } from "./story-card";
 import { TextsCard } from "./texts-card";
 import { VarsCard } from "./vars-card";
@@ -236,6 +237,8 @@ export function Dashboard() {
     "nightFrom",
     "generalTr",
     "generalEn",
+    "ogTitle",
+    "ogDescription",
   ];
 
   const saveSettingRows = async (rows: { key: string; value: string }[]) => {
@@ -289,6 +292,14 @@ export function Dashboard() {
     await saveSettingRows([{ key: "nightFrom", value: nightFrom }]);
     setS((prev) => ({ ...prev, nightFrom }));
   };
+
+  const doSaveSocial = (ogTitle: string, ogDescription: string) =>
+    run(async () => {
+      await saveSettingRows([
+        { key: "ogTitle", value: ogTitle },
+        { key: "ogDescription", value: ogDescription },
+      ]);
+    });
 
   const doSaveGeneral = (generalTr: GeneralTexts, generalEn: GeneralTexts) =>
     run(async () => {
@@ -618,6 +629,7 @@ export function Dashboard() {
       </div>
 
       <VarsCard settings={s} onSave={doSaveVars} pending={pending} />
+      <SocialCard settings={s} onSave={doSaveSocial} pending={pending} />
   </>
       )}
       {tab === "story" && (

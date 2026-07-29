@@ -425,7 +425,8 @@ export function StoryCard({
                         value={c.photo_layout}
                         onChange={(e) => patch(c.id, { photo_layout: e.target.value as PhotoLayout })}
                       >
-                        <option value="carousel">Carousel — tap left/right half or arrows</option>
+                        <option value="carousel">Carousel — framed, tap left/right half or arrows</option>
+                        <option value="carousel-bare">Carousel (bare) — native size, no white frame</option>
                         <option value="stack">Fanned stack — tap to bring forward</option>
                         <option value="grid">Grid — all at once</option>
                         <option value="single">Single (original) — whole photo, no white frame</option>

@@ -31,6 +31,8 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           # "/t-t-wedding" for username.github.io/t-t-wedding; empty for a custom domain
           NEXT_PUBLIC_BASE_PATH: ${{ vars.NEXT_PUBLIC_BASE_PATH }}
+          # Full origin for absolute share-preview URLs, e.g. https://ardacanbakis.github.io
+          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out

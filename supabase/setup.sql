@@ -64,7 +64,9 @@ insert into public.settings (key, value) values
   ('coupleNames',  'Tansu & Arda'),
   ('cardTilt',     '0'),
   ('dateStyle',    'date'),
-  ('nightFrom',    '9')
+  ('nightFrom',    '9'),
+  ('ogTitle',      'Tansu & Arda — Düğün Davetiyesi'),
+  ('ogDescription','Düğünümüze davetlisiniz · 28 Haziran 2026 · Germencik, Aydın')
 on conflict do nothing;
 
 -- Story-site strings that don't belong to a single chapter (nav labels,
@@ -84,7 +86,7 @@ create table if not exists public.story_chapters (
   slug text not null unique,
   photos jsonb not null default '[]'::jsonb,
   photo_layout text not null default 'carousel'
-    check (photo_layout in ('carousel', 'stack', 'grid', 'single')),
+    check (photo_layout in ('carousel', 'carousel-bare', 'stack', 'grid', 'single')),
   photo_fit text not null default 'cover'
     check (photo_fit in ('cover', 'contain')),
   tilt real not null default 0,
@@ -111,7 +113,7 @@ on conflict (slug) do nothing;
 -- Widen the photo layout check for projects created before 'single' existed.
 alter table public.story_chapters drop constraint if exists story_chapters_photo_layout_check;
 alter table public.story_chapters add constraint story_chapters_photo_layout_check
-  check (photo_layout in ('carousel', 'stack', 'grid', 'single'));
+  check (photo_layout in ('carousel', 'carousel-bare', 'stack', 'grid', 'single'));
 
 
 -- Five extra chapters (hidden). Toggle them on and fill them in from the
