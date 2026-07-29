@@ -66,6 +66,7 @@ insert into public.settings (key, value) values
   ('dateStyle',    'date'),
   ('nightFrom',    '9'),
   ('showLangPicker','true'),
+  ('showInviteLang','true'),
   ('ogTitle',      'Tansu & Arda — Düğün Davetiyesi'),
   ('ogDescription','Düğünümüze davetlisiniz · 28 Haziran 2026 · Germencik, Aydın')
 on conflict do nothing;
@@ -305,7 +306,7 @@ begin
   if not public.is_admin() then
     raise exception 'not authorized';
   end if;
-  update public.general_stats set count = 0;
+  update public.general_stats set count = 0 where kind in ('opens', 'yes');
 end;
 $$;
 

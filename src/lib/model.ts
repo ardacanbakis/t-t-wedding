@@ -77,6 +77,8 @@ export type SiteSettings = {
   nightFrom: string;
   /** "true"/"false" — show the TR/EN picker on the story site */
   showLangPicker: string;
+  /** "true"/"false" — show the TR/EN picker on the invitation pages */
+  showInviteLang: string;
   /** JSON overrides of the general (universal) invitation texts */
   generalTr: string;
   generalEn: string;
@@ -163,6 +165,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   storyEn: "",
   nightFrom: "9",
   showLangPicker: "true",
+  showInviteLang: "true",
   generalTr: "",
   generalEn: "",
   ogTitle: "Tansu & Arda — Düğün Davetiyesi",

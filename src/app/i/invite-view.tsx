@@ -403,6 +403,9 @@ export function InviteView(props: Props) {
     </div>
   );
 
+  // True once the guest has answered — RSVP saved, or tapped "I'll be there".
+  const rsvpDone = !!saved || gYes;
+
   const content: Record<BlockId, ReactNode> = {
     kicker: t.kicker ? (
       <div className="kicker" style={{ fontSize: "var(--blk-fs, clamp(20px, 3vw, 26px))", fontFamily: "var(--blk-ff, var(--script))", color: "var(--blk-color, var(--gold))" }}>
@@ -430,18 +433,19 @@ export function InviteView(props: Props) {
           {g.welcome}
         </p>
       ) : null
-    ) : (
-      <p style={{ fontFamily: "var(--blk-ff, var(--sans))", fontWeight: 300, fontSize: "var(--blk-fs, 16px)", lineHeight: 1.8, color: "var(--blk-color, var(--brown-mid))", margin: 0 }}>
-        {t.dear && <span style={{ fontFamily: "var(--script)", fontSize: 22, color: "var(--gold)" }}>{t.dear} </span>}
-        <strong style={{ fontWeight: 600, color: "var(--brown)" }}>{props.guestName}</strong>
-        {t.inviteLine && (
-          <>
-            <br />
-            {t.inviteLine}
-          </>
-        )}
+    ) : t.dear || props.guestName ? (
+      // "Dear <Name>" — the guest name is a size larger and scales with this
+      // block's font size, so it can be enlarged independently of the intro.
+      <p style={{ fontFamily: "var(--blk-ff, var(--sans))", fontWeight: 300, fontSize: "var(--blk-fs, 16px)", lineHeight: 1.5, color: "var(--blk-color, var(--brown-mid))", margin: 0 }}>
+        {t.dear && <span style={{ fontFamily: "var(--script)", fontSize: "1.4em", color: "var(--gold)" }}>{t.dear} </span>}
+        <strong style={{ fontWeight: 600, color: "var(--brown)", fontSize: "1.3em" }}>{props.guestName}</strong>
       </p>
-    ),
+    ) : null,
+    inviteLine: !isGeneral && t.inviteLine ? (
+      <p style={{ fontFamily: "var(--blk-ff, var(--sans))", fontWeight: 300, fontSize: "var(--blk-fs, 16px)", lineHeight: 1.8, color: "var(--blk-color, var(--brown-mid))", margin: 0 }}>
+        {t.inviteLine}
+      </p>
+    ) : null,
     personalNote: props.personalNote ? (
       <p
         style={{
@@ -518,20 +522,33 @@ export function InviteView(props: Props) {
 
   return (
     <div className="fade-in" style={{ minHeight: "100vh", padding: "84px 16px 60px", position: "relative" }}>
-      {/* Language toggle — same corner as the timeline site */}
-      <div style={{ position: "fixed", top: 16, left: 16, zIndex: 90, display: "flex", gap: 6 }}>
-        <button className={`pill-btn${lang === "tr" ? " active" : ""}`} onClick={() => pickLang("tr")}>
-          TR
-        </button>
-        <button className={`pill-btn${lang === "en" ? " active" : ""}`} onClick={() => pickLang("en")}>
-          EN
-        </button>
-      </div>
-      <div style={{ position: "fixed", top: 16, right: 16, zIndex: 90 }}>
-        <a className="pill-btn" href={withBase(s.storyUrl)}>
-          {t.storyButton} ♥
-        </a>
-      </div>
+      {/* Language toggle — same corner as the timeline site (hideable) */}
+      {s.showInviteLang !== "false" && (
+        <div style={{ position: "fixed", top: 16, left: 16, zIndex: 90, display: "flex", gap: 6 }}>
+          <button className={`pill-btn${lang === "tr" ? " active" : ""}`} onClick={() => pickLang("tr")}>
+            TR
+          </button>
+          <button className={`pill-btn${lang === "en" ? " active" : ""}`} onClick={() => pickLang("en")}>
+            EN
+          </button>
+        </div>
+      )}
+      {/* Story button — top centre and bottom centre. After an RSVP is made
+          it pulses in gold to draw the eye toward the story. */}
+      <a
+        className={`pill-btn story-cta${rsvpDone ? " pulsing" : ""}`}
+        href={withBase(s.storyUrl)}
+        style={{ position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 90 }}
+      >
+        {t.storyButton} ♥
+      </a>
+      <a
+        className={`pill-btn story-cta${rsvpDone ? " pulsing" : ""}`}
+        href={withBase(s.storyUrl)}
+        style={{ position: "fixed", bottom: 18, left: "50%", transform: "translateX(-50%)", zIndex: 90 }}
+      >
+        {t.storyButton} ♥
+      </a>
 
       {/* Invitation card hung on the red thread */}
       <div style={{ maxWidth: 640, margin: "40px auto 0", position: "relative" }}>
