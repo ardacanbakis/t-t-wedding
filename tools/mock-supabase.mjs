@@ -20,8 +20,23 @@ const ADMIN_PASSWORD = "test-pass-123";
 const ACCESS_TOKEN = "mock-access-token";
 
 let nextId = 1;
+let nextChapterId = 1;
 const db = {
   invitations: [],
+  story_chapters: [
+    {
+      id: nextChapterId++, position: 1, slug: "c1", photos: [], photo_layout: "carousel",
+      photo_fit: "cover", tilt: -2, visible: true, night: false,
+      tr: { nav: "Tanışma", kicker: "Birinci Bölüm", date: "Sonbahar 2019", title: "İlk Karşılaşma", cap: "her şeyin başladığı yer", body: "Kalabalık bir oda…", tl: "Kalabalık bir oda." },
+      en: { nav: "Meet", kicker: "Chapter One", date: "Autumn 2019", title: "First Meet", cap: "where it all began", body: "A crowded room…", tl: "A crowded room." },
+    },
+    {
+      id: nextChapterId++, position: 2, slug: "c2", photos: [], photo_layout: "carousel",
+      photo_fit: "cover", tilt: 2, visible: true, night: true,
+      tr: { nav: "Düğün", kicker: "İkinci Bölüm", date: "28 Haziran 2026", title: "Düğünümüz", cap: "en kolay evet", body: "Sıcak bir haziran…", tl: "En kolay evet." },
+      en: { nav: "Wedding", kicker: "Chapter Two", date: "28 June 2026", title: "Our Wedding", cap: "the easiest yes", body: "On a warm June afternoon…", tl: "The easiest yes." },
+    },
+  ],
   settings: new Map([
     ["eventDate", "2026-06-28T14:30:00+03:00"],
     ["rsvpDeadline", "2027-06-14T23:59:00+03:00"],
@@ -30,6 +45,7 @@ const db = {
     ["mapsUrl", "https://maps.google.com/?q=Germencik+Belediyesi,+Ayd%C4%B1n"],
     ["schedule", "14:30 | Nikah Töreni | Ceremony"],
     ["storyUrl", "/story/"],
+    ["coupleNames", "Tansu & Arda"],
   ]),
 };
 
@@ -186,6 +202,43 @@ const server = http.createServer(async (req, res) => {
         if (row?.key != null) db.settings.set(row.key, String(row.value ?? ""));
       }
       return send(res, 201, []);
+    }
+  }
+
+  // ── PostgREST: story_chapters (read = anyone, write = admin) ──
+  if (pathname === "/rest/v1/story_chapters") {
+    if (req.method === "GET") {
+      const rows = [...db.story_chapters].sort((a, b) => a.position - b.position);
+      return send(res, 200, rows);
+    }
+    if (!isAdmin(req)) return pgError(res, "permission denied", 401);
+    if (req.method === "POST") {
+      const body = await readBody(req);
+      const inserted = [];
+      for (const row of Array.isArray(body) ? body : [body]) {
+        const c = {
+          id: nextChapterId++, position: row.position ?? 0, slug: row.slug,
+          photos: row.photos ?? [], photo_layout: row.photo_layout ?? "carousel",
+          photo_fit: row.photo_fit ?? "cover", tilt: row.tilt ?? 0,
+          visible: row.visible !== false, night: !!row.night,
+          tr: row.tr ?? {}, en: row.en ?? {},
+        };
+        db.story_chapters.push(c);
+        inserted.push(c);
+      }
+      return send(res, 201, inserted);
+    }
+    const idF = url.searchParams.get("id");
+    const cid = idF?.startsWith("eq.") ? Number(idF.slice(3)) : NaN;
+    if (req.method === "PATCH") {
+      const body = await readBody(req);
+      const c = db.story_chapters.find((x) => x.id === cid);
+      if (c) Object.assign(c, body);
+      return send(res, 204);
+    }
+    if (req.method === "DELETE") {
+      db.story_chapters = db.story_chapters.filter((x) => x.id !== cid);
+      return send(res, 204);
     }
   }
 

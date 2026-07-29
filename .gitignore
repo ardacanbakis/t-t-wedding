@@ -17,3 +17,6 @@ next-env.d.ts
 
 # stray local artifacts
 data/
+
+# generated at build time from env vars
+public/story/config.js

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { blockStyle, parseLayout, type BlockId } from "@/lib/blocks";
 import { fmt, formatDeadline, formatEventDate, type GuestTexts, type Lang } from "@/lib/i18n";
-import { mergeTexts, parseSchedule, type SiteSettings } from "@/lib/model";
+import { mergeTexts, parseSchedule, parseVars, type SiteSettings } from "@/lib/model";
 import { getSupabase, withBase } from "@/lib/supabase";
 
 type Props = {
@@ -54,6 +55,21 @@ function CoupleNames({ value }: { value: string }) {
   );
 }
 
+function Divider({ beating }: { beating?: boolean }) {
+  return (
+    <div className="divider">
+      <div className="line-l" />
+      <span
+        className="heart"
+        style={beating ? { animation: "heartBeat 1.6s ease-in-out infinite", display: "inline-block" } : undefined}
+      >
+        ♥
+      </span>
+      <div className="line-r" />
+    </div>
+  );
+}
+
 function Countdown({ target, t }: { target: string; t: GuestTexts }) {
   const [now, setNow] = useState<number | null>(null);
 
@@ -67,21 +83,17 @@ function Countdown({ target, t }: { target: string; t: GuestTexts }) {
   if (now === null || Number.isNaN(targetMs)) return null;
 
   const diff = Math.max(0, targetMs - now);
-  const days = Math.floor(diff / 86400000);
-  const hours = Math.floor((diff % 86400000) / 3600000);
-  const minutes = Math.floor((diff % 3600000) / 60000);
-  const seconds = Math.floor((diff % 60000) / 1000);
   if (diff === 0) return null;
 
   const cells: [number, string][] = [
-    [days, t.cdDays],
-    [hours, t.cdHours],
-    [minutes, t.cdMinutes],
-    [seconds, t.cdSeconds],
+    [Math.floor(diff / 86400000), t.cdDays],
+    [Math.floor((diff % 86400000) / 3600000), t.cdHours],
+    [Math.floor((diff % 3600000) / 60000), t.cdMinutes],
+    [Math.floor((diff % 60000) / 1000), t.cdSeconds],
   ];
 
   return (
-    <div style={{ display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap", margin: "22px 0 4px" }}>
+    <div style={{ display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
       {cells.map(([n, label]) => (
         <div
           key={label}
@@ -118,6 +130,7 @@ function Countdown({ target, t }: { target: string; t: GuestTexts }) {
 export function InviteView(props: Props) {
   const s = props.settings;
   const schedule = useMemo(() => parseSchedule(s.schedule), [s.schedule]);
+  const layout = useMemo(() => parseLayout(s.layout), [s.layout]);
   const [lang, setLang] = useState<Lang>("tr");
   const [answer, setAnswer] = useState<"accepted" | "declined" | null>(
     props.status === "pending" ? null : props.status
@@ -145,7 +158,15 @@ export function InviteView(props: Props) {
     } catch {}
   };
 
-  const t = useMemo(() => mergeTexts(lang, s), [lang, s]);
+  const rawTexts = useMemo(() => mergeTexts(lang, s), [lang, s]);
+  // Custom {placeholders} defined in the dashboard are substituted everywhere.
+  const t = useMemo(() => {
+    const vars = parseVars(lang === "tr" ? s.varsTr : s.varsEn);
+    if (!Object.keys(vars).length) return rawTexts;
+    const out = { ...rawTexts };
+    for (const k of Object.keys(out) as (keyof GuestTexts)[]) out[k] = fmt(out[k], vars);
+    return out;
+  }, [rawTexts, lang, s.varsTr, s.varsEn]);
 
   const submit = async () => {
     if (!answer || pending) return;
@@ -172,6 +193,240 @@ export function InviteView(props: Props) {
     } finally {
       setPending(false);
     }
+  };
+
+  // ── Blocks. Each returns null when it has nothing to show, so an empty
+  // schedule or a guest without a personal message doesn't leave a gap.
+  const rsvpBlock: ReactNode = props.locked ? (
+    <div>
+      <div style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 15, color: "var(--brown-mid)" }}>
+        {saved ? t.lockedWithAnswer : t.lockedNoAnswer}
+      </div>
+      {saved && (
+        <div style={{ fontFamily: "var(--script)", fontSize: 26, color: "var(--gold)", marginTop: 8 }}>
+          {saved.status === "accepted"
+            ? saved.partySize > 1
+              ? fmt(t.answerAcceptedMany, { n: saved.partySize })
+              : t.answerAcceptedOne
+            : t.answerDeclined}
+        </div>
+      )}
+    </div>
+  ) : (
+    <div style={{ maxWidth: 440, margin: "0 auto" }}>
+      <h2
+        style={{
+          fontFamily: "var(--serif)",
+          fontWeight: 600,
+          fontSize: 24,
+          color: "var(--brown)",
+          textAlign: "center",
+          margin: "0 0 16px",
+        }}
+      >
+        {t.rsvpTitle}
+      </h2>
+
+      {saved && (
+        <div
+          style={{
+            background: "rgba(108,122,69,.12)",
+            border: "1px solid rgba(108,122,69,.3)",
+            borderRadius: 12,
+            padding: "12px 16px",
+            marginBottom: 16,
+            fontFamily: "var(--sans)",
+            fontSize: 14,
+            color: "#55632f",
+            textAlign: "center",
+          }}
+        >
+          {saved.status === "accepted"
+            ? saved.partySize > 1
+              ? fmt(t.savedAcceptedMany, { n: saved.partySize })
+              : t.savedAcceptedOne
+            : t.savedDeclined}
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <button
+          className={`choice-btn${answer === "accepted" ? " selected-yes" : ""}`}
+          onClick={() => setAnswer("accepted")}
+          type="button"
+        >
+          {t.accept}
+        </button>
+        <button
+          className={`choice-btn${answer === "declined" ? " selected-no" : ""}`}
+          onClick={() => setAnswer("declined")}
+          type="button"
+        >
+          {t.decline}
+        </button>
+      </div>
+
+      {answer === "accepted" && (
+        <div>
+          <label className="field-label" htmlFor="party-size">
+            {t.partySizeLabel}
+          </label>
+          {props.maxGuests != null ? (
+            <>
+              <select
+                id="party-size"
+                className="select-input"
+                value={partySize}
+                onChange={(e) => setPartySize(Number(e.target.value))}
+              >
+                {Array.from({ length: props.maxGuests }, (_, i) => i + 1).map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+              <div style={{ fontFamily: "var(--sans)", fontSize: 12, color: "var(--brown-soft)", marginTop: 6 }}>
+                {fmt(t.partySizeHint, { max: props.maxGuests })}
+              </div>
+            </>
+          ) : (
+            <input
+              id="party-size"
+              className="text-input"
+              type="number"
+              min={1}
+              max={99}
+              value={partySize}
+              onChange={(e) => setPartySize(Math.max(1, Math.min(99, Number(e.target.value) || 1)))}
+            />
+          )}
+        </div>
+      )}
+
+      {answer && (
+        <div>
+          <label className="field-label" htmlFor="rsvp-note">
+            {t.noteLabel}
+          </label>
+          <textarea
+            id="rsvp-note"
+            className="textarea-input"
+            placeholder={t.notePlaceholder}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            maxLength={2000}
+          />
+        </div>
+      )}
+
+      {error && <div style={{ color: "#a83232", fontFamily: "var(--sans)", fontSize: 13, marginTop: 12 }}>{error}</div>}
+
+      <div style={{ textAlign: "center", marginTop: 22 }}>
+        <button className="submit-btn" onClick={submit} disabled={!answer || pending} type="button">
+          {pending ? "…" : saved ? t.update : t.send}
+        </button>
+        <div style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 12, color: "var(--brown-soft)", marginTop: 12 }}>
+          {fmt(t.editUntil, { date: formatDeadline(s.rsvpDeadline, lang) })}
+        </div>
+      </div>
+    </div>
+  );
+
+  const content: Record<BlockId, ReactNode> = {
+    kicker: (
+      <div className="kicker" style={{ fontSize: "clamp(20px, 3vw, 26px)" }}>
+        {t.kicker}
+      </div>
+    ),
+    names: (
+      <h1
+        style={{
+          fontFamily: "var(--serif)",
+          fontWeight: 600,
+          fontSize: "clamp(38px, 7vw, 64px)",
+          color: "var(--brown)",
+          margin: 0,
+          lineHeight: 1.08,
+        }}
+      >
+        <CoupleNames value={s.coupleNames} />
+      </h1>
+    ),
+    dividerTop: <Divider />,
+    greeting: (
+      <p style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 16, lineHeight: 1.8, color: "var(--brown-mid)", margin: 0 }}>
+        <span style={{ fontFamily: "var(--script)", fontSize: 22, color: "var(--gold)" }}>{t.dear} </span>
+        <strong style={{ fontWeight: 600, color: "var(--brown)" }}>{props.guestName}</strong>
+        <br />
+        {t.inviteLine}
+      </p>
+    ),
+    personalNote: props.personalNote ? (
+      <p
+        style={{
+          fontFamily: "var(--script)",
+          fontSize: "clamp(19px, 3vw, 23px)",
+          lineHeight: 1.55,
+          color: "var(--brown-soft)",
+          margin: "0 auto",
+          maxWidth: "42ch",
+          whiteSpace: "pre-wrap",
+        }}
+      >
+        {props.personalNote}
+      </p>
+    ) : null,
+    countdown: <Countdown target={s.eventDate} t={t} />,
+    date: (
+      <>
+        <div className="field-label" style={{ margin: "0 0 4px" }}>
+          {t.dateLabel}
+        </div>
+        <div style={{ fontFamily: "var(--script)", fontSize: "clamp(24px, 4vw, 32px)", color: "var(--gold)" }}>
+          {formatEventDate(s.eventDate, lang)}
+        </div>
+      </>
+    ),
+    venue: (
+      <>
+        <div className="field-label" style={{ margin: "0 0 4px" }}>
+          {t.venueLabel}
+        </div>
+        <div style={{ fontFamily: "var(--serif)", fontSize: 22, fontWeight: 600, color: "var(--brown)" }}>{s.venueName}</div>
+        <div style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 14, color: "var(--brown-mid)", marginTop: 4 }}>
+          {s.venueAddress}
+        </div>
+      </>
+    ),
+    mapButton: (
+      <a className="pill-btn" href={s.mapsUrl} target="_blank" rel="noopener noreferrer">
+        📍 {t.mapButton}
+      </a>
+    ),
+    schedule: schedule.length ? (
+      <>
+        <div className="field-label" style={{ margin: "0 0 10px" }}>
+          {t.scheduleLabel}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
+          {schedule.map((item, i) => (
+            <div key={i} style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
+              <span style={{ fontFamily: "var(--serif)", fontWeight: 700, fontSize: 15, color: "var(--gold)" }}>
+                {item.time}
+              </span>
+              <span style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 15, color: "var(--brown-mid)" }}>
+                {lang === "tr" ? item.tr : item.en}
+              </span>
+            </div>
+          ))}
+        </div>
+      </>
+    ) : null,
+    dividerBottom: <Divider beating />,
+    rsvp: rsvpBlock,
+    closing: (
+      <div style={{ fontFamily: "var(--script)", fontSize: 20, color: "var(--gold)" }}>{t.closing}</div>
+    ),
   };
 
   return (
@@ -205,250 +460,17 @@ export function InviteView(props: Props) {
             textAlign: "center",
           }}
         >
-          <div className="kicker" style={{ fontSize: "clamp(20px, 3vw, 26px)" }}>
-            {t.kicker}
-          </div>
-          <h1
-            style={{
-              fontFamily: "var(--serif)",
-              fontWeight: 600,
-              fontSize: "clamp(38px, 7vw, 64px)",
-              color: "var(--brown)",
-              margin: "8px 0 0",
-              lineHeight: 1.08,
-            }}
-          >
-            <CoupleNames value={s.coupleNames} />
-          </h1>
-
-          <div className="divider">
-            <div className="line-l" />
-            <span className="heart">♥</span>
-            <div className="line-r" />
-          </div>
-
-          <p style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 16, lineHeight: 1.8, color: "var(--brown-mid)", margin: "0 0 6px" }}>
-            <span style={{ fontFamily: "var(--script)", fontSize: 22, color: "var(--gold)" }}>{t.dear} </span>
-            <strong style={{ fontWeight: 600, color: "var(--brown)" }}>{props.guestName}</strong>
-            <br />
-            {t.inviteLine}
-          </p>
-
-          {props.personalNote && (
-            <p
-              style={{
-                fontFamily: "var(--script)",
-                fontSize: "clamp(19px, 3vw, 23px)",
-                lineHeight: 1.55,
-                color: "var(--brown-soft)",
-                margin: "16px auto 4px",
-                maxWidth: "42ch",
-                whiteSpace: "pre-wrap",
-              }}
-            >
-              {props.personalNote}
-            </p>
-          )}
-
-          <Countdown target={s.eventDate} t={t} />
-
-          {/* Date & venue */}
-          <div style={{ margin: "26px 0 4px" }}>
-            <div className="field-label" style={{ margin: "0 0 4px", textAlign: "center" as const }}>
-              {t.dateLabel}
-            </div>
-            <div style={{ fontFamily: "var(--script)", fontSize: "clamp(24px, 4vw, 32px)", color: "var(--gold)" }}>
-              {formatEventDate(s.eventDate, lang)}
-            </div>
-            <div className="field-label" style={{ margin: "18px 0 4px", textAlign: "center" as const }}>
-              {t.venueLabel}
-            </div>
-            <div style={{ fontFamily: "var(--serif)", fontSize: 22, fontWeight: 600, color: "var(--brown)" }}>
-              {s.venueName}
-            </div>
-            <div style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 14, color: "var(--brown-mid)", marginTop: 4 }}>
-              {s.venueAddress}
-            </div>
-            <a
-              className="pill-btn"
-              href={s.mapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ marginTop: 12 }}
-            >
-              📍 {t.mapButton}
-            </a>
-          </div>
-
-          {schedule.length > 0 && (
-            <div style={{ margin: "28px 0 0" }}>
-              <div className="field-label" style={{ margin: "0 0 10px", textAlign: "center" as const }}>
-                {t.scheduleLabel}
+          {layout.order.map((id) => {
+            const style = layout.blocks[id];
+            if (!style.visible) return null;
+            const node = content[id];
+            if (!node) return null;
+            return (
+              <div key={id} data-block={id} style={blockStyle(style)}>
+                {node}
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
-                {schedule.map((item, i) => (
-                  <div key={i} style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
-                    <span style={{ fontFamily: "var(--serif)", fontWeight: 700, fontSize: 15, color: "var(--gold)" }}>
-                      {item.time}
-                    </span>
-                    <span style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 15, color: "var(--brown-mid)" }}>
-                      {lang === "tr" ? item.tr : item.en}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="divider">
-            <div className="line-l" />
-            <span className="heart" style={{ animation: "heartBeat 1.6s ease-in-out infinite", display: "inline-block" }}>
-              ♥
-            </span>
-            <div className="line-r" />
-          </div>
-
-          {/* ── RSVP ── */}
-          {props.locked ? (
-            <div>
-              <div style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 15, color: "var(--brown-mid)" }}>
-                {saved ? t.lockedWithAnswer : t.lockedNoAnswer}
-              </div>
-              {saved && (
-                <div style={{ fontFamily: "var(--script)", fontSize: 26, color: "var(--gold)", marginTop: 8 }}>
-                  {saved.status === "accepted"
-                    ? saved.partySize > 1
-                      ? fmt(t.answerAcceptedMany, { n: saved.partySize })
-                      : t.answerAcceptedOne
-                    : t.answerDeclined}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div style={{ textAlign: "left", maxWidth: 440, margin: "0 auto" }}>
-              <h2
-                style={{
-                  fontFamily: "var(--serif)",
-                  fontWeight: 600,
-                  fontSize: 24,
-                  color: "var(--brown)",
-                  textAlign: "center",
-                  margin: "0 0 16px",
-                }}
-              >
-                {t.rsvpTitle}
-              </h2>
-
-              {saved && (
-                <div
-                  style={{
-                    background: "rgba(108,122,69,.12)",
-                    border: "1px solid rgba(108,122,69,.3)",
-                    borderRadius: 12,
-                    padding: "12px 16px",
-                    marginBottom: 16,
-                    fontFamily: "var(--sans)",
-                    fontSize: 14,
-                    color: "#55632f",
-                    textAlign: "center",
-                  }}
-                >
-                  {saved.status === "accepted"
-                    ? saved.partySize > 1
-                      ? fmt(t.savedAcceptedMany, { n: saved.partySize })
-                      : t.savedAcceptedOne
-                    : t.savedDeclined}
-                </div>
-              )}
-
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <button
-                  className={`choice-btn${answer === "accepted" ? " selected-yes" : ""}`}
-                  onClick={() => setAnswer("accepted")}
-                  type="button"
-                >
-                  {t.accept}
-                </button>
-                <button
-                  className={`choice-btn${answer === "declined" ? " selected-no" : ""}`}
-                  onClick={() => setAnswer("declined")}
-                  type="button"
-                >
-                  {t.decline}
-                </button>
-              </div>
-
-              {answer === "accepted" && (
-                <div>
-                  <label className="field-label" htmlFor="party-size">
-                    {t.partySizeLabel}
-                  </label>
-                  {props.maxGuests != null ? (
-                    <>
-                      <select
-                        id="party-size"
-                        className="select-input"
-                        value={partySize}
-                        onChange={(e) => setPartySize(Number(e.target.value))}
-                      >
-                        {Array.from({ length: props.maxGuests }, (_, i) => i + 1).map((n) => (
-                          <option key={n} value={n}>
-                            {n}
-                          </option>
-                        ))}
-                      </select>
-                      <div style={{ fontFamily: "var(--sans)", fontSize: 12, color: "var(--brown-soft)", marginTop: 6 }}>
-                        {fmt(t.partySizeHint, { max: props.maxGuests })}
-                      </div>
-                    </>
-                  ) : (
-                    <input
-                      id="party-size"
-                      className="text-input"
-                      type="number"
-                      min={1}
-                      max={99}
-                      value={partySize}
-                      onChange={(e) => setPartySize(Math.max(1, Math.min(99, Number(e.target.value) || 1)))}
-                    />
-                  )}
-                </div>
-              )}
-
-              {answer && (
-                <div>
-                  <label className="field-label" htmlFor="rsvp-note">
-                    {t.noteLabel}
-                  </label>
-                  <textarea
-                    id="rsvp-note"
-                    className="textarea-input"
-                    placeholder={t.notePlaceholder}
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    maxLength={2000}
-                  />
-                </div>
-              )}
-
-              {error && (
-                <div style={{ color: "#a83232", fontFamily: "var(--sans)", fontSize: 13, marginTop: 12 }}>{error}</div>
-              )}
-
-              <div style={{ textAlign: "center", marginTop: 22 }}>
-                <button className="submit-btn" onClick={submit} disabled={!answer || pending} type="button">
-                  {pending ? "…" : saved ? t.update : t.send}
-                </button>
-                <div style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 12, color: "var(--brown-soft)", marginTop: 12 }}>
-                  {fmt(t.editUntil, { date: formatDeadline(s.rsvpDeadline, lang) })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div style={{ fontFamily: "var(--script)", fontSize: 20, color: "var(--gold)", marginTop: 34 }}>
-            {t.closing}
-          </div>
+            );
+          })}
         </div>
       </div>
     </div>
