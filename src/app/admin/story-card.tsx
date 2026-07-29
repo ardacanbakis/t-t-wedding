@@ -389,7 +389,7 @@ export function StoryCard({
                         <option value="carousel">Carousel — tap left/right half or arrows</option>
                         <option value="stack">Fanned stack — tap to bring forward</option>
                         <option value="grid">Grid — all at once</option>
-                        <option value="single">Single (original) — first photo only, no controls</option>
+                        <option value="single">Single (original) — whole photo, no white frame</option>
                       </select>
                       <label className="field-label">Photo fit</label>
                       <select
