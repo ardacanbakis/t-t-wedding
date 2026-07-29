@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./config.js"></script>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -180,7 +181,37 @@
                 <path d="M4 42 L100 4 L196 42" fill="none" stroke="#a83232" stroke-width="2" vector-effect="non-scaling-stroke"></path>
               </svg>
               <div style="position:relative; background:#fffdf8; padding:14px 14px 46px; border-radius:5px; box-shadow:0 8px 22px -12px rgba(120,72,40,.3), 0 26px 62px -22px rgba(120,72,40,.38); transform:rotate({{ ch.tilt }}deg);">
-                <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ ch.slot }}" src="{{ ch.src }}" shape="rounded" radius="4" placeholder="{{ ch.ph }}" style="display:block; width:min(400px,74vw); height:300px;" hint-size="400px,300px"></x-import>
+                <div style="position:relative; width:{{ ch.frameW }}; height:{{ ch.frameH }}; overflow:hidden; border-radius:4px; background:rgba(0,0,0,.04);" onPointerDown="{{ ch.swipeDown }}">
+                  <sc-if value="{{ ch.isCarousel }}" hint-placeholder-val="{{ true }}">
+                    <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" style="width:100%; height:100%; object-fit:{{ ch.fit }}; display:block; user-select:none;">
+                  </sc-if>
+                  <sc-if value="{{ ch.isStack }}" hint-placeholder-val="{{ false }}">
+                    <sc-for list="{{ ch.items }}" as="p" hint-placeholder-count="0">
+                      <img src="{{ p.src }}" alt="{{ ch.alt }}" draggable="false" onClick="{{ p.go }}" style="{{ p.style }}">
+                    </sc-for>
+                  </sc-if>
+                  <sc-if value="{{ ch.isGrid }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex; flex-wrap:wrap; align-content:flex-start; gap:5px; width:100%; height:100%;">
+                      <sc-for list="{{ ch.items }}" as="p" hint-placeholder-count="0">
+                        <img src="{{ p.src }}" alt="{{ ch.alt }}" draggable="false" style="{{ p.style }}">
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ ch.empty }}" hint-placeholder-val="{{ false }}">
+                    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:14px; box-sizing:border-box; font-family:'Mulish',sans-serif; font-size:13px; color:rgba(74,50,38,.45); border:1.5px dashed rgba(191,155,95,.5); border-radius:4px;">{{ ch.ph }}</div>
+                  </sc-if>
+                  <sc-if value="{{ ch.showNav }}" hint-placeholder-val="{{ false }}">
+                    <button onClick="{{ ch.prev }}" aria-label="Previous photo" style="position:absolute; left:6px; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:1; cursor:pointer; z-index:4;">&lsaquo;</button>
+                    <button onClick="{{ ch.next }}" aria-label="Next photo" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:1; cursor:pointer; z-index:4;">&rsaquo;</button>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ ch.showDots }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; justify-content:center; gap:6px; margin-top:9px;">
+                    <sc-for list="{{ ch.dots }}" as="d" hint-placeholder-count="0">
+                      <span onClick="{{ d.go }}" style="{{ d.style }}"></span>
+                    </sc-for>
+                  </div>
+                </sc-if>
                 <div style="font-family:'Dancing Script',cursive; color:#8a6a4d; text-align:center; margin-top:12px; font-size:20px;">{{ ch.cap }}</div>
               </div>
             </div>
@@ -215,63 +246,67 @@
       </div>
     </div>
 
-    <section id="c9" data-screen-label="09 · The Invitation" style="position:relative; display:flex; align-items:center; justify-content:center; padding:clamp(40px,7vh,80px) clamp(20px,5vw,100px) clamp(80px,11vh,120px) clamp(56px,10vw,120px);">
-      <div data-reveal="1" style="position:relative; z-index:2; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:clamp(36px,6vw,90px); max-width:1080px;">
-        <div style="flex:0 1 400px; min-width:280px; display:flex; justify-content:center; padding-top:26px;">
-          <div data-thread="1" style="position:relative;">
-            <div data-swing="1" style="position:relative; transform-origin:50% -14px;">
-              <svg viewBox="0 0 200 40" preserveAspectRatio="none" style="position:absolute; top:-14px; left:2%; width:96%; height:44px; z-index:0;">
-                <path d="M4 42 L100 4 L196 42" fill="none" stroke="#a83232" stroke-width="2" vector-effect="non-scaling-stroke"></path>
-              </svg>
-              <img src="assets/invitation.png" alt="Wedding invitation of Tansu and Arda" style="position:relative; width:min(380px,78vw); border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.65); transform:rotate(-1.4deg); display:block;">
-            </div>
-            <svg width="18" height="18" viewBox="0 0 18 18" style="position:absolute; top:-22px; left:50%; transform:translateX(-50%); z-index:3; overflow:visible;">
-              <circle cx="9" cy="9" r="5.6" fill="#c9a24e"></circle>
-              <circle cx="7.4" cy="7.4" r="1.9" fill="#f3e3b5"></circle>
-            </svg>
-          </div>
-        </div>
-        <div style="flex:1 1 340px; min-width:280px; position:relative; padding-top:34px;">
-          <div style="position:absolute; top:-28px; left:-14px; font-family:'Playfair Display',serif; font-weight:700; font-size:clamp(90px,10vw,132px); color:rgba(233,205,140,.1); line-height:1; pointer-events:none; user-select:none;">09</div>
-          <div style="position:relative; font-family:'Mulish',sans-serif; font-weight:600; font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:#d9b36c;">{{ invKicker }}</div>
-          <div style="font-family:'Dancing Script',cursive; font-size:clamp(28px,4vw,40px); color:#e4c284; margin-top:8px;">Ad astra per aspera</div>
-          <h2 style="font-family:'Playfair Display',serif; font-size:clamp(32px,4.6vw,48px); font-weight:600; color:#f0e2c8; margin:6px 0 0;">{{ invTitle }}</h2>
-          <div style="width:76px; height:1px; background:linear-gradient(90deg,#d9b36c,transparent); margin:18px 0;"></div>
-          <p style="font-family:'Mulish',sans-serif; font-weight:300; font-size:17px; line-height:1.85; color:rgba(240,226,200,.88); max-width:48ch; text-wrap:pretty; margin:0;">{{ invBody }}</p>
-        </div>
-      </div>
-    </section>
-
-    <section id="c10" data-screen-label="10 · Our Wedding" style="position:relative; display:flex; align-items:center; justify-content:center; padding:clamp(80px,11vh,120px) clamp(20px,5vw,100px) clamp(80px,11vh,120px) clamp(56px,10vw,120px);">
-      <div data-reveal="1" style="position:relative; z-index:2; display:flex; flex-direction:row-reverse; flex-wrap:wrap; align-items:center; justify-content:center; gap:clamp(36px,6vw,90px); max-width:1080px;">
-        <div style="flex:1 1 380px; min-width:290px; display:flex; justify-content:center; padding-top:26px;">
-          <div data-thread="1" style="position:relative;">
-            <div data-swing="1" style="position:relative; transform-origin:50% -14px;">
-              <svg viewBox="0 0 200 40" preserveAspectRatio="none" style="position:absolute; top:-14px; left:2%; width:96%; height:44px; z-index:0;">
-                <path d="M4 42 L100 4 L196 42" fill="none" stroke="#a83232" stroke-width="2" vector-effect="non-scaling-stroke"></path>
-              </svg>
-              <div style="position:relative; background:#fffdf8; padding:14px 14px 46px; border-radius:5px; box-shadow:0 0 0 1px rgba(217,179,108,.35), 0 34px 80px -20px rgba(0,0,0,.6); transform:rotate(1.8deg);">
-                <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="ph-wedding" shape="rounded" radius="4" placeholder="Drop a photo — the big day" style="display:block; width:min(400px,74vw); height:300px;" hint-size="400px,300px"></x-import>
-                <div style="font-family:'Dancing Script',cursive; color:#8a6a4d; text-align:center; margin-top:12px; font-size:20px;">{{ wedCap }}</div>
+    <sc-for list="{{ nightChapters }}" as="ch" hint-placeholder-count="2">
+      <section id="{{ ch.id }}" data-screen-label="{{ ch.label }}" style="position:relative; display:flex; align-items:center; justify-content:center; padding:clamp(40px,7vh,80px) clamp(20px,5vw,100px) clamp(80px,11vh,120px) clamp(56px,10vw,120px);">
+        <div data-reveal="1" style="position:relative; z-index:2; display:flex; flex-direction:{{ ch.dir }}; flex-wrap:wrap; align-items:center; justify-content:center; gap:clamp(36px,6vw,90px); max-width:1080px;">
+          <div style="flex:1 1 380px; min-width:290px; display:flex; justify-content:center; padding-top:26px;">
+            <div data-thread="1" style="position:relative;">
+              <div data-swing="1" style="position:relative; transform-origin:50% -14px;">
+                <svg viewBox="0 0 200 40" preserveAspectRatio="none" style="position:absolute; top:-14px; left:2%; width:96%; height:44px; z-index:0;">
+                  <path d="M4 42 L100 4 L196 42" fill="none" stroke="#a83232" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+                </svg>
+                <div style="position:relative; background:#fffdf8; padding:14px 14px 46px; border-radius:5px; box-shadow:0 0 0 1px rgba(217,179,108,.35), 0 34px 80px -20px rgba(0,0,0,.6); transform:rotate({{ ch.tilt }}deg);">
+                  <div style="position:relative; width:{{ ch.frameW }}; height:{{ ch.frameH }}; overflow:hidden; border-radius:4px; background:rgba(0,0,0,.04);" onPointerDown="{{ ch.swipeDown }}">
+                  <sc-if value="{{ ch.isCarousel }}" hint-placeholder-val="{{ true }}">
+                    <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" style="width:100%; height:100%; object-fit:{{ ch.fit }}; display:block; user-select:none;">
+                  </sc-if>
+                  <sc-if value="{{ ch.isStack }}" hint-placeholder-val="{{ false }}">
+                    <sc-for list="{{ ch.items }}" as="p" hint-placeholder-count="0">
+                      <img src="{{ p.src }}" alt="{{ ch.alt }}" draggable="false" onClick="{{ p.go }}" style="{{ p.style }}">
+                    </sc-for>
+                  </sc-if>
+                  <sc-if value="{{ ch.isGrid }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex; flex-wrap:wrap; align-content:flex-start; gap:5px; width:100%; height:100%;">
+                      <sc-for list="{{ ch.items }}" as="p" hint-placeholder-count="0">
+                        <img src="{{ p.src }}" alt="{{ ch.alt }}" draggable="false" style="{{ p.style }}">
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ ch.empty }}" hint-placeholder-val="{{ false }}">
+                    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:14px; box-sizing:border-box; font-family:'Mulish',sans-serif; font-size:13px; color:rgba(74,50,38,.45); border:1.5px dashed rgba(191,155,95,.5); border-radius:4px;">{{ ch.ph }}</div>
+                  </sc-if>
+                  <sc-if value="{{ ch.showNav }}" hint-placeholder-val="{{ false }}">
+                    <button onClick="{{ ch.prev }}" aria-label="Previous photo" style="position:absolute; left:6px; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:1; cursor:pointer; z-index:4;">&lsaquo;</button>
+                    <button onClick="{{ ch.next }}" aria-label="Next photo" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:1; cursor:pointer; z-index:4;">&rsaquo;</button>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ ch.showDots }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; justify-content:center; gap:6px; margin-top:9px;">
+                    <sc-for list="{{ ch.dots }}" as="d" hint-placeholder-count="0">
+                      <span onClick="{{ d.go }}" style="{{ d.style }}"></span>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                  <div style="font-family:'Dancing Script',cursive; color:#8a6a4d; text-align:center; margin-top:12px; font-size:20px;">{{ ch.cap }}</div>
+                </div>
               </div>
+              <svg width="18" height="18" viewBox="0 0 18 18" style="position:absolute; top:-22px; left:50%; transform:translateX(-50%); z-index:3; overflow:visible;">
+                <circle cx="9" cy="9" r="5.6" fill="#c9a24e"></circle>
+                <circle cx="7.4" cy="7.4" r="1.9" fill="#f3e3b5"></circle>
+              </svg>
             </div>
-            <svg width="18" height="18" viewBox="0 0 18 18" style="position:absolute; top:-22px; left:50%; transform:translateX(-50%); z-index:3; overflow:visible;">
-              <circle cx="9" cy="9" r="5.6" fill="#c9a24e"></circle>
-              <circle cx="7.4" cy="7.4" r="1.9" fill="#f3e3b5"></circle>
-            </svg>
+          </div>
+          <div style="flex:1 1 340px; min-width:280px; position:relative; padding-top:34px;">
+            <div style="position:absolute; top:-28px; left:-14px; font-family:'Playfair Display',serif; font-weight:700; font-size:clamp(90px,10vw,132px); color:rgba(233,205,140,.1); line-height:1; pointer-events:none; user-select:none;">{{ ch.num }}</div>
+            <div style="position:relative; font-family:'Mulish',sans-serif; font-weight:600; font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:#d9b36c;">{{ ch.kicker }}</div>
+            <div style="font-family:'Dancing Script',cursive; font-size:clamp(28px,4vw,40px); color:#e4c284; margin-top:8px;">{{ ch.date }}</div>
+            <h2 style="font-family:'Playfair Display',serif; font-size:clamp(32px,4.6vw,48px); font-weight:600; color:#f0e2c8; margin:6px 0 0;">{{ ch.title }}</h2>
+            <div style="width:76px; height:1px; background:linear-gradient(90deg,#d9b36c,transparent); margin:18px 0;"></div>
+            <p style="font-family:'Mulish',sans-serif; font-weight:300; font-size:17px; line-height:1.85; color:rgba(240,226,200,.88); max-width:48ch; text-wrap:pretty; margin:0;">{{ ch.body }}</p>
           </div>
         </div>
-        <div style="flex:1 1 340px; min-width:280px; position:relative; padding-top:34px;">
-          <div style="position:absolute; top:-28px; left:-14px; font-family:'Playfair Display',serif; font-weight:700; font-size:clamp(90px,10vw,132px); color:rgba(233,205,140,.1); line-height:1; pointer-events:none; user-select:none;">10</div>
-          <div style="position:relative; font-family:'Mulish',sans-serif; font-weight:600; font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:#d9b36c;">{{ wedKicker }}</div>
-          <div style="font-family:'Dancing Script',cursive; font-size:clamp(30px,4.4vw,44px); color:#e4c284; margin-top:8px;">{{ wedDate }}</div>
-          <h2 style="font-family:'Playfair Display',serif; font-size:clamp(32px,4.6vw,48px); font-weight:600; color:#f0e2c8; margin:6px 0 0;">{{ wedTitle }}</h2>
-          <div style="font-family:'Mulish',sans-serif; font-weight:300; font-size:13px; letter-spacing:.22em; text-transform:uppercase; color:rgba(240,226,200,.7); margin-top:10px;">Germencik Belediyesi · Aydın</div>
-          <div style="width:76px; height:1px; background:linear-gradient(90deg,#d9b36c,transparent); margin:18px 0;"></div>
-          <p style="font-family:'Mulish',sans-serif; font-weight:300; font-size:17px; line-height:1.85; color:rgba(240,226,200,.88); max-width:48ch; text-wrap:pretty; margin:0;">{{ wedBody }}</p>
-        </div>
-      </div>
-    </section>
+      </section>
+    </sc-for>
 
     <section id="c11" data-screen-label="11 · To Be Continued" style="position:relative; min-height:92vh; display:flex; align-items:center; justify-content:center; text-align:center; padding:100px 24px 48px;">
       <div data-reveal="1" style="position:relative; z-index:2; max-width:640px; display:flex; flex-direction:column; align-items:center; gap:8px;">
@@ -373,7 +408,37 @@
                 <path d="M4 42 L100 4 L196 42" fill="none" stroke="#a83232" stroke-width="2" vector-effect="non-scaling-stroke"></path>
               </svg>
               <div style="position:relative; background:#fffdf8; padding:12px 12px 32px; border-radius:6px; box-shadow:0 28px 64px -24px rgba(60,36,20,.45); transform:rotate({{ s.tilt }}deg);">
-                <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ s.slot }}" src="{{ s.src }}" fit="{{ s.fit }}" shape="rounded" radius="4" placeholder="{{ s.ph }}" style="display:block; width:min(520px,80vw); height:clamp(150px,34vh,330px);" hint-size="520px,300px"></x-import>
+                <div style="position:relative; width:{{ s.frameW }}; height:{{ s.frameH }}; overflow:hidden; border-radius:4px; background:rgba(0,0,0,.04);" onPointerDown="{{ s.swipeDown }}">
+                  <sc-if value="{{ s.isCarousel }}" hint-placeholder-val="{{ true }}">
+                    <img src="{{ s.curSrc }}" alt="{{ s.alt }}" draggable="false" style="width:100%; height:100%; object-fit:{{ s.fit }}; display:block; user-select:none;">
+                  </sc-if>
+                  <sc-if value="{{ s.isStack }}" hint-placeholder-val="{{ false }}">
+                    <sc-for list="{{ s.items }}" as="p" hint-placeholder-count="0">
+                      <img src="{{ p.src }}" alt="{{ s.alt }}" draggable="false" onClick="{{ p.go }}" style="{{ p.style }}">
+                    </sc-for>
+                  </sc-if>
+                  <sc-if value="{{ s.isGrid }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex; flex-wrap:wrap; align-content:flex-start; gap:5px; width:100%; height:100%;">
+                      <sc-for list="{{ s.items }}" as="p" hint-placeholder-count="0">
+                        <img src="{{ p.src }}" alt="{{ s.alt }}" draggable="false" style="{{ p.style }}">
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ s.empty }}" hint-placeholder-val="{{ false }}">
+                    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:14px; box-sizing:border-box; font-family:'Mulish',sans-serif; font-size:13px; color:rgba(74,50,38,.45); border:1.5px dashed rgba(191,155,95,.5); border-radius:4px;">{{ s.ph }}</div>
+                  </sc-if>
+                  <sc-if value="{{ s.showNav }}" hint-placeholder-val="{{ false }}">
+                    <button onClick="{{ s.prev }}" aria-label="Previous photo" style="position:absolute; left:6px; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:1; cursor:pointer; z-index:4;">&lsaquo;</button>
+                    <button onClick="{{ s.next }}" aria-label="Next photo" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:1; cursor:pointer; z-index:4;">&rsaquo;</button>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ s.showDots }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; justify-content:center; gap:6px; margin-top:9px;">
+                    <sc-for list="{{ s.dots }}" as="d" hint-placeholder-count="0">
+                      <span onClick="{{ d.go }}" style="{{ d.style }}"></span>
+                    </sc-for>
+                  </div>
+                </sc-if>
               </div>
             </div>
             <svg width="18" height="18" viewBox="0 0 18 18" style="position:absolute; top:-22px; left:50%; transform:translateX(-50%); z-index:3; overflow:visible;">
@@ -562,7 +627,7 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;petalStyle&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;sakura&quot;, &quot;rose&quot;, &quot;stardust&quot;, &quot;fireflies&quot;], &quot;default&quot;: &quot;sakura&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Ambience&quot;}, &quot;petalDensity&quot;: {&quot;editor&quot;: &quot;range&quot;, &quot;min&quot;: 0, &quot;max&quot;: 100, &quot;step&quot;: 5, &quot;default&quot;: 45, &quot;unit&quot;: &quot;&quot;, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Ambience&quot;}, &quot;showFerula&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Ambience&quot;}, &quot;showThread&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Ambience&quot;}}">
 class Component extends DCLogic {
-  state = { view: 'story', tlIndex: 0, activeCh: 0, hoverCh: -1, railHover: false, dragPct: 0, dragging: false, catsRunning: false, catsDir: 'ltr', settingsOpen: false, isNarrow: false, lang: 'tr', showTop: false };
+  state = { view: 'story', tlIndex: 0, activeCh: 0, hoverCh: -1, railHover: false, dragPct: 0, dragging: false, catsRunning: false, catsDir: 'ltr', settingsOpen: false, isNarrow: false, lang: 'tr', showTop: false, photoIdx: {}, dataVer: 0 };
 
   constructor(props) {
     super(props);
@@ -679,7 +744,153 @@ class Component extends DCLogic {
         ]
       }
     };
-    this._chIds = ['hero', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9', 'c10', 'c11'];
+    // Chapters are editable in the admin dashboard; these built-ins are
+    // the fallback used until (or unless) that data arrives.
+    this._chapters = this._defs.map((d, i) => ({
+      slug: d.id, photos: d.src ? [d.src.replace(/^assets\//, '')] : [],
+      photoLayout: 'carousel', photoFit: d.fit === 'contain' ? 'contain' : 'cover',
+      tilt: d.tilt, visible: true, night: i >= 8,
+      tr: Object.assign({ nav: this._L.tr.nav[i + 1] }, this._L.tr.ch[i]),
+      en: Object.assign({ nav: this._L.en.nav[i + 1] }, this._L.en.ch[i])
+    }));
+    this._site = {
+      tr: Object.assign({ navStart: this._L.tr.nav[0], navEnd: this._L.tr.nav[11] }, this._L.tr),
+      en: Object.assign({ navStart: this._L.en.nav[0], navEnd: this._L.en.nav[11] }, this._L.en)
+    };
+    this._syncChapters();
+  }
+
+  // Rebuild the id list the rail and scroll-spy work from.
+  _syncChapters() {
+    this._visible = this._chapters.filter((c) => c.visible !== false);
+    this._chIds = ['hero'].concat(this._visible.map((c) => c.slug)).concat(['c11']);
+  }
+
+  // Chapters and story wording come from Supabase when it is configured, so
+  // they can be edited from the dashboard without a redeploy. Any failure
+  // simply leaves the built-in content in place.
+  _loadRemote() {
+    const cfg = window.__TT_CONFIG;
+    if (!cfg || !cfg.url || !cfg.key) return;
+    const h = { apikey: cfg.key, Authorization: 'Bearer ' + cfg.key };
+    const get = (path) => fetch(cfg.url + '/rest/v1/' + path, { headers: h }).then((r) => r.ok ? r.json() : null);
+    Promise.all([
+      get('story_chapters?select=*&order=position.asc'),
+      get('settings?select=key,value')
+    ]).then((res) => {
+      const rows = res[0], settings = res[1];
+      if (Array.isArray(rows) && rows.length) {
+        this._chapters = rows.map((r) => ({
+          slug: String(r.slug || ''),
+          photos: Array.isArray(r.photos) ? r.photos.filter((x) => typeof x === 'string' && x.trim()) : [],
+          photoLayout: ['carousel', 'stack', 'grid'].indexOf(r.photo_layout) >= 0 ? r.photo_layout : 'carousel',
+          photoFit: r.photo_fit === 'contain' ? 'contain' : 'cover',
+          tilt: typeof r.tilt === 'number' ? r.tilt : 0,
+          visible: r.visible !== false,
+          night: !!r.night,
+          tr: r.tr || {}, en: r.en || {}
+        })).filter((c) => c.slug);
+        this._syncChapters();
+      }
+      if (Array.isArray(settings)) {
+        const map = {};
+        settings.forEach((row) => { map[row.key] = row.value; });
+        ['tr', 'en'].forEach((lang) => {
+          const raw = map[lang === 'tr' ? 'storyTr' : 'storyEn'];
+          if (!raw) return;
+          try {
+            const o = JSON.parse(raw);
+            Object.keys(o).forEach((k) => { if (typeof o[k] === 'string' && o[k]) this._site[lang][k] = o[k]; });
+          } catch (e) {}
+        });
+      }
+      this.setState({ dataVer: this.state.dataVer + 1, photoIdx: {} }, () => {
+        requestAnimationFrame(() => {
+          this._setupReveals();
+          this._setupWeddingBurst();
+          this._attachThreadRO();
+          this._layoutThread();
+          this._scrolled();
+        });
+      });
+    }).catch(() => {});
+  }
+
+  // ── Photo navigation within one chapter's frame ──
+  _photoAt(slug) { return this.state.photoIdx[slug] || 0; }
+
+  _setPhoto(slug, i, len) {
+    if (len < 1) return;
+    const next = Object.assign({}, this.state.photoIdx);
+    next[slug] = ((i % len) + len) % len;
+    this.setState({ photoIdx: next });
+  }
+
+  _swipeHandler(slug, len) {
+    return (e) => {
+      if (len < 2 || e.button !== 0 || (e.target && e.target.tagName === 'BUTTON')) return;
+      const x0 = e.clientX;
+      const up = (ev) => {
+        window.removeEventListener('pointerup', up);
+        const dx = ev.clientX - x0;
+        if (Math.abs(dx) > 40) this._setPhoto(slug, this._photoAt(slug) + (dx < 0 ? 1 : -1), len);
+      };
+      window.addEventListener('pointerup', up);
+    };
+  }
+
+  // Everything the template needs to draw one chapter's photo frame.
+  _photoProps(c, w, h) {
+    const n = c.photos.length;
+    const idx = Math.min(this._photoAt(c.slug), Math.max(0, n - 1));
+    const url = (f) => /^(https?:|assets\/|data:)/.test(f) ? f : 'assets/' + f;
+    const layout = n > 1 ? c.photoLayout : 'carousel';
+    let items = [];
+    if (layout === 'stack') {
+      items = c.photos.map((f, i) => {
+        const front = i === idx;
+        const rot = (i - (n - 1) / 2) * 5;
+        return {
+          src: url(f), go: () => this._setPhoto(c.slug, i, n),
+          style: 'position:absolute; inset:8px; width:calc(100% - 16px); height:calc(100% - 16px);' +
+            ' object-fit:' + c.photoFit + '; border-radius:3px; user-select:none; cursor:pointer;' +
+            ' transform:rotate(' + rot.toFixed(1) + 'deg) translateY(' + (front ? -4 : 0) + 'px);' +
+            ' z-index:' + (front ? 3 : 1) + '; opacity:' + (front ? 1 : 0.85) + ';' +
+            ' box-shadow:0 6px 18px -8px rgba(60,36,20,.55); border:3px solid #fffdf8;' +
+            ' transition:transform .3s, opacity .3s;'
+        };
+      });
+    } else if (layout === 'grid') {
+      const cols = n <= 2 ? 2 : (n <= 4 ? 2 : 3);
+      const rows = Math.ceil(n / cols);
+      items = c.photos.map((f) => ({
+        src: url(f), go: () => {},
+        style: 'position:relative; border-radius:3px; display:block; user-select:none;' +
+          ' object-fit:' + c.photoFit + ';' +
+          ' width:calc((100% - ' + (5 * (cols - 1)) + 'px) / ' + cols + ');' +
+          ' height:calc((100% - ' + (5 * (rows - 1)) + 'px) / ' + rows + ');'
+      }));
+    }
+    return {
+      frameW: w, frameH: h, fit: c.photoFit,
+      isCarousel: n > 0 && layout === 'carousel',
+      isStack: n > 0 && layout === 'stack',
+      isGrid: n > 0 && layout === 'grid',
+      empty: n === 0,
+      curSrc: n ? url(c.photos[idx]) : '',
+      items: items,
+      showNav: n > 1 && layout === 'carousel',
+      showDots: n > 1 && layout !== 'grid',
+      prev: () => this._setPhoto(c.slug, idx - 1, n),
+      next: () => this._setPhoto(c.slug, idx + 1, n),
+      swipeDown: this._swipeHandler(c.slug, layout === 'carousel' ? n : 0),
+      dots: c.photos.map((f, i) => ({
+        go: () => this._setPhoto(c.slug, i, n),
+        style: 'width:7px; height:7px; border-radius:50%; cursor:pointer; transition:all .25s;' +
+          ' background:' + (i === idx ? '#bf9b5f' : 'rgba(191,155,95,.3)') + ';' +
+          ' transform:scale(' + (i === idx ? 1.25 : 1) + ');'
+      }))
+    };
   }
 
   componentDidMount() {
@@ -705,6 +916,7 @@ class Component extends DCLogic {
     this._loop();
     this._scrolled();
     this._scheduleCats();
+    this._loadRemote();
     this._attachThreadRO();
     setTimeout(() => this._layoutThread(), 400);
     setTimeout(() => this._layoutThread(), 1600);
@@ -732,7 +944,7 @@ class Component extends DCLogic {
   }
 
   _growTlFerulas() {
-    const n = this._defs.length;
+    const n = (this._visible || []).length;
     const p = n > 1 ? this.state.tlIndex / (n - 1) : 0;
     const night = true;
     [this.tlFerulaLRef.current, this.tlFerulaRRef.current].forEach((svg) => {
@@ -1166,7 +1378,7 @@ class Component extends DCLogic {
   }
 
   _go(i) {
-    const n = this._defs.length;
+    const n = (this._visible || []).length;
     const idx = Math.min(n - 1, Math.max(0, i));
     const changed = idx !== this.state.tlIndex;
     this.setState({ tlIndex: idx, dragPct: 0, dragging: false }, () => {
@@ -1250,18 +1462,22 @@ class Component extends DCLogic {
 
   renderVals() {
     const { view, tlIndex, activeCh, hoverCh, railHover, dragPct, dragging, catsRunning, settingsOpen, isNarrow, lang, showTop } = this.state;
-    const L = this._L[lang] || this._L.tr;
+    const S = this._site[lang] || this._site.tr;
+    const list = this._visible || [];
+    const T = (c) => (c && (c[lang] || c.tr)) || {};
     const isStory = view === 'story';
-    const n = this._defs.length;
-    const numerals = ['01', '02', '03', '04', '05', '06', '07', '08'];
-    const storyNight = activeCh >= 9;
+    const n = list.length;
+    const nightAt = list.findIndex((c) => c.night);
+    const storyNight = nightAt >= 0 && activeCh >= nightAt + 1;
     const tlNightNow = true;
+    const pad = (i) => String(i + 1).padStart(2, '0');
 
     const chapters = this._chIds.map((id, i) => {
-      const title = i === 0 ? 'Tansu & Arda' : (i <= 10 ? L.ch[i - 1].title : L.closeSub);
+      const c = list[i - 1];
       const vis = i === activeCh || i === hoverCh || railHover;
       return {
-        short: L.nav[i], title: title,
+        short: i === 0 ? S.navStart : (c ? (T(c).nav || T(c).title) : S.navEnd),
+        title: i === 0 ? '\u2665' : (c ? T(c).title : S.closeSub),
         go: () => this._goChapter(id),
         enter: () => this.setState({ hoverCh: i }),
         leave: () => this.setState({ hoverCh: -1 }),
@@ -1273,40 +1489,45 @@ class Component extends DCLogic {
       };
     });
 
-    const dayChapters = this._defs.slice(0, 8).map((d, i) => {
-      const c = L.ch[i];
-      return {
-        id: d.id, slot: d.slot, src: d.src, ph: d.ph, num: numerals[i],
-        label: numerals[i] + ' \u00b7 ' + c.title,
+    const section = (c, i, dayIndex) => {
+      const t = T(c);
+      return Object.assign({
+        id: c.slug, num: pad(i), label: pad(i) + ' \u00b7 ' + (t.title || ''),
         dir: i % 2 === 0 ? 'row' : 'row-reverse',
-        bg: this._dayBgs[i],
-        tilt: d.tilt, kicker: c.kicker, date: c.date, title: c.title, cap: c.cap, body: c.body
-      };
+        bg: this._dayBgs[Math.min(Math.max(dayIndex, 0), this._dayBgs.length - 1)],
+        tilt: c.tilt, alt: t.title || '', ph: t.cap || t.title || '',
+        kicker: t.kicker, date: t.date, title: t.title, cap: t.cap, body: t.body
+      }, this._photoProps(c, 'min(400px,74vw)', '300px'));
+    };
+
+    let dayI = -1;
+    const dayChapters = [];
+    const nightChapters = [];
+    list.forEach((c, i) => {
+      if (c.night) { nightChapters.push(section(c, i, dayI)); }
+      else { dayI++; dayChapters.push(section(c, i, dayI)); }
     });
 
     const tlNight = [
       'radial-gradient(1.4px 1.4px at 18% 24%, rgba(233,205,140,.9), transparent 55%), radial-gradient(1.2px 1.2px at 74% 14%, rgba(233,205,140,.75), transparent 55%), radial-gradient(1.6px 1.6px at 86% 62%, rgba(233,205,140,.7), transparent 55%), radial-gradient(1.1px 1.1px at 32% 78%, rgba(233,205,140,.6), transparent 55%), radial-gradient(1100px 620px at 70% 26%, rgba(96,72,140,.35), transparent 62%), radial-gradient(900px 520px at 26% 58%, rgba(120,84,150,.22), transparent 65%), linear-gradient(180deg, #2a2140 0%, #191428 46%, #14101f 78%, #1c1631 100%)',
       'radial-gradient(1.5px 1.5px at 12% 34%, rgba(233,205,140,.85), transparent 55%), radial-gradient(1.2px 1.2px at 64% 20%, rgba(233,205,140,.7), transparent 55%), radial-gradient(1.4px 1.4px at 88% 74%, rgba(233,205,140,.65), transparent 55%), radial-gradient(1.1px 1.1px at 40% 86%, rgba(233,205,140,.55), transparent 55%), radial-gradient(900px 500px at 30% 10%, rgba(120,84,140,.3), transparent 62%), radial-gradient(1100px 620px at 70% 40%, rgba(96,72,140,.28), transparent 65%), linear-gradient(180deg, #2a2140 0%, #191428 40%, #14101f 72%, #1c1631 100%)'
     ];
-    const tlBackdrops = this._defs.map((d, i) => tlNight[i >= 9 ? 1 : 0]);
+    const tlBackdrops = list.map((c) => tlNight[c.night ? 1 : 0]);
 
-    const slides = this._defs.map((d, i) => {
-      const c = L.ch[i];
-      const night = true;
-      return {
-        short: L.nav[i + 1], date: c.date, title: c.title, caption: c.tl,
-        slot: d.slot, src: d.src, fit: d.fit || 'cover',
-        ph: d.ph || c.title, tilt: i % 2 === 0 ? -1.6 : 1.6,
-        dateColor: night ? '#e4c284' : '#bf9b5f',
-        titleColor: night ? '#f0e2c8' : '#4a3226',
-        capColor: night ? 'rgba(240,226,200,.85)' : '#6b543f',
+    const slides = list.map((c, i) => {
+      const t = T(c);
+      return Object.assign({
+        short: t.nav || t.title, date: t.date, title: t.title, caption: t.tl || t.body,
+        alt: t.title || '', ph: t.cap || t.title || '',
+        tilt: i % 2 === 0 ? -1.6 : 1.6,
+        dateColor: '#e4c284', titleColor: '#f0e2c8', capColor: 'rgba(240,226,200,.85)',
         go: () => this._go(i),
         dotBg: i === tlIndex ? '#bf9b5f' : 'rgba(191,155,95,.1)',
         dotScale: i === tlIndex ? 1.35 : 1,
-        labelColor: i === tlIndex ? (tlNightNow ? '#e4c284' : '#8a5a3b') : (tlNightNow ? 'rgba(228,194,132,.55)' : 'rgba(138,90,59,.55)'),
-        subColor: i === tlIndex ? (tlNightNow ? '#e4c284' : '#bf9b5f') : (tlNightNow ? 'rgba(228,194,132,.42)' : 'rgba(138,90,59,.42)'),
-        dateShort: c.date
-      };
+        labelColor: i === tlIndex ? '#e4c284' : 'rgba(228,194,132,.55)',
+        subColor: i === tlIndex ? '#e4c284' : 'rgba(228,194,132,.42)',
+        dateShort: t.date
+      }, this._photoProps(c, 'min(520px,80vw)', 'clamp(150px,34vh,330px)'));
     });
 
     return {
@@ -1317,7 +1538,7 @@ class Component extends DCLogic {
       showRail: isStory && !isNarrow,
       showTopBtn: isStory && showTop,
       goTop: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
-      tTop: L.top,
+      tTop: S.top,
       storyClick: this._storyClick,
       railEnter: () => this.setState({ railHover: true }),
       railLeave: () => this.setState({ railHover: false, hoverCh: -1 }),
@@ -1343,7 +1564,7 @@ class Component extends DCLogic {
       showTimeline: () => {
         if (!isStory) return;
         this._savedY = window.scrollY;
-        const idx = Math.min(this._defs.length - 1, Math.max(0, activeCh - 1));
+        const idx = Math.min(n - 1, Math.max(0, activeCh - 1));
         this.setState({ view: 'timeline', tlIndex: idx, settingsOpen: false });
       },
       navShellBg: (isStory ? storyNight : tlNightNow) ? 'rgba(22,17,34,.55)' : 'rgba(255,251,243,.85)',
@@ -1352,11 +1573,9 @@ class Component extends DCLogic {
       storyFg: isStory ? ((isStory ? storyNight : tlNightNow) ? '#1c1631' : '#fffaf0') : ((isStory ? storyNight : tlNightNow) ? 'rgba(228,194,132,.85)' : '#8a5a3b'),
       tlBg: !isStory ? ((isStory ? storyNight : tlNightNow) ? '#d9b36c' : '#bf9b5f') : 'transparent',
       tlFg: !isStory ? ((isStory ? storyNight : tlNightNow) ? '#1c1631' : '#fffaf0') : ((isStory ? storyNight : tlNightNow) ? 'rgba(228,194,132,.85)' : '#8a5a3b'),
-      tNavStory: L.navStory, tNavTimeline: L.navTimeline,
-      tHeroKicker: L.heroKicker, tHeroTagline: L.heroTagline, tScroll: L.scroll,
-      invKicker: L.ch[8].kicker, invTitle: L.ch[8].title, invBody: L.ch[8].body,
-      wedKicker: L.ch[9].kicker, wedDate: L.ch[9].date, wedTitle: L.ch[9].title, wedBody: L.ch[9].body, wedCap: L.ch[9].cap,
-      closeSub: L.closeSub, closeCredit: L.closeCredit, closeBtn: L.closeBtn,
+      tNavStory: S.navStory, tNavTimeline: S.navTimeline,
+      tHeroKicker: S.heroKicker, tHeroTagline: S.heroTagline, tScroll: S.scroll,
+      closeSub: S.closeSub, closeCredit: S.closeCredit, closeBtn: S.closeBtn,
       settingsOpen,
       toggleSettings: () => this.setState({ settingsOpen: !settingsOpen }),
       langLabel: lang.toUpperCase(),
@@ -1368,7 +1587,7 @@ class Component extends DCLogic {
       trFg: lang === 'tr' ? '#fffaf0' : '#8a5a3b',
       ferulaOpacity: (this.props.showFerula ?? true) ? 0.95 : 0,
       threadOpacity: (this.props.showThread ?? true) ? 1 : 0,
-      chapters, dayChapters, slides,
+      chapters, dayChapters, nightChapters, slides,
       tlBackdrop: tlBackdrops[tlIndex],
       tlStarsOpacity: tlNightNow ? 1 : 0,
       tlHover: tlNightNow ? '#e4c284' : '#8a5a3b',
