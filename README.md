@@ -15,6 +15,7 @@ row-level security and two locked-down SQL functions.
 | `/` | Small landing page (guests arrive via their personal links) |
 | `/i/?t=<token>` | A guest's personal invitation + RSVP form (TR/EN toggle) |
 | `/story/` | The timeline / love-story site (static, from the Claude design project) |
+| `/welcome/` | The general (universal, no-RSVP) invitation — one link for anyone |
 | `/admin/` | Login-protected dashboard |
 
 ### Guest features
