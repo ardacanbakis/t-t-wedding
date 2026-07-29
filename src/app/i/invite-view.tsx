@@ -160,14 +160,17 @@ export function InviteView(props: Props) {
   };
 
   const rawTexts = useMemo(() => mergeTexts(lang, s), [lang, s]);
-  // Custom {placeholders} defined in the dashboard are substituted everywhere.
+  // Texts switched off in the dashboard become empty; then any custom
+  // {placeholders} are substituted into what remains.
   const t = useMemo(() => {
     const vars = parseVars(lang === "tr" ? s.varsTr : s.varsEn);
-    if (!Object.keys(vars).length) return rawTexts;
+    const hidden = new Set(layout.hiddenTexts);
     const out = { ...rawTexts };
-    for (const k of Object.keys(out) as (keyof GuestTexts)[]) out[k] = fmt(out[k], vars);
+    for (const k of Object.keys(out) as (keyof GuestTexts)[]) {
+      out[k] = hidden.has(k) ? "" : fmt(out[k], vars);
+    }
     return out;
-  }, [rawTexts, lang, s.varsTr, s.varsEn]);
+  }, [rawTexts, lang, s.varsTr, s.varsEn, layout.hiddenTexts]);
 
   const submit = async () => {
     if (!answer || pending) return;
@@ -334,11 +337,11 @@ export function InviteView(props: Props) {
   );
 
   const content: Record<BlockId, ReactNode> = {
-    kicker: (
+    kicker: t.kicker ? (
       <div className="kicker" style={{ fontSize: "clamp(20px, 3vw, 26px)" }}>
         {t.kicker}
       </div>
-    ),
+    ) : null,
     names: (
       <h1
         style={{
@@ -356,10 +359,14 @@ export function InviteView(props: Props) {
     dividerTop: <Divider />,
     greeting: (
       <p style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 16, lineHeight: 1.8, color: "var(--brown-mid)", margin: 0 }}>
-        <span style={{ fontFamily: "var(--script)", fontSize: 22, color: "var(--gold)" }}>{t.dear} </span>
+        {t.dear && <span style={{ fontFamily: "var(--script)", fontSize: 22, color: "var(--gold)" }}>{t.dear} </span>}
         <strong style={{ fontWeight: 600, color: "var(--brown)" }}>{props.guestName}</strong>
-        <br />
-        {t.inviteLine}
+        {t.inviteLine && (
+          <>
+            <br />
+            {t.inviteLine}
+          </>
+        )}
       </p>
     ),
     personalNote: props.personalNote ? (
@@ -380,19 +387,23 @@ export function InviteView(props: Props) {
     countdown: <Countdown target={s.eventDate} t={t} />,
     date: (
       <>
-        <div className="field-label" style={{ margin: "0 0 4px" }}>
-          {t.dateLabel}
-        </div>
+        {t.dateLabel && (
+          <div className="field-label" style={{ margin: "0 0 4px" }}>
+            {t.dateLabel}
+          </div>
+        )}
         <div style={{ fontFamily: "var(--script)", fontSize: "clamp(24px, 4vw, 32px)", color: "var(--gold)" }}>
-          {formatEventDate(s.eventDate, lang)}
+          {formatEventDate(s.eventDate, lang, s.dateStyle === "datetime")}
         </div>
       </>
     ),
     venue: (
       <>
-        <div className="field-label" style={{ margin: "0 0 4px" }}>
-          {t.venueLabel}
-        </div>
+        {t.venueLabel && (
+          <div className="field-label" style={{ margin: "0 0 4px" }}>
+            {t.venueLabel}
+          </div>
+        )}
         <div style={{ fontFamily: "var(--serif)", fontSize: 22, fontWeight: 600, color: "var(--brown)" }}>{s.venueName}</div>
         <div style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 14, color: "var(--brown-mid)", marginTop: 4 }}>
           {s.venueAddress}
@@ -406,9 +417,11 @@ export function InviteView(props: Props) {
     ),
     schedule: schedule.length ? (
       <>
-        <div className="field-label" style={{ margin: "0 0 10px" }}>
-          {t.scheduleLabel}
-        </div>
+        {t.scheduleLabel && (
+          <div className="field-label" style={{ margin: "0 0 10px" }}>
+            {t.scheduleLabel}
+          </div>
+        )}
         <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
           {schedule.map((item, i) => (
             <div key={i} style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
@@ -425,9 +438,9 @@ export function InviteView(props: Props) {
     ) : null,
     dividerBottom: <Divider beating />,
     rsvp: rsvpBlock,
-    closing: (
+    closing: t.closing ? (
       <div style={{ fontFamily: "var(--script)", fontSize: 20, color: "var(--gold)" }}>{t.closing}</div>
-    ),
+    ) : null,
   };
 
   return (

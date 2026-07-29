@@ -158,7 +158,7 @@ export const TEXT_FIELDS: { key: keyof GuestTexts; label: string; multiline?: bo
   { key: "error", label: "Generic error message" },
 ];
 
-export function formatEventDate(iso: string, lang: Lang): string {
+export function formatEventDate(iso: string, lang: Lang, withTime = true): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   return new Intl.DateTimeFormat(lang === "tr" ? "tr-TR" : "en-GB", {
@@ -166,8 +166,7 @@ export function formatEventDate(iso: string, lang: Lang): string {
     year: "numeric",
     month: "long",
     day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+    ...(withTime ? { hour: "2-digit" as const, minute: "2-digit" as const } : {}),
     timeZone: "Europe/Istanbul",
   }).format(d);
 }

@@ -47,6 +47,7 @@ const db = {
     ["storyUrl", "/story/"],
     ["coupleNames", "Tansu & Arda"],
     ["cardTilt", "0"],
+    ["dateStyle", "date"],
   ]),
 };
 

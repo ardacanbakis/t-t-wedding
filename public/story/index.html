@@ -201,8 +201,12 @@
                     <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:14px; box-sizing:border-box; font-family:'Mulish',sans-serif; font-size:13px; color:rgba(74,50,38,.45); border:1.5px dashed rgba(191,155,95,.5); border-radius:4px;">{{ ch.ph }}</div>
                   </sc-if>
                   <sc-if value="{{ ch.showNav }}" hint-placeholder-val="{{ false }}">
-                    <button onClick="{{ ch.prev }}" aria-label="Previous photo" style="position:absolute; left:6px; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:1; cursor:pointer; z-index:4;">&lsaquo;</button>
-                    <button onClick="{{ ch.next }}" aria-label="Next photo" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:1; cursor:pointer; z-index:4;">&rsaquo;</button>
+                    <button onClick="{{ ch.prev }}" aria-label="Previous photo" style="position:absolute; left:0; top:0; width:50%; height:100%; border:0; background:transparent; padding:0 0 0 6px; cursor:pointer; z-index:4; display:flex; align-items:center; justify-content:flex-start;">
+                      <span style="width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:30px; text-align:center; display:block; pointer-events:none;">&lsaquo;</span>
+                    </button>
+                    <button onClick="{{ ch.next }}" aria-label="Next photo" style="position:absolute; right:0; top:0; width:50%; height:100%; border:0; background:transparent; padding:0 6px 0 0; cursor:pointer; z-index:4; display:flex; align-items:center; justify-content:flex-end;">
+                      <span style="width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:30px; text-align:center; display:block; pointer-events:none;">&rsaquo;</span>
+                    </button>
                   </sc-if>
                 </div>
                 <sc-if value="{{ ch.showDots }}" hint-placeholder-val="{{ false }}">
@@ -276,8 +280,12 @@
                     <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:14px; box-sizing:border-box; font-family:'Mulish',sans-serif; font-size:13px; color:rgba(74,50,38,.45); border:1.5px dashed rgba(191,155,95,.5); border-radius:4px;">{{ ch.ph }}</div>
                   </sc-if>
                   <sc-if value="{{ ch.showNav }}" hint-placeholder-val="{{ false }}">
-                    <button onClick="{{ ch.prev }}" aria-label="Previous photo" style="position:absolute; left:6px; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:1; cursor:pointer; z-index:4;">&lsaquo;</button>
-                    <button onClick="{{ ch.next }}" aria-label="Next photo" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:1; cursor:pointer; z-index:4;">&rsaquo;</button>
+                    <button onClick="{{ ch.prev }}" aria-label="Previous photo" style="position:absolute; left:0; top:0; width:50%; height:100%; border:0; background:transparent; padding:0 0 0 6px; cursor:pointer; z-index:4; display:flex; align-items:center; justify-content:flex-start;">
+                      <span style="width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:30px; text-align:center; display:block; pointer-events:none;">&lsaquo;</span>
+                    </button>
+                    <button onClick="{{ ch.next }}" aria-label="Next photo" style="position:absolute; right:0; top:0; width:50%; height:100%; border:0; background:transparent; padding:0 6px 0 0; cursor:pointer; z-index:4; display:flex; align-items:center; justify-content:flex-end;">
+                      <span style="width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:30px; text-align:center; display:block; pointer-events:none;">&rsaquo;</span>
+                    </button>
                   </sc-if>
                 </div>
                 <sc-if value="{{ ch.showDots }}" hint-placeholder-val="{{ false }}">
@@ -428,8 +436,12 @@
                     <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:14px; box-sizing:border-box; font-family:'Mulish',sans-serif; font-size:13px; color:rgba(74,50,38,.45); border:1.5px dashed rgba(191,155,95,.5); border-radius:4px;">{{ s.ph }}</div>
                   </sc-if>
                   <sc-if value="{{ s.showNav }}" hint-placeholder-val="{{ false }}">
-                    <button onClick="{{ s.prev }}" aria-label="Previous photo" style="position:absolute; left:6px; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:1; cursor:pointer; z-index:4;">&lsaquo;</button>
-                    <button onClick="{{ s.next }}" aria-label="Next photo" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:1; cursor:pointer; z-index:4;">&rsaquo;</button>
+                    <button onClick="{{ s.prev }}" aria-label="Previous photo" style="position:absolute; left:0; top:0; width:50%; height:100%; border:0; background:transparent; padding:0 0 0 6px; cursor:pointer; z-index:4; display:flex; align-items:center; justify-content:flex-start;">
+                      <span style="width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:30px; text-align:center; display:block; pointer-events:none;">&lsaquo;</span>
+                    </button>
+                    <button onClick="{{ s.next }}" aria-label="Next photo" style="position:absolute; right:0; top:0; width:50%; height:100%; border:0; background:transparent; padding:0 6px 0 0; cursor:pointer; z-index:4; display:flex; align-items:center; justify-content:flex-end;">
+                      <span style="width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:30px; text-align:center; display:block; pointer-events:none;">&rsaquo;</span>
+                    </button>
                   </sc-if>
                 </div>
                 <sc-if value="{{ s.showDots }}" hint-placeholder-val="{{ false }}">
@@ -783,7 +795,7 @@ class Component extends DCLogic {
         this._chapters = rows.map((r) => ({
           slug: String(r.slug || ''),
           photos: Array.isArray(r.photos) ? r.photos.filter((x) => typeof x === 'string' && x.trim()) : [],
-          photoLayout: ['carousel', 'stack', 'grid'].indexOf(r.photo_layout) >= 0 ? r.photo_layout : 'carousel',
+          photoLayout: ['carousel', 'stack', 'grid', 'single'].indexOf(r.photo_layout) >= 0 ? r.photo_layout : 'carousel',
           photoFit: r.photo_fit === 'contain' ? 'contain' : 'cover',
           tilt: typeof r.tilt === 'number' ? r.tilt : 0,
           visible: r.visible !== false,
@@ -828,7 +840,8 @@ class Component extends DCLogic {
 
   _swipeHandler(slug, len) {
     return (e) => {
-      if (len < 2 || e.button !== 0 || (e.target && e.target.tagName === 'BUTTON')) return;
+      if (len < 2 || e.button !== 0) return;
+      if (e.target && e.target.closest && e.target.closest('button')) return;
       const x0 = e.clientX;
       const up = (ev) => {
         window.removeEventListener('pointerup', up);
@@ -844,7 +857,11 @@ class Component extends DCLogic {
     const n = c.photos.length;
     const idx = Math.min(this._photoAt(c.slug), Math.max(0, n - 1));
     const url = (f) => /^(https?:|assets\/|data:)/.test(f) ? f : 'assets/' + f;
+    // 'single' keeps the original pre-multi-photo look: the first photo
+    // filling the frame, with no arrows or dots.
     const layout = n > 1 ? c.photoLayout : 'carousel';
+    const single = layout === 'single';
+    const shown = single ? 0 : idx;
     let items = [];
     if (layout === 'stack') {
       items = c.photos.map((f, i) => {
@@ -873,14 +890,14 @@ class Component extends DCLogic {
     }
     return {
       frameW: w, frameH: h, fit: c.photoFit,
-      isCarousel: n > 0 && layout === 'carousel',
+      isCarousel: n > 0 && (layout === 'carousel' || single),
       isStack: n > 0 && layout === 'stack',
       isGrid: n > 0 && layout === 'grid',
       empty: n === 0,
-      curSrc: n ? url(c.photos[idx]) : '',
+      curSrc: n ? url(c.photos[shown]) : '',
       items: items,
       showNav: n > 1 && layout === 'carousel',
-      showDots: n > 1 && layout !== 'grid',
+      showDots: n > 1 && (layout === 'carousel' || layout === 'stack'),
       prev: () => this._setPhoto(c.slug, idx - 1, n),
       next: () => this._setPhoto(c.slug, idx + 1, n),
       swipeDown: this._swipeHandler(c.slug, layout === 'carousel' ? n : 0),
