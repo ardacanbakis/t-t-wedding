@@ -131,6 +131,7 @@ export function InviteView(props: Props) {
   const s = props.settings;
   const schedule = useMemo(() => parseSchedule(s.schedule), [s.schedule]);
   const layout = useMemo(() => parseLayout(s.layout), [s.layout]);
+  const tilt = Number.parseFloat(s.cardTilt) || 0;
   const [lang, setLang] = useState<Lang>("tr");
   const [answer, setAnswer] = useState<"accepted" | "declined" | null>(
     props.status === "pending" ? null : props.status
@@ -456,7 +457,8 @@ export function InviteView(props: Props) {
             borderRadius: 8,
             padding: "clamp(28px, 6vw, 52px) clamp(20px, 5vw, 48px) 40px",
             boxShadow: "0 8px 22px -12px rgba(120,72,40,.3), 0 30px 70px -24px rgba(120,72,40,.4)",
-            transform: "rotate(-0.6deg)",
+            // Straight by default; the dashboard can tilt it for a hung-print look.
+            transform: tilt ? `rotate(${tilt}deg)` : undefined,
             textAlign: "center",
           }}
         >

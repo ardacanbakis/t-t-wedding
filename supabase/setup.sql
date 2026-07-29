@@ -61,7 +61,8 @@ insert into public.settings (key, value) values
   ('mapsUrl',      'https://maps.google.com/?q=Germencik+Belediyesi,+Ayd%C4%B1n'),
   ('schedule',     '14:30 | Nikah Töreni | Ceremony'),
   ('storyUrl',     '/story/'),
-  ('coupleNames',  'Tansu & Arda')
+  ('coupleNames',  'Tansu & Arda'),
+  ('cardTilt',     '0')
 on conflict do nothing;
 
 -- Story-site strings that don't belong to a single chapter (nav labels,

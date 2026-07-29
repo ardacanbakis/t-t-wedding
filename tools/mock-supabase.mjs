@@ -46,6 +46,7 @@ const db = {
     ["schedule", "14:30 | Nikah Töreni | Ceremony"],
     ["storyUrl", "/story/"],
     ["coupleNames", "Tansu & Arda"],
+    ["cardTilt", "0"],
   ]),
 };
 

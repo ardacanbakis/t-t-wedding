@@ -28,6 +28,8 @@ export type SiteSettings = {
   storyUrl: string;
   /** Heading on the invitation card; an "&" gets the script styling */
   coupleNames: string;
+  /** Rotation of the invitation card in degrees; 0 = perfectly straight */
+  cardTilt: string;
   /** JSON overrides of the guest-facing texts (see GuestTexts) */
   textsTr: string;
   textsEn: string;
@@ -108,6 +110,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   schedule: "14:30 | Nikah Töreni | Ceremony",
   storyUrl: "/story/",
   coupleNames: "Tansu & Arda",
+  cardTilt: "0",
   textsTr: "",
   textsEn: "",
   layout: "",
