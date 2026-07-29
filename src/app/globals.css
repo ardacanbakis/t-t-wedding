@@ -342,3 +342,26 @@ body {
   color: var(--brown-link);
   margin-top: 4px;
 }
+
+/* Story call-to-action: gold, pulsing, after an RSVP is submitted */
+@keyframes storyPulse {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+    box-shadow: 0 8px 22px -10px rgba(191, 155, 95, 0.6);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.06);
+    box-shadow: 0 10px 30px -8px rgba(191, 155, 95, 0.9);
+  }
+}
+
+.story-cta.pulsing {
+  background: linear-gradient(135deg, #cfa96b, #bf9b5f);
+  color: #fffdf8;
+  border-color: var(--gold);
+  animation: storyPulse 1.5s ease-in-out infinite;
+}
+
+.story-cta.pulsing:hover {
+  background: linear-gradient(135deg, #d8b477, #c9a568);
+}

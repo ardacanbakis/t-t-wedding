@@ -618,6 +618,15 @@ export function Dashboard() {
             <input className="text-input" value={s.mapsUrl} onChange={(e) => setS({ ...s, mapsUrl: e.target.value })} />
             <label className="field-label">Story site URL</label>
             <input className="text-input" value={s.storyUrl} onChange={(e) => setS({ ...s, storyUrl: e.target.value })} />
+            <label className="field-label">Language picker on invitations (personal &amp; general)</label>
+            <select
+              className="select-input"
+              value={s.showInviteLang}
+              onChange={(e) => setS({ ...s, showInviteLang: e.target.value })}
+            >
+              <option value="true">Shown (TR/EN toggle)</option>
+              <option value="false">Hidden</option>
+            </select>
             <label className="field-label">Schedule — one per line: HH:MM | Türkçe | English</label>
             <textarea
               className="textarea-input"

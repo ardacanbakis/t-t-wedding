@@ -8,6 +8,7 @@ export type BlockId =
   | "names"
   | "dividerTop"
   | "greeting"
+  | "inviteLine"
   | "personalNote"
   | "countdown"
   | "date"
@@ -48,7 +49,8 @@ export const BLOCK_LABELS: Record<BlockId, string> = {
   kicker: "Kicker line",
   names: "Couple names",
   dividerTop: "Divider (under the names)",
-  greeting: "Greeting + intro paragraph",
+  greeting: "Greeting (“Dear” + guest name)",
+  inviteLine: "Intro paragraph",
   personalNote: "Personal message (per guest)",
   countdown: "Countdown",
   date: "Date",
@@ -65,6 +67,7 @@ export const DEFAULT_ORDER: BlockId[] = [
   "names",
   "dividerTop",
   "greeting",
+  "inviteLine",
   "personalNote",
   "countdown",
   "date",
@@ -105,6 +108,7 @@ export const DEFAULT_LAYOUT: Layout = {
     names: block(),
     dividerTop: block(),
     greeting: block(),
+    inviteLine: block({ spaceAbove: 6 }),
     personalNote: block({ spaceAbove: 10 }),
     countdown: block(),
     date: block({ spaceAbove: 20 }),
@@ -129,7 +133,9 @@ export function parseLayout(raw: string): Layout {
     blocks[id] = { ...DEFAULT_LAYOUT.blocks[id], ...(stored.blocks?.[id] ?? {}) };
   }
 
-  // Keep stored ordering, drop unknown ids, append blocks added since.
+  // Keep the stored ordering, drop unknown ids, then slot any blocks added
+  // since right after their natural predecessor (so a new block doesn't land
+  // at the very bottom of an already-customised layout).
   const seen = new Set<BlockId>();
   const order: BlockId[] = [];
   for (const id of stored.order ?? []) {
@@ -138,7 +144,20 @@ export function parseLayout(raw: string): Layout {
       order.push(id);
     }
   }
-  for (const id of DEFAULT_ORDER) if (!seen.has(id)) order.push(id);
+  for (let i = 0; i < DEFAULT_ORDER.length; i++) {
+    const id = DEFAULT_ORDER[i];
+    if (seen.has(id)) continue;
+    let insertAt = order.length;
+    for (let j = i - 1; j >= 0; j--) {
+      const k = order.indexOf(DEFAULT_ORDER[j]);
+      if (k >= 0) {
+        insertAt = k + 1;
+        break;
+      }
+    }
+    order.splice(insertAt, 0, id);
+    seen.add(id);
+  }
 
   const hiddenTexts = Array.isArray(stored.hiddenTexts)
     ? stored.hiddenTexts.filter((k): k is string => typeof k === "string")

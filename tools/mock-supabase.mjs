@@ -51,6 +51,7 @@ const db = {
     ["dateStyle", "date"],
     ["nightFrom", "9"],
     ["showLangPicker", "true"],
+    ["showInviteLang", "true"],
     ["ogTitle", "Tansu & Arda — Düğün Davetiyesi"],
     ["ogDescription", "Düğünümüze davetlisiniz · 28 Haziran 2026 · Germencik, Aydın"],
   ]),

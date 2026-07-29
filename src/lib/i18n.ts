@@ -151,7 +151,7 @@ export const TEXT_FIELDS: { key: keyof GuestTexts; label: string; multiline?: bo
   { key: "answerAcceptedOne", label: "Locked answer — accepted, 1 person" },
   { key: "answerAcceptedMany", label: "Locked answer — accepted, {n} people" },
   { key: "answerDeclined", label: "Locked answer — declined" },
-  { key: "storyButton", label: "Story button (top right)" },
+  { key: "storyButton", label: "Story button (top & bottom centre)" },
   { key: "closing", label: "Closing motto (bottom of card)" },
   { key: "notFoundTitle", label: "Invalid-link page title" },
   { key: "notFoundBody", label: "Invalid-link page text", multiline: true },
