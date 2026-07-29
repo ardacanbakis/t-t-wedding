@@ -50,6 +50,7 @@ const db = {
     ["cardTilt", "0"],
     ["dateStyle", "date"],
     ["nightFrom", "9"],
+    ["showLangPicker", "true"],
     ["ogTitle", "Tansu & Arda — Düğün Davetiyesi"],
     ["ogDescription", "Düğünümüze davetlisiniz · 28 Haziran 2026 · Germencik, Aydın"],
   ]),
@@ -191,6 +192,12 @@ const server = http.createServer(async (req, res) => {
     const body = await readBody(req);
     const kind = body?.p_kind;
     if (kind === "opens" || kind === "yes") db.general_stats[kind] += 1;
+    return send(res, 200, null);
+  }
+  if (pathname === "/rest/v1/rpc/general_reset" && req.method === "POST") {
+    if (!isAdmin(req)) return pgError(res, "not authorized", 401);
+    db.general_stats.opens = 0;
+    db.general_stats.yes = 0;
     return send(res, 200, null);
   }
   if (pathname === "/rest/v1/general_stats" && req.method === "GET") {

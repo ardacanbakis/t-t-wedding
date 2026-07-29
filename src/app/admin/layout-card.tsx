@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BLOCK_LABELS, DEFAULT_LAYOUT, parseLayout, type BlockId, type BlockStyle, type Layout } from "@/lib/blocks";
+import { BLOCK_LABELS, DEFAULT_LAYOUT, FONT_CHOICES, parseLayout, type BlockId, type BlockStyle, type Layout } from "@/lib/blocks";
 import type { SiteSettings } from "@/lib/model";
 
 /**
@@ -152,6 +152,20 @@ export function LayoutCard({
                       value={b.fontSize}
                       onChange={(e) => patch(id, { fontSize: Number(e.target.value) || 0 })}
                     />
+                  </div>
+                  <div>
+                    <label className="field-label">Font</label>
+                    <select
+                      className="select-input"
+                      value={b.fontFamily}
+                      onChange={(e) => patch(id, { fontFamily: e.target.value })}
+                    >
+                      {FONT_CHOICES.map((f) => (
+                        <option key={f.value} value={f.value}>
+                          {f.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="field-label">Colour (blank = default)</label>

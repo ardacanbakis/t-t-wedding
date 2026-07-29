@@ -98,9 +98,26 @@ export function GeneralCard({
           <div className="num">{counts ? counts.yes : "—"}</div>
           <div className="lbl">“I&apos;ll be there”</div>
         </div>
-        <button className="mini-btn" style={{ alignSelf: "center" }} onClick={loadCounts} type="button">
-          Refresh counts
-        </button>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, alignSelf: "center" }}>
+          <button className="mini-btn" onClick={loadCounts} type="button">
+            Refresh counts
+          </button>
+          <button
+            className="mini-btn danger"
+            onClick={async () => {
+              if (!window.confirm("Reset both counters to zero?")) return;
+              const { error } = await getSupabase().rpc("general_reset");
+              if (error) {
+                alert(error.message);
+                return;
+              }
+              await loadCounts();
+            }}
+            type="button"
+          >
+            Reset counts
+          </button>
+        </div>
       </div>
 
       {/* Texts */}

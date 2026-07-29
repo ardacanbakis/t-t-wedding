@@ -65,6 +65,7 @@ insert into public.settings (key, value) values
   ('cardTilt',     '0'),
   ('dateStyle',    'date'),
   ('nightFrom',    '9'),
+  ('showLangPicker','true'),
   ('ogTitle',      'Tansu & Arda — Düğün Davetiyesi'),
   ('ogDescription','Düğünümüze davetlisiniz · 28 Haziran 2026 · Germencik, Aydın')
 on conflict do nothing;
@@ -294,11 +295,27 @@ begin
 end;
 $$;
 
+-- Reset both counters to zero — admins only (e.g. after test clicks).
+create or replace function public.general_reset()
+returns void
+language plpgsql security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'not authorized';
+  end if;
+  update public.general_stats set count = 0;
+end;
+$$;
+
 revoke all on function public.is_admin()                              from public;
 revoke all on function public.general_track(text)                    from public;
+revoke all on function public.general_reset()                        from public;
 revoke all on function public.get_invitation(text)                    from public;
 revoke all on function public.submit_rsvp(text, text, integer, text)  from public;
 grant execute on function public.is_admin()                             to anon, authenticated;
 grant execute on function public.get_invitation(text)                   to anon, authenticated;
 grant execute on function public.submit_rsvp(text, text, integer, text) to anon, authenticated;
 grant execute on function public.general_track(text)                    to anon, authenticated;
+grant execute on function public.general_reset()                        to authenticated;

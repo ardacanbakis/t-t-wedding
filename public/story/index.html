@@ -41,6 +41,7 @@
   <button onClick="{{ showTimeline }}" style="font-family:'Mulish',sans-serif; font-weight:600; font-size:12px; letter-spacing:.16em; text-transform:uppercase; padding:10px 18px; border:none; border-radius:999px; cursor:pointer; transition:all .35s; background:{{ tlBg }}; color:{{ tlFg }};">{{ tNavTimeline }}</button>
 </div>
 
+<sc-if value="{{ showLang }}" hint-placeholder-val="{{ true }}">
 <div style="position:fixed; top:16px; left:16px; z-index:90;">
   <button onClick="{{ toggleSettings }}" title="Language · Dil" style="width:42px; height:42px; border-radius:50%; border:1px solid {{ navShellBorder }}; background:{{ navShellBg }}; backdrop-filter:blur(10px); color:{{ navFg }}; cursor:pointer; font-family:'Mulish',sans-serif; font-weight:600; font-size:11px; letter-spacing:.1em; box-shadow:0 10px 30px -14px rgba(40,26,20,.4); transition:all .4s ease;">{{ langLabel }}</button>
   <sc-if value="{{ settingsOpen }}" hint-placeholder-val="{{ false }}">
@@ -53,6 +54,7 @@
     </div>
   </sc-if>
 </div>
+</sc-if>
 
 <sc-if value="{{ showRail }}" hint-placeholder-val="{{ false }}">
   <div onMouseEnter="{{ railEnter }}" onMouseLeave="{{ railLeave }}" style="position:fixed; left:8px; top:50%; transform:translateY(-50%); height:min(72vh,640px); width:140px; z-index:40;">
@@ -831,6 +833,7 @@ class Component extends DCLogic {
     // the ones before it, night the ones from it on — so add / reorder never
     // scrambles the scroll order.
     this._nightFrom = 9;
+    this._showLang = true;
     this._syncChapters();
   }
 
@@ -871,6 +874,7 @@ class Component extends DCLogic {
         settings.forEach((row) => { map[row.key] = row.value; });
         const nf = parseInt(map.nightFrom, 10);
         if (Number.isFinite(nf) && nf >= 1) this._nightFrom = nf;
+        this._showLang = map.showLangPicker !== 'false';
         ['tr', 'en'].forEach((lang) => {
           const raw = map[lang === 'tr' ? 'storyTr' : 'storyEn'];
           if (!raw) return;
@@ -1661,6 +1665,7 @@ class Component extends DCLogic {
         const idx = Math.min(n - 1, Math.max(0, activeCh - 1));
         this.setState({ view: 'timeline', tlIndex: idx, settingsOpen: false });
       },
+      showLang: this._showLang !== false,
       navFg: (isStory ? storyNight : tlNightNow) ? 'rgba(228,194,132,.9)' : '#8a5a3b',
       navShellBg: (isStory ? storyNight : tlNightNow) ? 'rgba(22,17,34,.55)' : 'rgba(255,251,243,.85)',
       navShellBorder: (isStory ? storyNight : tlNightNow) ? 'rgba(217,179,108,.3)' : 'rgba(191,155,95,.4)',

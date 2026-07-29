@@ -75,6 +75,8 @@ export type SiteSettings = {
   storyEn: string;
   /** 1-based chapter index where the pink day background turns to night */
   nightFrom: string;
+  /** "true"/"false" — show the TR/EN picker on the story site */
+  showLangPicker: string;
   /** JSON overrides of the general (universal) invitation texts */
   generalTr: string;
   generalEn: string;
@@ -160,6 +162,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   storyTr: "",
   storyEn: "",
   nightFrom: "9",
+  showLangPicker: "true",
   generalTr: "",
   generalEn: "",
   ogTitle: "Tansu & Arda — Düğün Davetiyesi",

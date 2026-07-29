@@ -235,6 +235,7 @@ export function Dashboard() {
     "storyTr",
     "storyEn",
     "nightFrom",
+    "showLangPicker",
     "generalTr",
     "generalEn",
     "ogTitle",
@@ -291,6 +292,11 @@ export function Dashboard() {
   const doSaveNightFrom = async (nightFrom: string) => {
     await saveSettingRows([{ key: "nightFrom", value: nightFrom }]);
     setS((prev) => ({ ...prev, nightFrom }));
+  };
+
+  const doSaveShowLang = async (value: string) => {
+    await saveSettingRows([{ key: "showLangPicker", value }]);
+    setS((prev) => ({ ...prev, showLangPicker: value }));
   };
 
   const doSaveSocial = (ogTitle: string, ogDescription: string) =>
@@ -637,6 +643,7 @@ export function Dashboard() {
         settings={s}
         onSaveSite={doSaveStorySite}
         onSaveNightFrom={doSaveNightFrom}
+        onSaveShowLang={doSaveShowLang}
         reloadSettings={reload}
       />
       )}
