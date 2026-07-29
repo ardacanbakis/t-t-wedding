@@ -63,7 +63,8 @@ insert into public.settings (key, value) values
   ('storyUrl',     '/story/'),
   ('coupleNames',  'Tansu & Arda'),
   ('cardTilt',     '0'),
-  ('dateStyle',    'date')
+  ('dateStyle',    'date'),
+  ('nightFrom',    '9')
 on conflict do nothing;
 
 -- Story-site strings that don't belong to a single chapter (nav labels,
@@ -112,10 +113,31 @@ alter table public.story_chapters drop constraint if exists story_chapters_photo
 alter table public.story_chapters add constraint story_chapters_photo_layout_check
   check (photo_layout in ('carousel', 'stack', 'grid', 'single'));
 
+
+-- Five extra chapters (hidden). Toggle them on and fill them in from the
+-- dashboard when you want more than ten. Kept empty so they never show
+-- until enabled.
+insert into public.story_chapters (position, slug, photos, photo_fit, tilt, night, visible, tr, en) values
+  (11, 'c11', '[]'::jsonb, 'cover',  1.6, true, false, '{}'::jsonb, '{}'::jsonb),
+  (12, 'c12', '[]'::jsonb, 'cover', -1.8, true, false, '{}'::jsonb, '{}'::jsonb),
+  (13, 'c13', '[]'::jsonb, 'cover',  2.0, true, false, '{}'::jsonb, '{}'::jsonb),
+  (14, 'c14', '[]'::jsonb, 'cover', -1.5, true, false, '{}'::jsonb, '{}'::jsonb),
+  (15, 'c15', '[]'::jsonb, 'cover',  1.4, true, false, '{}'::jsonb, '{}'::jsonb)
+on conflict (slug) do nothing;
+
+-- Counters for the general (universal) invitation link.
+create table if not exists public.general_stats (
+  kind text primary key,
+  count bigint not null default 0
+);
+insert into public.general_stats (kind, count) values ('opens', 0), ('yes', 0)
+on conflict do nothing;
+
 -- ── Row Level Security ───────────────────────────────────────
 
 alter table public.invitations    enable row level security;
 alter table public.story_chapters enable row level security;
+alter table public.general_stats  enable row level security;
 alter table public.settings     enable row level security;
 alter table public.admin_emails enable row level security;
 
@@ -165,6 +187,13 @@ create policy "admin writes story" on public.story_chapters
   for all to authenticated
   using (public.is_admin())
   with check (public.is_admin());
+
+-- General stats: readable by everyone (the counts aren't secret), and only
+-- ever changed through the SECURITY DEFINER RPC below.
+drop policy if exists "general stats readable" on public.general_stats;
+create policy "general stats readable" on public.general_stats
+  for select to anon, authenticated
+  using (true);
 
 -- admin_emails: no policies — nobody reads or writes it through the API.
 -- Manage it from the SQL editor only.
@@ -250,9 +279,24 @@ end;
 $$;
 
 -- Lock the functions down to exactly the roles that need them.
+create or replace function public.general_track(p_kind text)
+returns void
+language plpgsql security definer
+set search_path = public
+as $$
+begin
+  if p_kind not in ('opens', 'yes') then
+    return;
+  end if;
+  update public.general_stats set count = count + 1 where kind = p_kind;
+end;
+$$;
+
 revoke all on function public.is_admin()                              from public;
+revoke all on function public.general_track(text)                    from public;
 revoke all on function public.get_invitation(text)                    from public;
 revoke all on function public.submit_rsvp(text, text, integer, text)  from public;
 grant execute on function public.is_admin()                             to anon, authenticated;
 grant execute on function public.get_invitation(text)                   to anon, authenticated;
 grant execute on function public.submit_rsvp(text, text, integer, text) to anon, authenticated;
+grant execute on function public.general_track(text)                    to anon, authenticated;

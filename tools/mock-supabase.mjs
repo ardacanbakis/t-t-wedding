@@ -37,6 +37,7 @@ const db = {
       en: { nav: "Wedding", kicker: "Chapter Two", date: "28 June 2026", title: "Our Wedding", cap: "the easiest yes", body: "On a warm June afternoon…", tl: "The easiest yes." },
     },
   ],
+  general_stats: { opens: 0, yes: 0 },
   settings: new Map([
     ["eventDate", "2026-06-28T14:30:00+03:00"],
     ["rsvpDeadline", "2027-06-14T23:59:00+03:00"],
@@ -48,6 +49,7 @@ const db = {
     ["coupleNames", "Tansu & Arda"],
     ["cardTilt", "0"],
     ["dateStyle", "date"],
+    ["nightFrom", "9"],
   ]),
 };
 
@@ -182,6 +184,18 @@ const server = http.createServer(async (req, res) => {
           ]
         : []
     );
+  }
+  if (pathname === "/rest/v1/rpc/general_track" && req.method === "POST") {
+    const body = await readBody(req);
+    const kind = body?.p_kind;
+    if (kind === "opens" || kind === "yes") db.general_stats[kind] += 1;
+    return send(res, 200, null);
+  }
+  if (pathname === "/rest/v1/general_stats" && req.method === "GET") {
+    return send(res, 200, [
+      { kind: "opens", count: db.general_stats.opens },
+      { kind: "yes", count: db.general_stats.yes },
+    ]);
   }
   if (pathname === "/rest/v1/rpc/submit_rsvp" && req.method === "POST") {
     const body = await readBody(req);
