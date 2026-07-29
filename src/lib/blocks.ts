@@ -28,6 +28,8 @@ export type BlockStyle = {
   fontSize: number;
   /** "" = keep the designed colour */
   color: string;
+  /** "" = keep the designed font. Otherwise a CSS font-family value. */
+  fontFamily: string;
 };
 
 export type Layout = {
@@ -82,9 +84,18 @@ function block(overrides: Partial<BlockStyle> = {}): BlockStyle {
     align: "center",
     fontSize: 0,
     color: "",
+    fontFamily: "",
     ...overrides,
   };
 }
+
+/** Font-family choices offered per block in the dashboard. */
+export const FONT_CHOICES: { label: string; value: string }[] = [
+  { label: "Default (as designed)", value: "" },
+  { label: "Serif — Playfair Display", value: "var(--serif)" },
+  { label: "Script — Dancing Script", value: "var(--script)" },
+  { label: "Sans — Mulish", value: "var(--sans)" },
+];
 
 export const DEFAULT_LAYOUT: Layout = {
   order: DEFAULT_ORDER,
@@ -136,13 +147,18 @@ export function parseLayout(raw: string): Layout {
   return { order, blocks, hiddenTexts };
 }
 
-/** Wrapper style for one block. */
+/** Wrapper style for one block. Font-size / colour / family overrides are
+ *  exposed as CSS variables (not a plain wrapper font-size) so each block's
+ *  text can opt in with `var(--blk-fs, <its own default>)` — a bare wrapper
+ *  font-size can't win against the explicit sizes the blocks set themselves. */
 export function blockStyle(s: BlockStyle): CSSProperties {
   const out: CSSProperties = {};
   if (s.spaceAbove) out.marginTop = s.spaceAbove;
   if (s.spaceBelow) out.marginBottom = s.spaceBelow;
   out.textAlign = s.align;
-  if (s.fontSize) out.fontSize = s.fontSize;
-  if (s.color) out.color = s.color;
+  const vars = out as Record<string, string | number>;
+  if (s.fontSize) vars["--blk-fs"] = s.fontSize + "px";
+  if (s.color) vars["--blk-color"] = s.color;
+  if (s.fontFamily) vars["--blk-ff"] = s.fontFamily;
   return out;
 }

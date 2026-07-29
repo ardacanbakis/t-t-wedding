@@ -64,7 +64,10 @@ insert into public.settings (key, value) values
   ('coupleNames',  'Tansu & Arda'),
   ('cardTilt',     '0'),
   ('dateStyle',    'date'),
-  ('nightFrom',    '9')
+  ('nightFrom',    '9'),
+  ('showLangPicker','true'),
+  ('ogTitle',      'Tansu & Arda — Düğün Davetiyesi'),
+  ('ogDescription','Düğünümüze davetlisiniz · 28 Haziran 2026 · Germencik, Aydın')
 on conflict do nothing;
 
 -- Story-site strings that don't belong to a single chapter (nav labels,
@@ -84,7 +87,7 @@ create table if not exists public.story_chapters (
   slug text not null unique,
   photos jsonb not null default '[]'::jsonb,
   photo_layout text not null default 'carousel'
-    check (photo_layout in ('carousel', 'stack', 'grid', 'single')),
+    check (photo_layout in ('carousel', 'carousel-bare', 'stack', 'grid', 'single')),
   photo_fit text not null default 'cover'
     check (photo_fit in ('cover', 'contain')),
   tilt real not null default 0,
@@ -111,7 +114,7 @@ on conflict (slug) do nothing;
 -- Widen the photo layout check for projects created before 'single' existed.
 alter table public.story_chapters drop constraint if exists story_chapters_photo_layout_check;
 alter table public.story_chapters add constraint story_chapters_photo_layout_check
-  check (photo_layout in ('carousel', 'stack', 'grid', 'single'));
+  check (photo_layout in ('carousel', 'carousel-bare', 'stack', 'grid', 'single'));
 
 
 -- Five extra chapters (hidden). Toggle them on and fill them in from the
@@ -292,11 +295,27 @@ begin
 end;
 $$;
 
+-- Reset both counters to zero — admins only (e.g. after test clicks).
+create or replace function public.general_reset()
+returns void
+language plpgsql security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'not authorized';
+  end if;
+  update public.general_stats set count = 0;
+end;
+$$;
+
 revoke all on function public.is_admin()                              from public;
 revoke all on function public.general_track(text)                    from public;
+revoke all on function public.general_reset()                        from public;
 revoke all on function public.get_invitation(text)                    from public;
 revoke all on function public.submit_rsvp(text, text, integer, text)  from public;
 grant execute on function public.is_admin()                             to anon, authenticated;
 grant execute on function public.get_invitation(text)                   to anon, authenticated;
 grant execute on function public.submit_rsvp(text, text, integer, text) to anon, authenticated;
 grant execute on function public.general_track(text)                    to anon, authenticated;
+grant execute on function public.general_reset()                        to authenticated;

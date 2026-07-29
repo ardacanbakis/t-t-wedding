@@ -75,13 +75,18 @@ export type SiteSettings = {
   storyEn: string;
   /** 1-based chapter index where the pink day background turns to night */
   nightFrom: string;
+  /** "true"/"false" — show the TR/EN picker on the story site */
+  showLangPicker: string;
   /** JSON overrides of the general (universal) invitation texts */
   generalTr: string;
   generalEn: string;
+  /** Social share preview (Open Graph / Twitter) — baked in at build time */
+  ogTitle: string;
+  ogDescription: string;
 };
 
 // ── Story / timeline ────────────────────────────────────────────────
-export type PhotoLayout = "carousel" | "stack" | "grid" | "single";
+export type PhotoLayout = "carousel" | "carousel-bare" | "stack" | "grid" | "single";
 
 export type StoryChapterText = {
   nav: string;
@@ -124,7 +129,7 @@ export function normalizeChapter(row: Partial<StoryChapter>): StoryChapter {
     position: row.position ?? 0,
     slug: row.slug ?? "",
     photos: Array.isArray(row.photos) ? row.photos.filter((p) => typeof p === "string" && p.trim()) : [],
-    photo_layout: (["carousel", "stack", "grid", "single"] as const).includes(row.photo_layout as PhotoLayout)
+    photo_layout: (["carousel", "carousel-bare", "stack", "grid", "single"] as const).includes(row.photo_layout as PhotoLayout)
       ? (row.photo_layout as PhotoLayout)
       : "carousel",
     photo_fit: row.photo_fit === "contain" ? "contain" : "cover",
@@ -157,8 +162,11 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   storyTr: "",
   storyEn: "",
   nightFrom: "9",
+  showLangPicker: "true",
   generalTr: "",
   generalEn: "",
+  ogTitle: "Tansu & Arda — Düğün Davetiyesi",
+  ogDescription: "Düğünümüze davetlisiniz · 28 Haziran 2026 · Germencik, Aydın",
 };
 
 /** General invitation texts for a language: overrides merged over defaults. */

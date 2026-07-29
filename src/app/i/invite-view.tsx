@@ -108,7 +108,7 @@ function Countdown({ target, t }: { target: string; t: GuestTexts }) {
             background: "rgba(255,253,248,.7)",
           }}
         >
-          <div style={{ fontFamily: "var(--serif)", fontWeight: 700, fontSize: 26, color: "var(--brown)", lineHeight: 1.1 }}>
+          <div style={{ fontFamily: "var(--blk-ff, var(--serif))", fontWeight: 700, fontSize: "var(--blk-fs, 26px)", color: "var(--blk-color, var(--brown))", lineHeight: 1.1 }}>
             {n}
           </div>
           <div
@@ -287,10 +287,10 @@ export function InviteView(props: Props) {
     <div style={{ maxWidth: 440, margin: "0 auto" }}>
       <h2
         style={{
-          fontFamily: "var(--serif)",
+          fontFamily: "var(--blk-ff, var(--serif))",
           fontWeight: 600,
-          fontSize: 24,
-          color: "var(--brown)",
+          fontSize: "var(--blk-fs, 24px)",
+          color: "var(--blk-color, var(--brown))",
           textAlign: "center",
           margin: "0 0 16px",
         }}
@@ -405,17 +405,17 @@ export function InviteView(props: Props) {
 
   const content: Record<BlockId, ReactNode> = {
     kicker: t.kicker ? (
-      <div className="kicker" style={{ fontSize: "clamp(20px, 3vw, 26px)" }}>
+      <div className="kicker" style={{ fontSize: "var(--blk-fs, clamp(20px, 3vw, 26px))", fontFamily: "var(--blk-ff, var(--script))", color: "var(--blk-color, var(--gold))" }}>
         {t.kicker}
       </div>
     ) : null,
     names: (
       <h1
         style={{
-          fontFamily: "var(--serif)",
+          fontFamily: "var(--blk-ff, var(--serif))",
           fontWeight: 600,
-          fontSize: "clamp(38px, 7vw, 64px)",
-          color: "var(--brown)",
+          fontSize: "var(--blk-fs, clamp(38px, 7vw, 64px))",
+          color: "var(--blk-color, var(--brown))",
           margin: 0,
           lineHeight: 1.08,
         }}
@@ -426,12 +426,12 @@ export function InviteView(props: Props) {
     dividerTop: <Divider />,
     greeting: isGeneral ? (
       g.welcome ? (
-        <p style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 16, lineHeight: 1.8, color: "var(--brown-mid)", margin: 0, whiteSpace: "pre-wrap" }}>
+        <p style={{ fontFamily: "var(--blk-ff, var(--sans))", fontWeight: 300, fontSize: "var(--blk-fs, 16px)", lineHeight: 1.8, color: "var(--blk-color, var(--brown-mid))", margin: 0, whiteSpace: "pre-wrap" }}>
           {g.welcome}
         </p>
       ) : null
     ) : (
-      <p style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 16, lineHeight: 1.8, color: "var(--brown-mid)", margin: 0 }}>
+      <p style={{ fontFamily: "var(--blk-ff, var(--sans))", fontWeight: 300, fontSize: "var(--blk-fs, 16px)", lineHeight: 1.8, color: "var(--blk-color, var(--brown-mid))", margin: 0 }}>
         {t.dear && <span style={{ fontFamily: "var(--script)", fontSize: 22, color: "var(--gold)" }}>{t.dear} </span>}
         <strong style={{ fontWeight: 600, color: "var(--brown)" }}>{props.guestName}</strong>
         {t.inviteLine && (
@@ -445,10 +445,10 @@ export function InviteView(props: Props) {
     personalNote: props.personalNote ? (
       <p
         style={{
-          fontFamily: "var(--script)",
-          fontSize: "clamp(19px, 3vw, 23px)",
-          lineHeight: 1.55,
-          color: "var(--brown-soft)",
+          fontFamily: "var(--blk-ff, var(--script))",
+          fontSize: "var(--blk-fs, clamp(28px, 4.5vw, 34px))",
+          lineHeight: 1.5,
+          color: "var(--blk-color, var(--brown-soft))",
           margin: "0 auto",
           maxWidth: "42ch",
           whiteSpace: "pre-wrap",
@@ -465,7 +465,7 @@ export function InviteView(props: Props) {
             {t.dateLabel}
           </div>
         )}
-        <div style={{ fontFamily: "var(--script)", fontSize: "clamp(24px, 4vw, 32px)", color: "var(--gold)" }}>
+        <div style={{ fontFamily: "var(--blk-ff, var(--script))", fontSize: "var(--blk-fs, clamp(24px, 4vw, 32px))", color: "var(--blk-color, var(--gold))" }}>
           {formatEventDate(s.eventDate, lang, s.dateStyle === "datetime")}
         </div>
       </>
@@ -477,14 +477,14 @@ export function InviteView(props: Props) {
             {t.venueLabel}
           </div>
         )}
-        <div style={{ fontFamily: "var(--serif)", fontSize: 22, fontWeight: 600, color: "var(--brown)" }}>{s.venueName}</div>
+        <div style={{ fontFamily: "var(--blk-ff, var(--serif))", fontSize: "var(--blk-fs, 22px)", fontWeight: 600, color: "var(--blk-color, var(--brown))" }}>{s.venueName}</div>
         <div style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 14, color: "var(--brown-mid)", marginTop: 4 }}>
           {s.venueAddress}
         </div>
       </>
     ),
     mapButton: (
-      <a className="pill-btn" href={s.mapsUrl} target="_blank" rel="noopener noreferrer">
+      <a className="pill-btn" href={s.mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: "var(--blk-fs, 12px)", fontFamily: "var(--blk-ff, var(--sans))" }}>
         📍 {t.mapButton}
       </a>
     ),
@@ -498,7 +498,7 @@ export function InviteView(props: Props) {
         <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
           {schedule.map((item, i) => (
             <div key={i} style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
-              <span style={{ fontFamily: "var(--serif)", fontWeight: 700, fontSize: 15, color: "var(--gold)" }}>
+              <span style={{ fontFamily: "var(--blk-ff, var(--serif))", fontWeight: 700, fontSize: "var(--blk-fs, 22px)", color: "var(--blk-color, var(--gold))" }}>
                 {item.time}
               </span>
               <span style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 15, color: "var(--brown-mid)" }}>
@@ -512,7 +512,7 @@ export function InviteView(props: Props) {
     dividerBottom: <Divider beating />,
     rsvp: isGeneral ? generalBlock : rsvpBlock,
     closing: t.closing ? (
-      <div style={{ fontFamily: "var(--script)", fontSize: 20, color: "var(--gold)" }}>{t.closing}</div>
+      <div style={{ fontFamily: "var(--blk-ff, var(--script))", fontSize: "var(--blk-fs, 20px)", color: "var(--blk-color, var(--gold))" }}>{t.closing}</div>
     ) : null,
   };
 

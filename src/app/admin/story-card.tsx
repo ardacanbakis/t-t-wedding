@@ -140,11 +140,13 @@ export function StoryCard({
   settings,
   onSaveSite,
   onSaveNightFrom,
+  onSaveShowLang,
   reloadSettings,
 }: {
   settings: SiteSettings;
   onSaveSite: (storyTr: Record<string, string>, storyEn: Record<string, string>) => Promise<void>;
   onSaveNightFrom: (n: string) => Promise<void>;
+  onSaveShowLang: (v: string) => Promise<void>;
   reloadSettings: () => Promise<void>;
 }) {
   const [chapters, setChapters] = useState<StoryChapter[]>([]);
@@ -154,6 +156,7 @@ export function StoryCard({
     setNfSeed(settings.nightFrom);
     setNightFrom(settings.nightFrom || "9");
   }
+  const showLang = settings.showLangPicker !== "false";
   const [openId, setOpenId] = useState<number | null>(null);
   const [tab, setTab] = useState<Lang>("tr");
   const [pending, setPending] = useState(false);
@@ -338,6 +341,15 @@ export function StoryCard({
               Everything before it shows the pink daylight background; from it on, the dark starry night. Counts shown
               chapters only.
             </div>
+            <label className="field-label">Language picker</label>
+            <button
+              className="mini-btn"
+              style={showLang ? { background: "var(--gold)", color: "#fffdf8", borderColor: "var(--gold)" } : undefined}
+              onClick={() => run(() => onSaveShowLang(showLang ? "false" : "true"))}
+              type="button"
+            >
+              {showLang ? "👁 Shown on the story site" : "🚫 Hidden"}
+            </button>
           </div>
         );
       })()}
@@ -425,7 +437,8 @@ export function StoryCard({
                         value={c.photo_layout}
                         onChange={(e) => patch(c.id, { photo_layout: e.target.value as PhotoLayout })}
                       >
-                        <option value="carousel">Carousel — tap left/right half or arrows</option>
+                        <option value="carousel">Carousel — framed, tap left/right half or arrows</option>
+                        <option value="carousel-bare">Carousel (bare) — native size, no white frame</option>
                         <option value="stack">Fanned stack — tap to bring forward</option>
                         <option value="grid">Grid — all at once</option>
                         <option value="single">Single (original) — whole photo, no white frame</option>

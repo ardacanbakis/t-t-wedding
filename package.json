@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node tools/write-story-config.mjs && next dev",
-    "build": "node tools/write-story-config.mjs && next build",
+    "build": "node tools/write-story-config.mjs && next build && node tools/write-og.mjs",
     "start": "next start"
   },
   "dependencies": {

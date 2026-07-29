@@ -41,6 +41,7 @@
   <button onClick="{{ showTimeline }}" style="font-family:'Mulish',sans-serif; font-weight:600; font-size:12px; letter-spacing:.16em; text-transform:uppercase; padding:10px 18px; border:none; border-radius:999px; cursor:pointer; transition:all .35s; background:{{ tlBg }}; color:{{ tlFg }};">{{ tNavTimeline }}</button>
 </div>
 
+<sc-if value="{{ showLang }}" hint-placeholder-val="{{ true }}">
 <div style="position:fixed; top:16px; left:16px; z-index:90;">
   <button onClick="{{ toggleSettings }}" title="Language · Dil" style="width:42px; height:42px; border-radius:50%; border:1px solid {{ navShellBorder }}; background:{{ navShellBg }}; backdrop-filter:blur(10px); color:{{ navFg }}; cursor:pointer; font-family:'Mulish',sans-serif; font-weight:600; font-size:11px; letter-spacing:.1em; box-shadow:0 10px 30px -14px rgba(40,26,20,.4); transition:all .4s ease;">{{ langLabel }}</button>
   <sc-if value="{{ settingsOpen }}" hint-placeholder-val="{{ false }}">
@@ -53,6 +54,7 @@
     </div>
   </sc-if>
 </div>
+</sc-if>
 
 <sc-if value="{{ showRail }}" hint-placeholder-val="{{ false }}">
   <div onMouseEnter="{{ railEnter }}" onMouseLeave="{{ railLeave }}" style="position:fixed; left:8px; top:50%; transform:translateY(-50%); height:min(72vh,640px); width:140px; z-index:40;">
@@ -181,9 +183,26 @@
                 <path d="M4 42 L100 4 L196 42" fill="none" stroke="#a83232" stroke-width="2" vector-effect="non-scaling-stroke"></path>
               </svg>
               <sc-if value="{{ ch.bare }}" hint-placeholder-val="{{ false }}">
-              <div style="position:relative; transform:rotate({{ ch.tilt }}deg);">
-                <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" style="display:block; width:{{ ch.frameW }}; height:auto; max-width:82vw; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
-                <sc-if value="{{ ch.cap }}" hint-placeholder-val="{{ false }}"><sc-if value="{{ ch.cap }}" hint-placeholder-val="{{ false }}"><div style="font-family:'Dancing Script',cursive; color:#8a6a4d; text-align:center; margin-top:12px; font-size:20px;">{{ ch.cap }}</div></sc-if></sc-if>
+              <div style="position:relative; text-align:center; transform:rotate({{ ch.tilt }}deg);">
+                <div style="position:relative; line-height:0; display:inline-block; max-width:100%;" onPointerDown="{{ ch.swipeDown }}">
+                  <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" style="display:block; width:{{ ch.frameW }}; height:auto; max-width:82vw; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
+                  <sc-if value="{{ ch.showNav }}" hint-placeholder-val="{{ false }}">
+                    <button onClick="{{ ch.prev }}" aria-label="Previous photo" style="position:absolute; left:0; top:0; width:50%; height:100%; border:0; background:transparent; padding:0 0 0 6px; cursor:pointer; z-index:4; display:flex; align-items:center; justify-content:flex-start;">
+                      <span style="width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:30px; text-align:center; display:block; pointer-events:none;">&lsaquo;</span>
+                    </button>
+                    <button onClick="{{ ch.next }}" aria-label="Next photo" style="position:absolute; right:0; top:0; width:50%; height:100%; border:0; background:transparent; padding:0 6px 0 0; cursor:pointer; z-index:4; display:flex; align-items:center; justify-content:flex-end;">
+                      <span style="width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:30px; text-align:center; display:block; pointer-events:none;">&rsaquo;</span>
+                    </button>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ ch.showDots }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; justify-content:center; gap:6px; margin-top:9px;">
+                    <sc-for list="{{ ch.dots }}" as="d" hint-placeholder-count="0">
+                      <span onClick="{{ d.go }}" style="{{ d.style }}"></span>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ ch.cap }}" hint-placeholder-val="{{ false }}"><div style="font-family:'Dancing Script',cursive; color:rgba(240,226,200,.9); text-align:center; margin-top:12px; font-size:20px;">{{ ch.cap }}</div></sc-if>
               </div>
               </sc-if>
               <sc-if value="{{ ch.matted }}" hint-placeholder-val="{{ true }}">
@@ -432,8 +451,25 @@
                 <path d="M4 42 L100 4 L196 42" fill="none" stroke="#a83232" stroke-width="2" vector-effect="non-scaling-stroke"></path>
               </svg>
               <sc-if value="{{ s.bare }}" hint-placeholder-val="{{ false }}">
-              <div style="position:relative; transform:rotate({{ s.tilt }}deg);">
-                <img src="{{ s.curSrc }}" alt="{{ s.alt }}" draggable="false" style="display:block; width:{{ s.frameW }}; height:auto; max-width:82vw; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
+              <div style="position:relative; text-align:center; transform:rotate({{ s.tilt }}deg);">
+                <div style="position:relative; line-height:0; display:inline-block; max-width:100%;" onPointerDown="{{ s.swipeDown }}">
+                  <img src="{{ s.curSrc }}" alt="{{ s.alt }}" draggable="false" style="display:block; width:auto; height:auto; max-width:82vw; max-height:46vh; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
+                  <sc-if value="{{ s.showNav }}" hint-placeholder-val="{{ false }}">
+                    <button onClick="{{ s.prev }}" aria-label="Previous photo" style="position:absolute; left:0; top:0; width:50%; height:100%; border:0; background:transparent; padding:0 0 0 6px; cursor:pointer; z-index:4; display:flex; align-items:center; justify-content:flex-start;">
+                      <span style="width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:30px; text-align:center; display:block; pointer-events:none;">&lsaquo;</span>
+                    </button>
+                    <button onClick="{{ s.next }}" aria-label="Next photo" style="position:absolute; right:0; top:0; width:50%; height:100%; border:0; background:transparent; padding:0 6px 0 0; cursor:pointer; z-index:4; display:flex; align-items:center; justify-content:flex-end;">
+                      <span style="width:32px; height:32px; border-radius:50%; border:1px solid rgba(191,155,95,.5); background:rgba(255,251,243,.85); color:#8a5a3b; font-family:'Playfair Display',serif; font-size:17px; line-height:30px; text-align:center; display:block; pointer-events:none;">&rsaquo;</span>
+                    </button>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ s.showDots }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; justify-content:center; gap:6px; margin-top:9px;">
+                    <sc-for list="{{ s.dots }}" as="d" hint-placeholder-count="0">
+                      <span onClick="{{ d.go }}" style="{{ d.style }}"></span>
+                    </sc-for>
+                  </div>
+                </sc-if>
               </div>
               </sc-if>
               <sc-if value="{{ s.matted }}" hint-placeholder-val="{{ true }}">
@@ -797,6 +833,7 @@ class Component extends DCLogic {
     // the ones before it, night the ones from it on — so add / reorder never
     // scrambles the scroll order.
     this._nightFrom = 9;
+    this._showLang = true;
     this._syncChapters();
   }
 
@@ -823,7 +860,7 @@ class Component extends DCLogic {
         this._chapters = rows.map((r) => ({
           slug: String(r.slug || ''),
           photos: Array.isArray(r.photos) ? r.photos.filter((x) => typeof x === 'string' && x.trim()) : [],
-          photoLayout: ['carousel', 'stack', 'grid', 'single'].indexOf(r.photo_layout) >= 0 ? r.photo_layout : 'carousel',
+          photoLayout: ['carousel', 'carousel-bare', 'stack', 'grid', 'single'].indexOf(r.photo_layout) >= 0 ? r.photo_layout : 'carousel',
           photoFit: r.photo_fit === 'contain' ? 'contain' : 'cover',
           tilt: typeof r.tilt === 'number' ? r.tilt : 0,
           visible: r.visible !== false,
@@ -837,6 +874,7 @@ class Component extends DCLogic {
         settings.forEach((row) => { map[row.key] = row.value; });
         const nf = parseInt(map.nightFrom, 10);
         if (Number.isFinite(nf) && nf >= 1) this._nightFrom = nf;
+        this._showLang = map.showLangPicker !== 'false';
         ['tr', 'en'].forEach((lang) => {
           const raw = map[lang === 'tr' ? 'storyTr' : 'storyEn'];
           if (!raw) return;
@@ -891,8 +929,13 @@ class Component extends DCLogic {
     // image at its natural aspect, no white mat, no arrows or dots. Honoured
     // even with a single photo (so it isn't collapsed into 'carousel').
     const single = c.photoLayout === 'single';
-    const layout = single ? 'single' : (n > 1 ? c.photoLayout : 'carousel');
-    const bare = single && n > 0;
+    // 'carousel-bare' shows several photos at native size/ratio (no white
+    // frame) with the same tap-left/right + dots navigation as the carousel.
+    const bareCarousel = c.photoLayout === 'carousel-bare';
+    const nativeOnly = single || bareCarousel;
+    const layout = nativeOnly ? c.photoLayout : (n > 1 ? c.photoLayout : 'carousel');
+    const bare = nativeOnly && n > 0;
+    const navLayout = layout === 'carousel' || layout === 'carousel-bare';
     const shown = single ? 0 : idx;
     let items = [];
     if (layout === 'stack') {
@@ -930,11 +973,11 @@ class Component extends DCLogic {
       empty: n === 0,
       curSrc: n ? url(c.photos[shown]) : '',
       items: items,
-      showNav: n > 1 && layout === 'carousel',
-      showDots: n > 1 && (layout === 'carousel' || layout === 'stack'),
+      showNav: n > 1 && navLayout,
+      showDots: n > 1 && (navLayout || layout === 'stack'),
       prev: () => this._setPhoto(c.slug, idx - 1, n),
       next: () => this._setPhoto(c.slug, idx + 1, n),
-      swipeDown: this._swipeHandler(c.slug, layout === 'carousel' ? n : 0),
+      swipeDown: this._swipeHandler(c.slug, navLayout ? n : 0),
       dots: c.photos.map((f, i) => ({
         go: () => this._setPhoto(c.slug, i, n),
         style: 'width:7px; height:7px; border-radius:50%; cursor:pointer; transition:all .25s;' +
@@ -1622,6 +1665,7 @@ class Component extends DCLogic {
         const idx = Math.min(n - 1, Math.max(0, activeCh - 1));
         this.setState({ view: 'timeline', tlIndex: idx, settingsOpen: false });
       },
+      showLang: this._showLang !== false,
       navFg: (isStory ? storyNight : tlNightNow) ? 'rgba(228,194,132,.9)' : '#8a5a3b',
       navShellBg: (isStory ? storyNight : tlNightNow) ? 'rgba(22,17,34,.55)' : 'rgba(255,251,243,.85)',
       navShellBorder: (isStory ? storyNight : tlNightNow) ? 'rgba(217,179,108,.3)' : 'rgba(191,155,95,.4)',
