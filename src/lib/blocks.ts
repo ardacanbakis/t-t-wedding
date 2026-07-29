@@ -33,6 +33,13 @@ export type BlockStyle = {
 export type Layout = {
   order: BlockId[];
   blocks: Record<BlockId, BlockStyle>;
+  /**
+   * Keys of GuestTexts the couple switched off. A hidden text renders as an
+   * empty string, which also drops the element that only carried it — finer
+   * grained than hiding a whole block (e.g. drop the "Dear" word but keep
+   * the guest's name).
+   */
+  hiddenTexts: string[];
 };
 
 export const BLOCK_LABELS: Record<BlockId, string> = {
@@ -81,6 +88,7 @@ function block(overrides: Partial<BlockStyle> = {}): BlockStyle {
 
 export const DEFAULT_LAYOUT: Layout = {
   order: DEFAULT_ORDER,
+  hiddenTexts: [],
   blocks: {
     kicker: block(),
     names: block(),
@@ -121,7 +129,11 @@ export function parseLayout(raw: string): Layout {
   }
   for (const id of DEFAULT_ORDER) if (!seen.has(id)) order.push(id);
 
-  return { order, blocks };
+  const hiddenTexts = Array.isArray(stored.hiddenTexts)
+    ? stored.hiddenTexts.filter((k): k is string => typeof k === "string")
+    : [];
+
+  return { order, blocks, hiddenTexts };
 }
 
 /** Wrapper style for one block. */

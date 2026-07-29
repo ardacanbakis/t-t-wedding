@@ -62,7 +62,8 @@ insert into public.settings (key, value) values
   ('schedule',     '14:30 | Nikah Töreni | Ceremony'),
   ('storyUrl',     '/story/'),
   ('coupleNames',  'Tansu & Arda'),
-  ('cardTilt',     '0')
+  ('cardTilt',     '0'),
+  ('dateStyle',    'date')
 on conflict do nothing;
 
 -- Story-site strings that don't belong to a single chapter (nav labels,
@@ -82,7 +83,7 @@ create table if not exists public.story_chapters (
   slug text not null unique,
   photos jsonb not null default '[]'::jsonb,
   photo_layout text not null default 'carousel'
-    check (photo_layout in ('carousel', 'stack', 'grid')),
+    check (photo_layout in ('carousel', 'stack', 'grid', 'single')),
   photo_fit text not null default 'cover'
     check (photo_fit in ('cover', 'contain')),
   tilt real not null default 0,
@@ -105,6 +106,11 @@ insert into public.story_chapters (position, slug, photos, photo_fit, tilt, nigh
   (9, 'c9', '["invitation.png"]'::jsonb, 'contain', -1.4, true, '{"nav":"Davetiye","kicker":"Dokuzuncu Bölüm","date":"Ad astra per aspera","title":"Davetiye","cap":"","body":"Hikâyemizi yıldızlara çizdik — tarot kartları, roketler, bir kara kedi ve bir küçük kedi — ve dünyaya gönderdik. Hecate ve Didi de tabii ki posterde: aileyi zaten onlar yönetiyor.","tl":"Yıldızlara çizilmiş hikâyemiz — posterde Hecate ve Didi ile."}'::jsonb, '{"nav":"Invite","kicker":"Chapter Nine","date":"Ad astra per aspera","title":"The Invitation","cap":"","body":"We drew our story in the stars — tarot cards, rockets, one black cat and one small one — and sent it out into the world. Hecate and Didi made the poster, of course. They practically run the family.","tl":"Our story drawn in the stars — with Hecate and Didi on the poster, naturally."}'::jsonb),
   (10, 'c10', '[]'::jsonb, 'cover', 1.8, true, '{"nav":"Düğün","kicker":"Onuncu Bölüm","date":"28 Haziran 2026","title":"Düğünümüz","cap":"en kolay evet","body":"Sıcak bir haziran öğleden sonrasında, sevdiğimiz herkesin arasında hayatımızın en kolay evet’ini söyledik. Yedi yılın küçük, sıradan mucizeleri; saat iki buçukta imzalandı ve mühürlendi.","tl":"Germencik Belediyesi, Aydın — hayatımızın en kolay evet’i."}'::jsonb, '{"nav":"Wedding","kicker":"Chapter Ten","date":"28 June 2026","title":"Our Wedding","cap":"the easiest yes","body":"On a warm June afternoon, surrounded by everyone we love, we said the easiest yes of our lives. Seven years of small ordinary miracles, signed and sealed at half past two.","tl":"Germencik Belediyesi, Aydın — the easiest yes of our lives."}'::jsonb)
 on conflict (slug) do nothing;
+
+-- Widen the photo layout check for projects created before 'single' existed.
+alter table public.story_chapters drop constraint if exists story_chapters_photo_layout_check;
+alter table public.story_chapters add constraint story_chapters_photo_layout_check
+  check (photo_layout in ('carousel', 'stack', 'grid', 'single'));
 
 -- ── Row Level Security ───────────────────────────────────────
 

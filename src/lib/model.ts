@@ -30,6 +30,8 @@ export type SiteSettings = {
   coupleNames: string;
   /** Rotation of the invitation card in degrees; 0 = perfectly straight */
   cardTilt: string;
+  /** What the Date block shows: "date" (default) or "datetime" */
+  dateStyle: string;
   /** JSON overrides of the guest-facing texts (see GuestTexts) */
   textsTr: string;
   textsEn: string;
@@ -44,7 +46,7 @@ export type SiteSettings = {
 };
 
 // ── Story / timeline ────────────────────────────────────────────────
-export type PhotoLayout = "carousel" | "stack" | "grid";
+export type PhotoLayout = "carousel" | "stack" | "grid" | "single";
 
 export type StoryChapterText = {
   nav: string;
@@ -87,7 +89,7 @@ export function normalizeChapter(row: Partial<StoryChapter>): StoryChapter {
     position: row.position ?? 0,
     slug: row.slug ?? "",
     photos: Array.isArray(row.photos) ? row.photos.filter((p) => typeof p === "string" && p.trim()) : [],
-    photo_layout: (["carousel", "stack", "grid"] as const).includes(row.photo_layout as PhotoLayout)
+    photo_layout: (["carousel", "stack", "grid", "single"] as const).includes(row.photo_layout as PhotoLayout)
       ? (row.photo_layout as PhotoLayout)
       : "carousel",
     photo_fit: row.photo_fit === "contain" ? "contain" : "cover",
@@ -111,6 +113,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   storyUrl: "/story/",
   coupleNames: "Tansu & Arda",
   cardTilt: "0",
+  dateStyle: "date",
   textsTr: "",
   textsEn: "",
   layout: "",
