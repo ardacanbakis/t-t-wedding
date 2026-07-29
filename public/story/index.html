@@ -180,6 +180,13 @@
               <svg viewBox="0 0 200 40" preserveAspectRatio="none" style="position:absolute; top:-14px; left:2%; width:96%; height:44px; z-index:0;">
                 <path d="M4 42 L100 4 L196 42" fill="none" stroke="#a83232" stroke-width="2" vector-effect="non-scaling-stroke"></path>
               </svg>
+              <sc-if value="{{ ch.bare }}" hint-placeholder-val="{{ false }}">
+              <div style="position:relative; transform:rotate({{ ch.tilt }}deg);">
+                <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" style="display:block; width:{{ ch.frameW }}; height:auto; max-width:82vw; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
+                <sc-if value="{{ ch.cap }}" hint-placeholder-val="{{ false }}"><div style="font-family:'Dancing Script',cursive; color:#8a6a4d; text-align:center; margin-top:12px; font-size:20px;">{{ ch.cap }}</div></sc-if>
+              </div>
+              </sc-if>
+              <sc-if value="{{ ch.matted }}" hint-placeholder-val="{{ true }}">
               <div style="position:relative; background:#fffdf8; padding:14px 14px 46px; border-radius:5px; box-shadow:0 8px 22px -12px rgba(120,72,40,.3), 0 26px 62px -22px rgba(120,72,40,.38); transform:rotate({{ ch.tilt }}deg);">
                 <div style="position:relative; width:{{ ch.frameW }}; height:{{ ch.frameH }}; overflow:hidden; border-radius:4px; background:rgba(0,0,0,.04);" onPointerDown="{{ ch.swipeDown }}">
                   <sc-if value="{{ ch.isCarousel }}" hint-placeholder-val="{{ true }}">
@@ -218,6 +225,7 @@
                 </sc-if>
                 <div style="font-family:'Dancing Script',cursive; color:#8a6a4d; text-align:center; margin-top:12px; font-size:20px;">{{ ch.cap }}</div>
               </div>
+              </sc-if>
             </div>
             <svg width="18" height="18" viewBox="0 0 18 18" style="position:absolute; top:-22px; left:50%; transform:translateX(-50%); z-index:3; overflow:visible;">
               <circle cx="9" cy="9" r="5.6" fill="#c9a24e"></circle>
@@ -259,7 +267,14 @@
                 <svg viewBox="0 0 200 40" preserveAspectRatio="none" style="position:absolute; top:-14px; left:2%; width:96%; height:44px; z-index:0;">
                   <path d="M4 42 L100 4 L196 42" fill="none" stroke="#a83232" stroke-width="2" vector-effect="non-scaling-stroke"></path>
                 </svg>
-                <div style="position:relative; background:#fffdf8; padding:14px 14px 46px; border-radius:5px; box-shadow:0 0 0 1px rgba(217,179,108,.35), 0 34px 80px -20px rgba(0,0,0,.6); transform:rotate({{ ch.tilt }}deg);">
+                <sc-if value="{{ ch.bare }}" hint-placeholder-val="{{ false }}">
+              <div style="position:relative; transform:rotate({{ ch.tilt }}deg);">
+                <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" style="display:block; width:{{ ch.frameW }}; height:auto; max-width:82vw; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
+                <sc-if value="{{ ch.cap }}" hint-placeholder-val="{{ false }}"><div style="font-family:'Dancing Script',cursive; color:rgba(240,226,200,.9); text-align:center; margin-top:12px; font-size:20px;">{{ ch.cap }}</div></sc-if>
+              </div>
+              </sc-if>
+              <sc-if value="{{ ch.matted }}" hint-placeholder-val="{{ true }}">
+              <div style="position:relative; background:#fffdf8; padding:14px 14px 46px; border-radius:5px; box-shadow:0 0 0 1px rgba(217,179,108,.35), 0 34px 80px -20px rgba(0,0,0,.6); transform:rotate({{ ch.tilt }}deg);">
                   <div style="position:relative; width:{{ ch.frameW }}; height:{{ ch.frameH }}; overflow:hidden; border-radius:4px; background:rgba(0,0,0,.04);" onPointerDown="{{ ch.swipeDown }}">
                   <sc-if value="{{ ch.isCarousel }}" hint-placeholder-val="{{ true }}">
                     <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" style="width:100%; height:100%; object-fit:{{ ch.fit }}; display:block; user-select:none;">
@@ -297,6 +312,7 @@
                 </sc-if>
                   <div style="font-family:'Dancing Script',cursive; color:#8a6a4d; text-align:center; margin-top:12px; font-size:20px;">{{ ch.cap }}</div>
                 </div>
+              </sc-if>
               </div>
               <svg width="18" height="18" viewBox="0 0 18 18" style="position:absolute; top:-22px; left:50%; transform:translateX(-50%); z-index:3; overflow:visible;">
                 <circle cx="9" cy="9" r="5.6" fill="#c9a24e"></circle>
@@ -415,6 +431,12 @@
               <svg viewBox="0 0 200 40" preserveAspectRatio="none" style="position:absolute; top:-14px; left:2%; width:96%; height:44px; z-index:0;">
                 <path d="M4 42 L100 4 L196 42" fill="none" stroke="#a83232" stroke-width="2" vector-effect="non-scaling-stroke"></path>
               </svg>
+              <sc-if value="{{ s.bare }}" hint-placeholder-val="{{ false }}">
+              <div style="position:relative; transform:rotate({{ s.tilt }}deg);">
+                <img src="{{ s.curSrc }}" alt="{{ s.alt }}" draggable="false" style="display:block; width:{{ s.frameW }}; height:auto; max-width:82vw; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
+              </div>
+              </sc-if>
+              <sc-if value="{{ s.matted }}" hint-placeholder-val="{{ true }}">
               <div style="position:relative; background:#fffdf8; padding:12px 12px 32px; border-radius:6px; box-shadow:0 28px 64px -24px rgba(60,36,20,.45); transform:rotate({{ s.tilt }}deg);">
                 <div style="position:relative; width:{{ s.frameW }}; height:{{ s.frameH }}; overflow:hidden; border-radius:4px; background:rgba(0,0,0,.04);" onPointerDown="{{ s.swipeDown }}">
                   <sc-if value="{{ s.isCarousel }}" hint-placeholder-val="{{ true }}">
@@ -452,6 +474,7 @@
                   </div>
                 </sc-if>
               </div>
+              </sc-if>
             </div>
             <svg width="18" height="18" viewBox="0 0 18 18" style="position:absolute; top:-22px; left:50%; transform:translateX(-50%); z-index:3; overflow:visible;">
               <circle cx="9" cy="9" r="5.6" fill="#c9a24e"></circle>
@@ -857,10 +880,12 @@ class Component extends DCLogic {
     const n = c.photos.length;
     const idx = Math.min(this._photoAt(c.slug), Math.max(0, n - 1));
     const url = (f) => /^(https?:|assets\/|data:)/.test(f) ? f : 'assets/' + f;
-    // 'single' keeps the original pre-multi-photo look: the first photo
-    // filling the frame, with no arrows or dots.
-    const layout = n > 1 ? c.photoLayout : 'carousel';
-    const single = layout === 'single';
+    // 'single' reproduces the original pre-multi-photo look: the whole
+    // image at its natural aspect, no white mat, no arrows or dots. Honoured
+    // even with a single photo (so it isn't collapsed into 'carousel').
+    const single = c.photoLayout === 'single';
+    const layout = single ? 'single' : (n > 1 ? c.photoLayout : 'carousel');
+    const bare = single && n > 0;
     const shown = single ? 0 : idx;
     let items = [];
     if (layout === 'stack') {
@@ -890,7 +915,9 @@ class Component extends DCLogic {
     }
     return {
       frameW: w, frameH: h, fit: c.photoFit,
-      isCarousel: n > 0 && (layout === 'carousel' || single),
+      matted: !bare,
+      bare: bare,
+      isCarousel: n > 0 && layout === 'carousel',
       isStack: n > 0 && layout === 'stack',
       isGrid: n > 0 && layout === 'grid',
       empty: n === 0,
