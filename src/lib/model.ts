@@ -3,6 +3,36 @@
 
 import { defaultTexts, type GuestTexts, type Lang } from "./i18n";
 
+// ── General (universal, no-RSVP) invitation texts ───────────────────
+export type GeneralTexts = {
+  welcome: string;
+  yes: string;
+  thanks: string;
+  replyNote: string;
+};
+
+export const defaultGeneral: Record<Lang, GeneralTexts> = {
+  tr: {
+    welcome: "Sizi düğünümüzde aramızda görmek isteriz.",
+    yes: "Geleceğim 🎉",
+    thanks: "Harika — sizi bekliyoruz! 💛",
+    replyNote: "Geleceğinizi bize bir mesajla da bildirmeyi unutmayın 💌",
+  },
+  en: {
+    welcome: "We would love to have you with us on our wedding day.",
+    yes: "I'll be there 🎉",
+    thanks: "Wonderful — we can't wait to see you! 💛",
+    replyNote: "Don't forget to drop us a message to let us know you're coming 💌",
+  },
+};
+
+export const GENERAL_FIELDS: { key: keyof GeneralTexts; label: string; multiline?: boolean }[] = [
+  { key: "welcome", label: "Welcome line (in place of the personal greeting)", multiline: true },
+  { key: "yes", label: "“I'll be there” button" },
+  { key: "thanks", label: "Message after they tap the button" },
+  { key: "replyNote", label: "Reply-to-us note", multiline: true },
+];
+
 export type Invitation = {
   id: number;
   token: string;
@@ -43,6 +73,11 @@ export type SiteSettings = {
   /** JSON overrides of the story site's non-chapter strings */
   storyTr: string;
   storyEn: string;
+  /** 1-based chapter index where the pink day background turns to night */
+  nightFrom: string;
+  /** JSON overrides of the general (universal) invitation texts */
+  generalTr: string;
+  generalEn: string;
 };
 
 // ── Story / timeline ────────────────────────────────────────────────
@@ -121,7 +156,25 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   varsEn: "",
   storyTr: "",
   storyEn: "",
+  nightFrom: "9",
+  generalTr: "",
+  generalEn: "",
 };
+
+/** General invitation texts for a language: overrides merged over defaults. */
+export function mergeGeneral(lang: Lang, s: SiteSettings): GeneralTexts {
+  const raw = lang === "tr" ? s.generalTr : s.generalEn;
+  let overrides: Partial<GeneralTexts> = {};
+  try {
+    if (raw) overrides = JSON.parse(raw);
+  } catch {}
+  const merged: GeneralTexts = { ...defaultGeneral[lang] };
+  for (const k of Object.keys(merged) as (keyof GeneralTexts)[]) {
+    const v = overrides[k];
+    if (typeof v === "string" && v.trim() !== "") merged[k] = v;
+  }
+  return merged;
+}
 
 /** Custom {placeholder} values defined in the dashboard, per language. */
 export function parseVars(raw: string): Record<string, string> {

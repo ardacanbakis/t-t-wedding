@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { blockStyle, parseLayout, type BlockId } from "@/lib/blocks";
 import { fmt, formatDeadline, formatEventDate, type GuestTexts, type Lang } from "@/lib/i18n";
-import { mergeTexts, parseSchedule, parseVars, type SiteSettings } from "@/lib/model";
+import { mergeGeneral, mergeTexts, parseSchedule, parseVars, type GeneralTexts, type SiteSettings } from "@/lib/model";
 import { getSupabase, withBase } from "@/lib/supabase";
 
 type Props = {
@@ -16,6 +16,9 @@ type Props = {
   personalNote: string | null;
   locked: boolean;
   settings: SiteSettings;
+  /** "general" = the universal no-RSVP link; hides RSVP, shows a light-touch
+   *  positive-response button + reply note, and tracks opens/clicks. */
+  mode?: "personal" | "general";
 };
 
 /** Red thread + gold pin, same motif the timeline hangs its polaroids on */
@@ -199,6 +202,70 @@ export function InviteView(props: Props) {
     }
   };
 
+  // ── General (universal) mode ──
+  const isGeneral = props.mode === "general";
+  const g: GeneralTexts = useMemo(() => mergeGeneral(lang, s), [lang, s]);
+  const [gYes, setGYes] = useState(false);
+
+  // Count an "open" once per browser (a refresh doesn't inflate it).
+  useEffect(() => {
+    if (!isGeneral) return;
+    try {
+      if (localStorage.getItem("tt-general-opened")) return;
+      localStorage.setItem("tt-general-opened", "1");
+    } catch {}
+    getSupabase()
+      .rpc("general_track", { p_kind: "opens" })
+      .then(() => {}, () => {});
+  }, [isGeneral]);
+
+  const sayYes = async () => {
+    if (gYes) return;
+    setGYes(true); // optimistic + guards against a second click
+    try {
+      await getSupabase().rpc("general_track", { p_kind: "yes" });
+    } catch {}
+  };
+
+  const generalBlock: ReactNode = (
+    <div style={{ textAlign: "center", maxWidth: 440, margin: "0 auto" }}>
+      {gYes ? (
+        <div
+          style={{
+            background: "rgba(108,122,69,.12)",
+            border: "1px solid rgba(108,122,69,.3)",
+            borderRadius: 12,
+            padding: "14px 18px",
+            fontFamily: "var(--sans)",
+            fontSize: 15,
+            color: "#55632f",
+          }}
+        >
+          {g.thanks}
+        </div>
+      ) : (
+        <button className="submit-btn" onClick={sayYes} type="button" style={{ fontSize: 15 }}>
+          {g.yes}
+        </button>
+      )}
+      {g.replyNote && (
+        <div
+          style={{
+            fontFamily: "var(--sans)",
+            fontWeight: 300,
+            fontSize: 13,
+            lineHeight: 1.7,
+            color: "var(--brown-soft)",
+            marginTop: 16,
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {g.replyNote}
+        </div>
+      )}
+    </div>
+  );
+
   // ── Blocks. Each returns null when it has nothing to show, so an empty
   // schedule or a guest without a personal message doesn't leave a gap.
   const rsvpBlock: ReactNode = props.locked ? (
@@ -357,7 +424,13 @@ export function InviteView(props: Props) {
       </h1>
     ),
     dividerTop: <Divider />,
-    greeting: (
+    greeting: isGeneral ? (
+      g.welcome ? (
+        <p style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 16, lineHeight: 1.8, color: "var(--brown-mid)", margin: 0, whiteSpace: "pre-wrap" }}>
+          {g.welcome}
+        </p>
+      ) : null
+    ) : (
       <p style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 16, lineHeight: 1.8, color: "var(--brown-mid)", margin: 0 }}>
         {t.dear && <span style={{ fontFamily: "var(--script)", fontSize: 22, color: "var(--gold)" }}>{t.dear} </span>}
         <strong style={{ fontWeight: 600, color: "var(--brown)" }}>{props.guestName}</strong>
@@ -437,7 +510,7 @@ export function InviteView(props: Props) {
       </>
     ) : null,
     dividerBottom: <Divider beating />,
-    rsvp: rsvpBlock,
+    rsvp: isGeneral ? generalBlock : rsvpBlock,
     closing: t.closing ? (
       <div style={{ fontFamily: "var(--script)", fontSize: 20, color: "var(--gold)" }}>{t.closing}</div>
     ) : null,

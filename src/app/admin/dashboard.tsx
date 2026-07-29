@@ -11,19 +11,22 @@ import {
   type Invitation,
   type SiteSettings,
 } from "@/lib/model";
+import type { GeneralTexts } from "@/lib/model";
 import { parseLayout, type Layout } from "@/lib/blocks";
 import { BASE_PATH, getSupabase } from "@/lib/supabase";
+import { GeneralCard } from "./general-card";
 import { LayoutCard } from "./layout-card";
 import { StoryCard } from "./story-card";
 import { TextsCard } from "./texts-card";
 import { VarsCard } from "./vars-card";
 
-type Tab = "invitations" | "styling" | "story";
+type Tab = "invitations" | "styling" | "story" | "general";
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "invitations", label: "Invitations" },
-  { id: "styling", label: "Invitation styling" },
-  { id: "story", label: "Story & timeline" },
+  { id: "invitations", label: "INVITATIONS" },
+  { id: "styling", label: "INVITATION STYLING" },
+  { id: "story", label: "STORY & TIMELINE" },
+  { id: "general", label: "GENERAL INVITATION" },
 ];
 
 type Filter = "all" | "accepted" | "declined" | "pending";
@@ -222,7 +225,18 @@ export function Dashboard() {
 
   // Keys owned by their own editor cards — the Settings button must not
   // write them back from this component's (possibly stale) copy.
-  const CARD_OWNED = ["textsTr", "textsEn", "layout", "varsTr", "varsEn", "storyTr", "storyEn"];
+  const CARD_OWNED = [
+    "textsTr",
+    "textsEn",
+    "layout",
+    "varsTr",
+    "varsEn",
+    "storyTr",
+    "storyEn",
+    "nightFrom",
+    "generalTr",
+    "generalEn",
+  ];
 
   const saveSettingRows = async (rows: { key: string; value: string }[]) => {
     const { error } = await getSupabase().from("settings").upsert(rows, { onConflict: "key" });
@@ -270,6 +284,19 @@ export function Dashboard() {
       { key: "storyEn", value: JSON.stringify(storyEn) },
     ]);
   };
+
+  const doSaveNightFrom = async (nightFrom: string) => {
+    await saveSettingRows([{ key: "nightFrom", value: nightFrom }]);
+    setS((prev) => ({ ...prev, nightFrom }));
+  };
+
+  const doSaveGeneral = (generalTr: GeneralTexts, generalEn: GeneralTexts) =>
+    run(async () => {
+      await saveSettingRows([
+        { key: "generalTr", value: JSON.stringify(generalTr) },
+        { key: "generalEn", value: JSON.stringify(generalEn) },
+      ]);
+    });
 
   const doDownloadCsv = () => {
     const blob = new Blob([toCsv(invitations)], { type: "text/csv;charset=utf-8" });
@@ -594,8 +621,14 @@ export function Dashboard() {
   </>
       )}
       {tab === "story" && (
-      <StoryCard settings={s} onSaveSite={doSaveStorySite} reloadSettings={reload} />
+      <StoryCard
+        settings={s}
+        onSaveSite={doSaveStorySite}
+        onSaveNightFrom={doSaveNightFrom}
+        reloadSettings={reload}
+      />
       )}
+      {tab === "general" && <GeneralCard settings={s} onSave={doSaveGeneral} pending={pending} />}
     </div>
   );
 }

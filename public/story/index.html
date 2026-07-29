@@ -42,7 +42,7 @@
 </div>
 
 <div style="position:fixed; top:16px; left:16px; z-index:90;">
-  <button onClick="{{ toggleSettings }}" title="Language · Dil" style="width:42px; height:42px; border-radius:50%; border:1px solid rgba(191,155,95,.4); background:rgba(255,251,243,.85); backdrop-filter:blur(10px); color:#8a5a3b; cursor:pointer; font-family:'Mulish',sans-serif; font-weight:600; font-size:11px; letter-spacing:.1em; box-shadow:0 10px 30px -14px rgba(120,72,40,.45); transition:all .3s;" style-hover="background:rgba(191,155,95,.18)">{{ langLabel }}</button>
+  <button onClick="{{ toggleSettings }}" title="Language · Dil" style="width:42px; height:42px; border-radius:50%; border:1px solid {{ navShellBorder }}; background:{{ navShellBg }}; backdrop-filter:blur(10px); color:{{ navFg }}; cursor:pointer; font-family:'Mulish',sans-serif; font-weight:600; font-size:11px; letter-spacing:.1em; box-shadow:0 10px 30px -14px rgba(40,26,20,.4); transition:all .4s ease;">{{ langLabel }}</button>
   <sc-if value="{{ settingsOpen }}" hint-placeholder-val="{{ false }}">
     <div style="position:absolute; top:50px; left:0; background:rgba(255,251,243,.97); border:1px solid rgba(191,155,95,.35); border-radius:14px; padding:14px 16px 16px; box-shadow:0 18px 44px -18px rgba(120,72,40,.5); min-width:170px; animation:viewIn .25s ease both;">
       <div style="font-family:'Mulish',sans-serif; font-weight:600; font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:#8a5a3b; margin-bottom:10px;">Language · Dil</div>
@@ -121,7 +121,7 @@
 </sc-if>
 
 <sc-if value="{{ showTopBtn }}" hint-placeholder-val="{{ false }}">
-  <button onClick="{{ goTop }}" title="{{ tTop }}" style="position:fixed; right:18px; bottom:18px; z-index:85; width:52px; height:52px; border-radius:50%; border:1px solid rgba(191,155,95,.45); background:rgba(255,251,243,.9); backdrop-filter:blur(8px); cursor:pointer; box-shadow:0 12px 32px -14px rgba(120,72,40,.5); display:flex; align-items:center; justify-content:center; animation:viewIn .3s ease both;">
+  <button onClick="{{ goTop }}" title="{{ tTop }}" style="position:fixed; right:18px; bottom:18px; z-index:85; width:52px; height:52px; border-radius:50%; border:1px solid {{ navShellBorder }}; background:{{ navShellBg }}; backdrop-filter:blur(10px); cursor:pointer; box-shadow:0 10px 30px -14px rgba(40,26,20,.4); display:flex; align-items:center; justify-content:center; animation:viewIn .3s ease both; transition:background .4s ease, border-color .4s ease;">
     <span style="font-size:20px; color:#d47f8a; display:inline-block; animation:heartBeat 1.6s ease-in-out infinite; line-height:1;">♥</span>
   </button>
 </sc-if>
@@ -183,11 +183,11 @@
               <sc-if value="{{ ch.bare }}" hint-placeholder-val="{{ false }}">
               <div style="position:relative; transform:rotate({{ ch.tilt }}deg);">
                 <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" style="display:block; width:{{ ch.frameW }}; height:auto; max-width:82vw; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
-                <sc-if value="{{ ch.cap }}" hint-placeholder-val="{{ false }}"><div style="font-family:'Dancing Script',cursive; color:#8a6a4d; text-align:center; margin-top:12px; font-size:20px;">{{ ch.cap }}</div></sc-if>
+                <sc-if value="{{ ch.cap }}" hint-placeholder-val="{{ false }}"><sc-if value="{{ ch.cap }}" hint-placeholder-val="{{ false }}"><div style="font-family:'Dancing Script',cursive; color:#8a6a4d; text-align:center; margin-top:12px; font-size:20px;">{{ ch.cap }}</div></sc-if></sc-if>
               </div>
               </sc-if>
               <sc-if value="{{ ch.matted }}" hint-placeholder-val="{{ true }}">
-              <div style="position:relative; background:#fffdf8; padding:14px 14px 46px; border-radius:5px; box-shadow:0 8px 22px -12px rgba(120,72,40,.3), 0 26px 62px -22px rgba(120,72,40,.38); transform:rotate({{ ch.tilt }}deg);">
+              <div style="position:relative; background:#fffdf8; padding:{{ ch.matPad }}; border-radius:5px; box-shadow:0 8px 22px -12px rgba(120,72,40,.3), 0 26px 62px -22px rgba(120,72,40,.38); transform:rotate({{ ch.tilt }}deg);">
                 <div style="position:relative; width:{{ ch.frameW }}; height:{{ ch.frameH }}; overflow:hidden; border-radius:4px; background:rgba(0,0,0,.04);" onPointerDown="{{ ch.swipeDown }}">
                   <sc-if value="{{ ch.isCarousel }}" hint-placeholder-val="{{ true }}">
                     <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" style="width:100%; height:100%; object-fit:{{ ch.fit }}; display:block; user-select:none;">
@@ -223,7 +223,7 @@
                     </sc-for>
                   </div>
                 </sc-if>
-                <div style="font-family:'Dancing Script',cursive; color:#8a6a4d; text-align:center; margin-top:12px; font-size:20px;">{{ ch.cap }}</div>
+                <sc-if value="{{ ch.cap }}" hint-placeholder-val="{{ false }}"><div style="font-family:'Dancing Script',cursive; color:#8a6a4d; text-align:center; margin-top:12px; font-size:20px;">{{ ch.cap }}</div></sc-if>
               </div>
               </sc-if>
             </div>
@@ -234,7 +234,7 @@
           </div>
         </div>
         <div style="flex:1 1 360px; min-width:280px; position:relative; padding-top:34px;">
-          <div style="position:absolute; top:-28px; left:-14px; font-family:'Playfair Display',serif; font-weight:700; font-size:clamp(90px,10vw,132px); color:rgba(191,155,95,.15); line-height:1; pointer-events:none; user-select:none;">{{ ch.num }}</div>
+          
           <div style="position:relative; font-family:'Mulish',sans-serif; font-weight:600; font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:#bf9b5f;">{{ ch.kicker }}</div>
           <div style="font-family:'Dancing Script',cursive; font-size:clamp(28px,4vw,40px); color:#bf9b5f; margin-top:8px;">{{ ch.date }}</div>
           <h2 style="font-family:'Playfair Display',serif; font-size:clamp(32px,4.6vw,48px); font-weight:600; color:#4a3226; margin:6px 0 0;">{{ ch.title }}</h2>
@@ -274,7 +274,7 @@
               </div>
               </sc-if>
               <sc-if value="{{ ch.matted }}" hint-placeholder-val="{{ true }}">
-              <div style="position:relative; background:#fffdf8; padding:14px 14px 46px; border-radius:5px; box-shadow:0 0 0 1px rgba(217,179,108,.35), 0 34px 80px -20px rgba(0,0,0,.6); transform:rotate({{ ch.tilt }}deg);">
+              <div style="position:relative; background:#fffdf8; padding:{{ ch.matPad }}; border-radius:5px; box-shadow:0 0 0 1px rgba(217,179,108,.35), 0 34px 80px -20px rgba(0,0,0,.6); transform:rotate({{ ch.tilt }}deg);">
                   <div style="position:relative; width:{{ ch.frameW }}; height:{{ ch.frameH }}; overflow:hidden; border-radius:4px; background:rgba(0,0,0,.04);" onPointerDown="{{ ch.swipeDown }}">
                   <sc-if value="{{ ch.isCarousel }}" hint-placeholder-val="{{ true }}">
                     <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" style="width:100%; height:100%; object-fit:{{ ch.fit }}; display:block; user-select:none;">
@@ -310,7 +310,7 @@
                     </sc-for>
                   </div>
                 </sc-if>
-                  <div style="font-family:'Dancing Script',cursive; color:#8a6a4d; text-align:center; margin-top:12px; font-size:20px;">{{ ch.cap }}</div>
+                  <sc-if value="{{ ch.cap }}" hint-placeholder-val="{{ false }}"><div style="font-family:'Dancing Script',cursive; color:#8a6a4d; text-align:center; margin-top:12px; font-size:20px;">{{ ch.cap }}</div></sc-if>
                 </div>
               </sc-if>
               </div>
@@ -321,7 +321,7 @@
             </div>
           </div>
           <div style="flex:1 1 340px; min-width:280px; position:relative; padding-top:34px;">
-            <div style="position:absolute; top:-28px; left:-14px; font-family:'Playfair Display',serif; font-weight:700; font-size:clamp(90px,10vw,132px); color:rgba(233,205,140,.1); line-height:1; pointer-events:none; user-select:none;">{{ ch.num }}</div>
+            
             <div style="position:relative; font-family:'Mulish',sans-serif; font-weight:600; font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:#d9b36c;">{{ ch.kicker }}</div>
             <div style="font-family:'Dancing Script',cursive; font-size:clamp(28px,4vw,40px); color:#e4c284; margin-top:8px;">{{ ch.date }}</div>
             <h2 style="font-family:'Playfair Display',serif; font-size:clamp(32px,4.6vw,48px); font-weight:600; color:#f0e2c8; margin:6px 0 0;">{{ ch.title }}</h2>
@@ -332,7 +332,7 @@
       </section>
     </sc-for>
 
-    <section id="c11" data-screen-label="11 · To Be Continued" style="position:relative; min-height:92vh; display:flex; align-items:center; justify-content:center; text-align:center; padding:100px 24px 48px;">
+    <section id="finale" data-screen-label="To Be Continued" style="position:relative; min-height:92vh; display:flex; align-items:center; justify-content:center; text-align:center; padding:100px 24px 48px;">
       <div data-reveal="1" style="position:relative; z-index:2; max-width:640px; display:flex; flex-direction:column; align-items:center; gap:8px;">
         <div style="display:flex; align-items:center; justify-content:center; gap:14px; width:min(360px,70vw); margin-bottom:14px;">
           <div style="flex:1; height:1px; background:linear-gradient(90deg, transparent, #d9b36c);"></div>
@@ -437,7 +437,7 @@
               </div>
               </sc-if>
               <sc-if value="{{ s.matted }}" hint-placeholder-val="{{ true }}">
-              <div style="position:relative; background:#fffdf8; padding:12px 12px 32px; border-radius:6px; box-shadow:0 28px 64px -24px rgba(60,36,20,.45); transform:rotate({{ s.tilt }}deg);">
+              <div style="position:relative; background:#fffdf8; padding:12px; border-radius:6px; box-shadow:0 28px 64px -24px rgba(60,36,20,.45); transform:rotate({{ s.tilt }}deg);">
                 <div style="position:relative; width:{{ s.frameW }}; height:{{ s.frameH }}; overflow:hidden; border-radius:4px; background:rgba(0,0,0,.04);" onPointerDown="{{ s.swipeDown }}">
                   <sc-if value="{{ s.isCarousel }}" hint-placeholder-val="{{ true }}">
                     <img src="{{ s.curSrc }}" alt="{{ s.alt }}" draggable="false" style="width:100%; height:100%; object-fit:{{ s.fit }}; display:block; user-select:none;">
@@ -792,13 +792,18 @@ class Component extends DCLogic {
       tr: Object.assign({ navStart: this._L.tr.nav[0], navEnd: this._L.tr.nav[11] }, this._L.tr),
       en: Object.assign({ navStart: this._L.en.nav[0], navEnd: this._L.en.nav[11] }, this._L.en)
     };
+    // 1-based chapter index at which the pink day background gives way to the
+    // starry night. Editable in the admin dashboard. Day chapters are always
+    // the ones before it, night the ones from it on — so add / reorder never
+    // scrambles the scroll order.
+    this._nightFrom = 9;
     this._syncChapters();
   }
 
   // Rebuild the id list the rail and scroll-spy work from.
   _syncChapters() {
     this._visible = this._chapters.filter((c) => c.visible !== false);
-    this._chIds = ['hero'].concat(this._visible.map((c) => c.slug)).concat(['c11']);
+    this._chIds = ['hero'].concat(this._visible.map((c) => c.slug)).concat(['finale']);
   }
 
   // Chapters and story wording come from Supabase when it is configured, so
@@ -830,6 +835,8 @@ class Component extends DCLogic {
       if (Array.isArray(settings)) {
         const map = {};
         settings.forEach((row) => { map[row.key] = row.value; });
+        const nf = parseInt(map.nightFrom, 10);
+        if (Number.isFinite(nf) && nf >= 1) this._nightFrom = nf;
         ['tr', 'en'].forEach((lang) => {
           const raw = map[lang === 'tr' ? 'storyTr' : 'storyEn'];
           if (!raw) return;
@@ -1511,8 +1518,11 @@ class Component extends DCLogic {
     const T = (c) => (c && (c[lang] || c.tr)) || {};
     const isStory = view === 'story';
     const n = list.length;
-    const nightAt = list.findIndex((c) => c.night);
-    const storyNight = nightAt >= 0 && activeCh >= nightAt + 1;
+    // A chapter is 'night' by its position, not a per-row flag: everything
+    // from nightFrom onward. Clamp so the value is always sane.
+    const nightFrom = Math.max(1, Math.min(n + 1, this._nightFrom || 9));
+    const isNight = (i) => (i + 1) >= nightFrom;
+    const storyNight = activeCh >= nightFrom;
     const tlNightNow = true;
     const pad = (i) => String(i + 1).padStart(2, '0');
 
@@ -1540,6 +1550,7 @@ class Component extends DCLogic {
         dir: i % 2 === 0 ? 'row' : 'row-reverse',
         bg: this._dayBgs[Math.min(Math.max(dayIndex, 0), this._dayBgs.length - 1)],
         tilt: c.tilt, alt: t.title || '', ph: t.cap || t.title || '',
+        matPad: t.cap ? '14px 14px 46px' : '14px',
         kicker: t.kicker, date: t.date, title: t.title, cap: t.cap, body: t.body
       }, this._photoProps(c, 'min(400px,74vw)', '300px'));
     };
@@ -1548,7 +1559,7 @@ class Component extends DCLogic {
     const dayChapters = [];
     const nightChapters = [];
     list.forEach((c, i) => {
-      if (c.night) { nightChapters.push(section(c, i, dayI)); }
+      if (isNight(i)) { nightChapters.push(section(c, i, dayI)); }
       else { dayI++; dayChapters.push(section(c, i, dayI)); }
     });
 
@@ -1556,7 +1567,7 @@ class Component extends DCLogic {
       'radial-gradient(1.4px 1.4px at 18% 24%, rgba(233,205,140,.9), transparent 55%), radial-gradient(1.2px 1.2px at 74% 14%, rgba(233,205,140,.75), transparent 55%), radial-gradient(1.6px 1.6px at 86% 62%, rgba(233,205,140,.7), transparent 55%), radial-gradient(1.1px 1.1px at 32% 78%, rgba(233,205,140,.6), transparent 55%), radial-gradient(1100px 620px at 70% 26%, rgba(96,72,140,.35), transparent 62%), radial-gradient(900px 520px at 26% 58%, rgba(120,84,150,.22), transparent 65%), linear-gradient(180deg, #2a2140 0%, #191428 46%, #14101f 78%, #1c1631 100%)',
       'radial-gradient(1.5px 1.5px at 12% 34%, rgba(233,205,140,.85), transparent 55%), radial-gradient(1.2px 1.2px at 64% 20%, rgba(233,205,140,.7), transparent 55%), radial-gradient(1.4px 1.4px at 88% 74%, rgba(233,205,140,.65), transparent 55%), radial-gradient(1.1px 1.1px at 40% 86%, rgba(233,205,140,.55), transparent 55%), radial-gradient(900px 500px at 30% 10%, rgba(120,84,140,.3), transparent 62%), radial-gradient(1100px 620px at 70% 40%, rgba(96,72,140,.28), transparent 65%), linear-gradient(180deg, #2a2140 0%, #191428 40%, #14101f 72%, #1c1631 100%)'
     ];
-    const tlBackdrops = list.map((c) => tlNight[c.night ? 1 : 0]);
+    const tlBackdrops = list.map((c, i) => tlNight[isNight(i) ? 1 : 0]);
 
     const slides = list.map((c, i) => {
       const t = T(c);
@@ -1611,6 +1622,7 @@ class Component extends DCLogic {
         const idx = Math.min(n - 1, Math.max(0, activeCh - 1));
         this.setState({ view: 'timeline', tlIndex: idx, settingsOpen: false });
       },
+      navFg: (isStory ? storyNight : tlNightNow) ? 'rgba(228,194,132,.9)' : '#8a5a3b',
       navShellBg: (isStory ? storyNight : tlNightNow) ? 'rgba(22,17,34,.55)' : 'rgba(255,251,243,.85)',
       navShellBorder: (isStory ? storyNight : tlNightNow) ? 'rgba(217,179,108,.3)' : 'rgba(191,155,95,.4)',
       storyBg: isStory ? ((isStory ? storyNight : tlNightNow) ? '#d9b36c' : '#bf9b5f') : 'transparent',

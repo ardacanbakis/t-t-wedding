@@ -139,13 +139,21 @@ function PhotoEditor({
 export function StoryCard({
   settings,
   onSaveSite,
+  onSaveNightFrom,
   reloadSettings,
 }: {
   settings: SiteSettings;
   onSaveSite: (storyTr: Record<string, string>, storyEn: Record<string, string>) => Promise<void>;
+  onSaveNightFrom: (n: string) => Promise<void>;
   reloadSettings: () => Promise<void>;
 }) {
   const [chapters, setChapters] = useState<StoryChapter[]>([]);
+  const [nightFrom, setNightFrom] = useState(settings.nightFrom || "9");
+  const [nfSeed, setNfSeed] = useState(settings.nightFrom);
+  if (nfSeed !== settings.nightFrom) {
+    setNfSeed(settings.nightFrom);
+    setNightFrom(settings.nightFrom || "9");
+  }
   const [openId, setOpenId] = useState<number | null>(null);
   const [tab, setTab] = useState<Lang>("tr");
   const [pending, setPending] = useState(false);
@@ -302,6 +310,37 @@ export function StoryCard({
         </div>
       )}
       {msg && <div style={{ color: "#55632f", fontFamily: "var(--sans)", fontSize: 13, marginBottom: 10 }}>{msg}</div>}
+
+      {/* Background transition point */}
+      {(() => {
+        const shown = chapters.filter((c) => c.visible);
+        return (
+          <div style={{ marginBottom: 16, maxWidth: 460 }}>
+            <label className="field-label" style={{ marginTop: 0 }}>
+              Starry night background starts at
+            </label>
+            <select
+              className="select-input"
+              value={nightFrom}
+              onChange={(e) => {
+                setNightFrom(e.target.value);
+                run(() => onSaveNightFrom(e.target.value));
+              }}
+            >
+              {shown.map((c, i) => (
+                <option key={c.id} value={String(i + 1)}>
+                  From chapter {i + 1} — {c[tab].title || c.slug}
+                </option>
+              ))}
+              <option value={String(shown.length + 1)}>Never — stay pink throughout</option>
+            </select>
+            <div style={{ fontFamily: "var(--sans)", fontSize: 12, color: "var(--brown-soft)", marginTop: 6 }}>
+              Everything before it shows the pink daylight background; from it on, the dark starry night. Counts shown
+              chapters only.
+            </div>
+          </div>
+        );
+      })()}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {chapters.map((c, i) => {
