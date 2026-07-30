@@ -85,6 +85,10 @@ export type SiteSettings = {
   hideNavMobile: string;
   /** "true"/"false" — auto-cycle through story/timeline chapters */
   autoCycle: string;
+  /** Seconds each photo is held during auto-cycle (as a string number) */
+  autoCycleSecs: string;
+  /** "true"/"false" — load <name>-mobile.<ext> variants on phones */
+  mobileImages: string;
   /** JSON overrides of the general (universal) invitation texts */
   generalTr: string;
   generalEn: string;
@@ -202,6 +206,8 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   showInviteLang: "true",
   hideNavMobile: "false",
   autoCycle: "false",
+  autoCycleSecs: "3",
+  mobileImages: "true",
   generalTr: "",
   generalEn: "",
   ogTitle: "Tansu & Arda — Düğün Davetiyesi",

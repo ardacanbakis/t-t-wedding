@@ -173,6 +173,52 @@ export function InviteView(props: Props) {
     } catch {}
   };
 
+  // Warm the story page in the background once the invite is on screen, so it's
+  // already cached when the guest taps "Our Story". Runs at idle and bows out
+  // on data-saver / very slow connections.
+  useEffect(() => {
+    const conn = (navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    if (conn && (conn.saveData || /(^|-)2g/.test(conn.effectiveType || ""))) return;
+    let cancelled = false;
+    const warm = () => {
+      if (cancelled) return;
+      try {
+        const link = document.createElement("link");
+        link.rel = "prefetch";
+        link.href = withBase(s.storyUrl);
+        document.head.appendChild(link);
+      } catch {}
+      const mobile = window.innerWidth < 820 && s.mobileImages !== "false";
+      getSupabase()
+        .from("story_chapters")
+        .select("photos, visible")
+        .then(({ data }) => {
+          if (cancelled || !data) return;
+          const seen = new Set<string>();
+          for (const row of data as { photos: unknown; visible: boolean }[]) {
+            if (row.visible === false) continue;
+            const photos = Array.isArray(row.photos) ? row.photos : [];
+            for (const f of photos) {
+              if (typeof f !== "string" || !f.trim() || seen.has(f)) continue;
+              seen.add(f);
+              const rel = /^(https?:|assets\/|data:)/.test(f) ? f : "assets/" + f;
+              let path = /^(https?:|data:)/.test(rel) ? rel : withBase("/story/") + rel;
+              if (mobile && !/^(https?:|data:)/.test(rel)) path = path.replace(/(\.[a-z0-9]+)(\?.*)?$/i, "-mobile$1$2");
+              const img = new Image();
+              img.decoding = "async";
+              img.src = path;
+            }
+          }
+        }, () => {});
+    };
+    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
+    const id = ric ? ric(warm) : window.setTimeout(warm, 1200);
+    return () => {
+      cancelled = true;
+      if (!ric) clearTimeout(id);
+    };
+  }, [s.storyUrl, s.mobileImages]);
+
   const rawTexts = useMemo(() => mergeTexts(lang, s), [lang, s]);
   // Texts switched off in the dashboard become empty; then any custom
   // {placeholders} are substituted into what remains.

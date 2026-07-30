@@ -395,6 +395,8 @@ export function Dashboard() {
     "showLangPicker",
     "hideNavMobile",
     "autoCycle",
+    "autoCycleSecs",
+    "mobileImages",
     "inviteMessage",
     "generalTr",
     "generalEn",
@@ -467,6 +469,16 @@ export function Dashboard() {
   const doSaveAutoCycle = async (value: string) => {
     await saveSettingRows([{ key: "autoCycle", value }]);
     setS((prev) => ({ ...prev, autoCycle: value }));
+  };
+
+  const doSaveAutoCycleSecs = async (value: string) => {
+    await saveSettingRows([{ key: "autoCycleSecs", value }]);
+    setS((prev) => ({ ...prev, autoCycleSecs: value }));
+  };
+
+  const doSaveMobileImages = async (value: string) => {
+    await saveSettingRows([{ key: "mobileImages", value }]);
+    setS((prev) => ({ ...prev, mobileImages: value }));
   };
 
   const doSaveInviteMessage = async (value: string) => {
@@ -912,6 +924,8 @@ export function Dashboard() {
         onSaveShowLang={doSaveShowLang}
         onSaveHideNavMobile={doSaveHideNavMobile}
         onSaveAutoCycle={doSaveAutoCycle}
+        onSaveAutoCycleSecs={doSaveAutoCycleSecs}
+        onSaveMobileImages={doSaveMobileImages}
         reloadSettings={reload}
       />
       )}

@@ -70,6 +70,8 @@ insert into public.settings (key, value) values
   ('showInviteLang','true'),
   ('hideNavMobile','false'),
   ('autoCycle','false'),
+  ('autoCycleSecs','3'),
+  ('mobileImages','true'),
   ('contactWhatsapp','905469660256'),
   ('ogTitle',      'Tansu & Arda — Düğün Davetiyesi'),
   ('ogDescription','Düğünümüze davetlisiniz · 28 Haziran 2026 · Germencik, Aydın')
