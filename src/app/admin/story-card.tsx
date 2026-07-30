@@ -141,12 +141,14 @@ export function StoryCard({
   onSaveSite,
   onSaveNightFrom,
   onSaveShowLang,
+  onSaveHideNavMobile,
   reloadSettings,
 }: {
   settings: SiteSettings;
   onSaveSite: (storyTr: Record<string, string>, storyEn: Record<string, string>) => Promise<void>;
   onSaveNightFrom: (n: string) => Promise<void>;
   onSaveShowLang: (v: string) => Promise<void>;
+  onSaveHideNavMobile: (v: string) => Promise<void>;
   reloadSettings: () => Promise<void>;
 }) {
   const [chapters, setChapters] = useState<StoryChapter[]>([]);
@@ -157,6 +159,7 @@ export function StoryCard({
     setNightFrom(settings.nightFrom || "9");
   }
   const showLang = settings.showLangPicker !== "false";
+  const hideNavMobile = settings.hideNavMobile === "true";
   const [openId, setOpenId] = useState<number | null>(null);
   const [tab, setTab] = useState<Lang>("tr");
   const [pending, setPending] = useState(false);
@@ -222,6 +225,8 @@ export function StoryCard({
           photo_layout: c.photo_layout,
           photo_fit: c.photo_fit,
           tilt: c.tilt,
+          autoplay: c.autoplay,
+          autoplay_ms: c.autoplay_ms,
           visible: c.visible,
           tr: c.tr,
           en: c.en,
@@ -350,6 +355,18 @@ export function StoryCard({
             >
               {showLang ? "👁 Shown on the story site" : "🚫 Hidden"}
             </button>
+            <label className="field-label">Story / Timeline switch on phones</label>
+            <button
+              className="mini-btn"
+              style={hideNavMobile ? { background: "var(--gold)", color: "#fffdf8", borderColor: "var(--gold)" } : undefined}
+              onClick={() => run(() => onSaveHideNavMobile(hideNavMobile ? "false" : "true"))}
+              type="button"
+            >
+              {hideNavMobile ? "🚫 Hidden on mobile" : "👁 Shown on mobile"}
+            </button>
+            <div style={{ fontFamily: "var(--sans)", fontSize: 12, color: "var(--brown-soft)", marginTop: 6 }}>
+              Hides the top-right “Our Story · Timeline” switch on small screens only. It stays visible on desktop.
+            </div>
           </div>
         );
       })()}
@@ -412,10 +429,13 @@ export function StoryCard({
                             <label className="field-label">{f.label}</label>
                             <textarea
                               className="textarea-input"
-                              style={{ minHeight: 78 }}
+                              style={{ minHeight: f.key === "body" ? 120 : 78 }}
                               value={c[tab][f.key]}
                               onChange={(e) => patchText(c.id, tab, { [f.key]: e.target.value })}
                             />
+                            <div style={{ fontFamily: "var(--sans)", fontSize: 11, color: "var(--brown-soft)", margin: "4px 0 2px", lineHeight: 1.5 }}>
+                              Line breaks are kept — press Enter for a new line, or leave a blank line between paragraphs.
+                            </div>
                           </div>
                         ) : (
                           <div key={f.key}>
@@ -452,6 +472,37 @@ export function StoryCard({
                         <option value="cover">Cover — fill the frame (crops)</option>
                         <option value="contain">Contain — show the whole image</option>
                       </select>
+                      {["carousel", "carousel-bare", "stack"].includes(c.photo_layout) ? (
+                        <>
+                          <label className="field-label" style={{ display: "flex", alignItems: "center", gap: 8, textTransform: "none", letterSpacing: "normal" }}>
+                            <input
+                              type="checkbox"
+                              checked={c.autoplay}
+                              onChange={(e) => patch(c.id, { autoplay: e.target.checked })}
+                              style={{ width: 16, height: 16 }}
+                            />
+                            Auto-rotate photos
+                          </label>
+                          {c.autoplay && (
+                            <>
+                              <label className="field-label">Rotate every (seconds)</label>
+                              <input
+                                className="text-input"
+                                type="number"
+                                min={1}
+                                step={0.5}
+                                value={c.autoplay_ms / 1000}
+                                onChange={(e) => {
+                                  const secs = Number(e.target.value);
+                                  patch(c.id, {
+                                    autoplay_ms: Math.max(1000, Math.round((Number.isFinite(secs) ? secs : 4) * 1000)),
+                                  });
+                                }}
+                              />
+                            </>
+                          )}
+                        </>
+                      ) : null}
                       <label className="field-label">Frame tilt (deg)</label>
                       <input
                         className="text-input"

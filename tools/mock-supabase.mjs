@@ -26,13 +26,13 @@ const db = {
   story_chapters: [
     {
       id: nextChapterId++, position: 1, slug: "c1", photos: [], photo_layout: "carousel",
-      photo_fit: "cover", tilt: -2, visible: true, night: false,
+      photo_fit: "cover", tilt: -2, visible: true, night: false, autoplay: false, autoplay_ms: 4000,
       tr: { nav: "Tanışma", kicker: "Birinci Bölüm", date: "Sonbahar 2019", title: "İlk Karşılaşma", cap: "her şeyin başladığı yer", body: "Kalabalık bir oda…", tl: "Kalabalık bir oda." },
       en: { nav: "Meet", kicker: "Chapter One", date: "Autumn 2019", title: "First Meet", cap: "where it all began", body: "A crowded room…", tl: "A crowded room." },
     },
     {
       id: nextChapterId++, position: 2, slug: "c2", photos: [], photo_layout: "carousel",
-      photo_fit: "cover", tilt: 2, visible: true, night: true,
+      photo_fit: "cover", tilt: 2, visible: true, night: true, autoplay: false, autoplay_ms: 4000,
       tr: { nav: "Düğün", kicker: "İkinci Bölüm", date: "28 Haziran 2026", title: "Düğünümüz", cap: "en kolay evet", body: "Sıcak bir haziran…", tl: "En kolay evet." },
       en: { nav: "Wedding", kicker: "Chapter Two", date: "28 June 2026", title: "Our Wedding", cap: "the easiest yes", body: "On a warm June afternoon…", tl: "The easiest yes." },
     },
@@ -52,6 +52,7 @@ const db = {
     ["nightFrom", "9"],
     ["showLangPicker", "true"],
     ["showInviteLang", "true"],
+    ["hideNavMobile", "false"],
     ["ogTitle", "Tansu & Arda — Düğün Davetiyesi"],
     ["ogDescription", "Düğünümüze davetlisiniz · 28 Haziran 2026 · Germencik, Aydın"],
   ]),
@@ -247,6 +248,7 @@ const server = http.createServer(async (req, res) => {
           photos: row.photos ?? [], photo_layout: row.photo_layout ?? "carousel",
           photo_fit: row.photo_fit ?? "cover", tilt: row.tilt ?? 0,
           visible: row.visible !== false, night: !!row.night,
+          autoplay: !!row.autoplay, autoplay_ms: row.autoplay_ms ?? 4000,
           tr: row.tr ?? {}, en: row.en ?? {},
         };
         db.story_chapters.push(c);

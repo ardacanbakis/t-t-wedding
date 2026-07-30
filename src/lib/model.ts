@@ -79,6 +79,8 @@ export type SiteSettings = {
   showLangPicker: string;
   /** "true"/"false" — show the TR/EN picker on the invitation pages */
   showInviteLang: string;
+  /** "true"/"false" — hide the Story/Timeline switch on phones */
+  hideNavMobile: string;
   /** JSON overrides of the general (universal) invitation texts */
   generalTr: string;
   generalEn: string;
@@ -110,6 +112,10 @@ export type StoryChapter = {
   /** Photo fit inside the frame */
   photo_fit: "cover" | "contain";
   tilt: number;
+  /** Auto-advance the photos of a multi-photo layout (carousel / bare / stack) */
+  autoplay: boolean;
+  /** Auto-advance interval in milliseconds (min 1000) */
+  autoplay_ms: number;
   visible: boolean;
   tr: StoryChapterText;
   en: StoryChapterText;
@@ -136,6 +142,8 @@ export function normalizeChapter(row: Partial<StoryChapter>): StoryChapter {
       : "carousel",
     photo_fit: row.photo_fit === "contain" ? "contain" : "cover",
     tilt: Number.isFinite(row.tilt) ? Number(row.tilt) : 0,
+    autoplay: !!row.autoplay,
+    autoplay_ms: Number.isFinite(row.autoplay_ms) && Number(row.autoplay_ms) >= 1000 ? Number(row.autoplay_ms) : 4000,
     visible: row.visible !== false,
     tr: { ...EMPTY_CHAPTER_TEXT, ...(row.tr ?? {}) },
     en: { ...EMPTY_CHAPTER_TEXT, ...(row.en ?? {}) },
@@ -166,6 +174,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   nightFrom: "9",
   showLangPicker: "true",
   showInviteLang: "true",
+  hideNavMobile: "false",
   generalTr: "",
   generalEn: "",
   ogTitle: "Tansu & Arda — Düğün Davetiyesi",

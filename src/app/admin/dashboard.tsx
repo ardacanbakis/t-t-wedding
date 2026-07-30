@@ -236,6 +236,7 @@ export function Dashboard() {
     "storyEn",
     "nightFrom",
     "showLangPicker",
+    "hideNavMobile",
     "generalTr",
     "generalEn",
     "ogTitle",
@@ -297,6 +298,11 @@ export function Dashboard() {
   const doSaveShowLang = async (value: string) => {
     await saveSettingRows([{ key: "showLangPicker", value }]);
     setS((prev) => ({ ...prev, showLangPicker: value }));
+  };
+
+  const doSaveHideNavMobile = async (value: string) => {
+    await saveSettingRows([{ key: "hideNavMobile", value }]);
+    setS((prev) => ({ ...prev, hideNavMobile: value }));
   };
 
   const doSaveSocial = (ogTitle: string, ogDescription: string) =>
@@ -653,6 +659,7 @@ export function Dashboard() {
         onSaveSite={doSaveStorySite}
         onSaveNightFrom={doSaveNightFrom}
         onSaveShowLang={doSaveShowLang}
+        onSaveHideNavMobile={doSaveHideNavMobile}
         reloadSettings={reload}
       />
       )}

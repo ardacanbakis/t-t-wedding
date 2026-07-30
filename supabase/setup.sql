@@ -67,6 +67,7 @@ insert into public.settings (key, value) values
   ('nightFrom',    '9'),
   ('showLangPicker','true'),
   ('showInviteLang','true'),
+  ('hideNavMobile','false'),
   ('ogTitle',      'Tansu & Arda — Düğün Davetiyesi'),
   ('ogDescription','Düğünümüze davetlisiniz · 28 Haziran 2026 · Germencik, Aydın')
 on conflict do nothing;
@@ -94,6 +95,8 @@ create table if not exists public.story_chapters (
   tilt real not null default 0,
   visible boolean not null default true,
   night boolean not null default false,   -- shown in the dark, after-dusk part
+  autoplay boolean not null default false,      -- auto-advance multi-photo layouts
+  autoplay_ms integer not null default 4000,    -- auto-advance interval (ms)
   tr jsonb not null default '{}'::jsonb,
   en jsonb not null default '{}'::jsonb,
   updated_at timestamptz not null default now()
@@ -116,6 +119,10 @@ on conflict (slug) do nothing;
 alter table public.story_chapters drop constraint if exists story_chapters_photo_layout_check;
 alter table public.story_chapters add constraint story_chapters_photo_layout_check
   check (photo_layout in ('carousel', 'carousel-bare', 'stack', 'grid', 'single'));
+
+-- Auto-rotation for multi-photo layouts (added after the first release).
+alter table public.story_chapters add column if not exists autoplay boolean not null default false;
+alter table public.story_chapters add column if not exists autoplay_ms integer not null default 4000;
 
 
 -- Five extra chapters (hidden). Toggle them on and fill them in from the
