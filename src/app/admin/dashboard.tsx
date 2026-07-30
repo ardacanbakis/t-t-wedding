@@ -151,13 +151,22 @@ function EditRow({
   onCancel,
 }: {
   inv: Invitation;
-  onSave: (fields: { name: string; max: string; personal: string; group: string }) => Promise<void>;
+  onSave: (fields: {
+    name: string;
+    max: string;
+    personal: string;
+    group: string;
+    status: Invitation["status"];
+    partySize: string;
+  }) => Promise<void>;
   onCancel: () => void;
 }) {
   const [name, setName] = useState(inv.name);
   const [max, setMax] = useState(inv.max_guests == null ? "unlimited" : String(inv.max_guests));
   const [personal, setPersonal] = useState(inv.personal_note ?? "");
   const [group, setGroup] = useState(inv.invite_group ?? "");
+  const [status, setStatus] = useState<Invitation["status"]>(inv.status);
+  const [partySize, setPartySize] = useState(String(inv.party_size ?? 1));
   const [pending, setPending] = useState(false);
   return (
     <tr style={{ background: "rgba(191,155,95,.08)" }}>
@@ -185,7 +194,7 @@ function EditRow({
             onClick={async () => {
               setPending(true);
               try {
-                await onSave({ name, max, personal, group });
+                await onSave({ name, max, personal, group, status, partySize });
               } finally {
                 setPending(false);
               }
@@ -197,6 +206,34 @@ function EditRow({
           <button className="mini-btn" onClick={onCancel} type="button">
             Cancel
           </button>
+        </div>
+        {/* Response override — set/change an RSVP by hand, for stats */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", padding: "2px 0 6px" }}>
+          <span style={{ fontFamily: "var(--sans)", fontSize: 12, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--brown-link)" }}>
+            Response
+          </span>
+          <select
+            className="select-input"
+            style={{ width: "auto", padding: "8px 12px", fontSize: 14 }}
+            value={status}
+            onChange={(e) => setStatus(e.target.value as Invitation["status"])}
+          >
+            <option value="pending">No response</option>
+            <option value="accepted">Accepted</option>
+            <option value="declined">Declined</option>
+          </select>
+          {status === "accepted" && (
+            <input
+              className="text-input"
+              style={{ flex: "0 1 130px" }}
+              type="number"
+              min={1}
+              value={partySize}
+              onChange={(e) => setPartySize(e.target.value)}
+              placeholder="party size"
+              title="Party size (headcount)"
+            />
+          )}
         </div>
         <textarea
           className="textarea-input"
@@ -460,22 +497,57 @@ export function Dashboard() {
   const deadlineOver = new Date() > new Date(s.rsvpDeadline);
 
   return (
-    <div className="fade-in" style={{ maxWidth: 1080, margin: "0 auto", padding: "28px 18px 80px" }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-        <h1 style={{ fontFamily: "var(--serif)", fontWeight: 600, fontSize: 30, color: "var(--brown)", margin: 0 }}>
-          Tansu <span style={{ fontFamily: "var(--script)", color: "var(--gold)" }}>&amp;</span> Arda{" "}
-          <span style={{ fontWeight: 400, fontSize: 18, color: "var(--brown-soft)" }}>· RSVP admin</span>
-        </h1>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button className="mini-btn" onClick={doDownloadCsv} type="button">
-            Export CSV
-          </button>
-          <button className="mini-btn" onClick={() => getSupabase().auth.signOut()} type="button">
-            Sign out
-          </button>
+    <div className="fade-in" style={{ maxWidth: 1080, margin: "0 auto", padding: "0 18px 80px" }}>
+      {/* Sticky navbar: title + actions + tab switcher */}
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
+          margin: "0 -18px",
+          padding: "16px 18px 0",
+          background: "rgba(253,248,240,.9)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
+          borderBottom: "1px solid var(--gold-soft)",
+          boxShadow: "0 8px 20px -18px rgba(120,72,40,.5)",
+        }}
+      >
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+          <h1 style={{ fontFamily: "var(--serif)", fontWeight: 600, fontSize: 26, color: "var(--brown)", margin: 0 }}>
+            Tansu <span style={{ fontFamily: "var(--script)", color: "var(--gold)" }}>&amp;</span> Arda{" "}
+            <span style={{ fontWeight: 400, fontSize: 16, color: "var(--brown-soft)" }}>· RSVP admin</span>
+          </h1>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="mini-btn" onClick={doDownloadCsv} type="button">
+              Export CSV
+            </button>
+            <button className="mini-btn" onClick={() => getSupabase().auth.signOut()} type="button">
+              Sign out
+            </button>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "14px 0 0", paddingBottom: 10 }}>
+          {TABS.map((tb) => (
+            <button
+              key={tb.id}
+              className="pill-btn"
+              style={
+                tab === tb.id ? { background: "var(--gold)", color: "#fffdf8", borderColor: "var(--gold)" } : undefined
+              }
+              onClick={() => setTab(tb.id)}
+              type="button"
+            >
+              {tb.label}
+            </button>
+          ))}
         </div>
       </div>
+
+      <div style={{ height: 18 }} />
 
       {loadError && (
         <div
@@ -494,33 +566,6 @@ export function Dashboard() {
         </div>
       )}
 
-      {/* Tabs */}
-      <div
-        style={{
-          display: "flex",
-          gap: 6,
-          flexWrap: "wrap",
-          margin: "18px 0 22px",
-          borderBottom: "1px solid var(--gold-soft)",
-          paddingBottom: 10,
-        }}
-      >
-        {TABS.map((tb) => (
-          <button
-            key={tb.id}
-            className="pill-btn"
-            style={
-              tab === tb.id
-                ? { background: "var(--gold)", color: "#fffdf8", borderColor: "var(--gold)" }
-                : undefined
-            }
-            onClick={() => setTab(tb.id)}
-            type="button"
-          >
-            {tb.label}
-          </button>
-        ))}
-      </div>
 
       {tab === "invitations" && (
   <>
@@ -636,14 +681,27 @@ export function Dashboard() {
                     key={inv.id}
                     inv={inv}
                     onCancel={() => setEditingId(null)}
-                    onSave={async ({ name, max, personal, group }) => {
+                    onSave={async ({ name, max, personal, group, status, partySize }) => {
+                      const maxG = parseMaxGuests(max);
+                      // Admin override is authoritative (for stats): clamp only to a
+                      // sane 1–99, not to the invite's own max_guests.
+                      let party: number | null = null;
+                      if (status === "accepted") {
+                        party = Math.max(1, Math.min(99, Number.parseInt(partySize, 10) || 1));
+                      } else if (status === "declined") {
+                        party = 0;
+                      }
                       const { error } = await getSupabase()
                         .from("invitations")
                         .update({
                           name: name.trim(),
-                          max_guests: parseMaxGuests(max),
+                          max_guests: maxG,
                           personal_note: personal.trim() || null,
                           invite_group: group.trim() || null,
+                          status,
+                          party_size: party,
+                          responded_at:
+                            status === "pending" ? null : inv.responded_at ?? new Date().toISOString(),
                           updated_at: new Date().toISOString(),
                         })
                         .eq("id", inv.id);
