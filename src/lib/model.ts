@@ -83,6 +83,8 @@ export type SiteSettings = {
   showInviteLang: string;
   /** "true"/"false" — hide the Story/Timeline switch on phones */
   hideNavMobile: string;
+  /** "true"/"false" — auto-cycle through story/timeline chapters */
+  autoCycle: string;
   /** JSON overrides of the general (universal) invitation texts */
   generalTr: string;
   generalEn: string;
@@ -199,6 +201,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   showLangPicker: "true",
   showInviteLang: "true",
   hideNavMobile: "false",
+  autoCycle: "false",
   generalTr: "",
   generalEn: "",
   ogTitle: "Tansu & Arda — Düğün Davetiyesi",

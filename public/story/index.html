@@ -125,10 +125,14 @@
 </sc-if>
 
 <sc-if value="{{ showTopBtn }}" hint-placeholder-val="{{ false }}">
-  <button onClick="{{ goTop }}" title="{{ tTop }}" style="position:fixed; right:18px; bottom:18px; z-index:85; width:52px; height:52px; border-radius:50%; border:1px solid {{ navShellBorder }}; background:{{ navShellBg }}; backdrop-filter:blur(10px); cursor:pointer; box-shadow:0 10px 30px -14px rgba(40,26,20,.4); display:flex; align-items:center; justify-content:center; animation:viewIn .3s ease both; transition:background .4s ease, border-color .4s ease;">
+  <button onClick="{{ goTop }}" title="{{ tTop }}" style="position:fixed; left:18px; bottom:18px; z-index:85; width:52px; height:52px; border-radius:50%; border:1px solid {{ navShellBorder }}; background:{{ navShellBg }}; backdrop-filter:blur(10px); cursor:pointer; box-shadow:0 10px 30px -14px rgba(40,26,20,.4); display:flex; align-items:center; justify-content:center; animation:viewIn .3s ease both; transition:background .4s ease, border-color .4s ease;">
     <span style="font-size:20px; color:#d47f8a; display:inline-block; animation:heartBeat 1.6s ease-in-out infinite; line-height:1;">♥</span>
   </button>
 </sc-if>
+
+<button onClick="{{ releaseCats }}" title="{{ tReleaseCats }}" aria-label="{{ tReleaseCats }}" style="position:fixed; right:18px; bottom:18px; z-index:85; width:52px; height:52px; border-radius:50%; border:1px solid {{ navShellBorder }}; background:{{ navShellBg }}; backdrop-filter:blur(10px); cursor:pointer; box-shadow:0 10px 30px -14px rgba(40,26,20,.4); display:flex; align-items:center; justify-content:center; transition:background .4s ease, border-color .4s ease, transform .2s ease;" style-hover="transform:scale(1.08)">
+  <span style="font-size:22px; line-height:1;">🐾</span>
+</button>
 
 <sc-if value="{{ isStory }}" hint-placeholder-val="{{ true }}">
 <div ref="{{ storyRef }}" onClick="{{ storyClick }}" style="position:relative; z-index:1; animation:viewIn .5s ease both;">
@@ -187,7 +191,7 @@
               <sc-if value="{{ ch.bare }}" hint-placeholder-val="{{ false }}">
               <div style="position:relative; text-align:center; transform:rotate({{ ch.tilt }}deg);">
                 <div style="position:relative; line-height:0; display:inline-block; max-width:100%;" onPointerDown="{{ ch.swipeDown }}">
-                  <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" style="display:block; width:{{ ch.frameW }}; height:auto; max-width:82vw; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
+                  <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" loading="lazy" decoding="async" style="display:block; width:{{ ch.frameW }}; height:auto; max-width:82vw; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
                   <sc-if value="{{ ch.showNav }}" hint-placeholder-val="{{ false }}">
                     <button onClick="{{ ch.prev }}" aria-label="Previous photo" style="position:absolute; left:0; top:0; width:50%; height:100%; border:0; background:transparent; padding:0 0 0 6px; cursor:pointer; z-index:4; display:flex; align-items:center; justify-content:flex-start;">
                       <span style="width:34px; height:34px; border-radius:50%; border:1px solid rgba(255,247,224,.55); background:rgba(20,16,30,.55); color:#fdf3e0; font-family:'Playfair Display',serif; font-size:18px; line-height:32px; text-align:center; display:block; pointer-events:none; box-shadow:0 2px 10px rgba(0,0,0,.35);">&lsaquo;</span>
@@ -211,17 +215,17 @@
               <div style="position:relative; background:#fffdf8; padding:{{ ch.matPad }}; border-radius:5px; box-shadow:0 8px 22px -12px rgba(120,72,40,.3), 0 26px 62px -22px rgba(120,72,40,.38); transform:rotate({{ ch.tilt }}deg);">
                 <div style="position:relative; width:{{ ch.frameW }}; height:{{ ch.frameH }}; overflow:hidden; border-radius:4px; background:rgba(0,0,0,.04);" onPointerDown="{{ ch.swipeDown }}">
                   <sc-if value="{{ ch.isCarousel }}" hint-placeholder-val="{{ true }}">
-                    <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" style="width:100%; height:100%; object-fit:{{ ch.fit }}; display:block; user-select:none;">
+                    <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:{{ ch.fit }}; display:block; user-select:none;">
                   </sc-if>
                   <sc-if value="{{ ch.isStack }}" hint-placeholder-val="{{ false }}">
                     <sc-for list="{{ ch.items }}" as="p" hint-placeholder-count="0">
-                      <img src="{{ p.src }}" alt="{{ ch.alt }}" draggable="false" onClick="{{ p.go }}" style="{{ p.style }}">
+                      <img src="{{ p.src }}" alt="{{ ch.alt }}" draggable="false" loading="lazy" decoding="async" onClick="{{ p.go }}" style="{{ p.style }}">
                     </sc-for>
                   </sc-if>
                   <sc-if value="{{ ch.isGrid }}" hint-placeholder-val="{{ false }}">
                     <div style="display:flex; flex-wrap:wrap; align-content:flex-start; gap:5px; width:100%; height:100%;">
                       <sc-for list="{{ ch.items }}" as="p" hint-placeholder-count="0">
-                        <img src="{{ p.src }}" alt="{{ ch.alt }}" draggable="false" style="{{ p.style }}">
+                        <img src="{{ p.src }}" alt="{{ ch.alt }}" draggable="false" loading="lazy" decoding="async" style="{{ p.style }}">
                       </sc-for>
                     </div>
                   </sc-if>
@@ -291,7 +295,7 @@
                 <sc-if value="{{ ch.bare }}" hint-placeholder-val="{{ false }}">
               <div style="position:relative; text-align:center; transform:rotate({{ ch.tilt }}deg);">
                 <div style="position:relative; line-height:0; display:inline-block; max-width:100%;" onPointerDown="{{ ch.swipeDown }}">
-                  <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" style="display:block; width:{{ ch.frameW }}; height:auto; max-width:82vw; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
+                  <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" loading="lazy" decoding="async" style="display:block; width:{{ ch.frameW }}; height:auto; max-width:82vw; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
                   <sc-if value="{{ ch.showNav }}" hint-placeholder-val="{{ false }}">
                     <button onClick="{{ ch.prev }}" aria-label="Previous photo" style="position:absolute; left:0; top:0; width:50%; height:100%; border:0; background:transparent; padding:0 0 0 6px; cursor:pointer; z-index:4; display:flex; align-items:center; justify-content:flex-start;">
                       <span style="width:34px; height:34px; border-radius:50%; border:1px solid rgba(255,247,224,.55); background:rgba(20,16,30,.55); color:#fdf3e0; font-family:'Playfair Display',serif; font-size:18px; line-height:32px; text-align:center; display:block; pointer-events:none; box-shadow:0 2px 10px rgba(0,0,0,.35);">&lsaquo;</span>
@@ -315,17 +319,17 @@
               <div style="position:relative; background:#fffdf8; padding:{{ ch.matPad }}; border-radius:5px; box-shadow:0 0 0 1px rgba(217,179,108,.35), 0 34px 80px -20px rgba(0,0,0,.6); transform:rotate({{ ch.tilt }}deg);">
                   <div style="position:relative; width:{{ ch.frameW }}; height:{{ ch.frameH }}; overflow:hidden; border-radius:4px; background:rgba(0,0,0,.04);" onPointerDown="{{ ch.swipeDown }}">
                   <sc-if value="{{ ch.isCarousel }}" hint-placeholder-val="{{ true }}">
-                    <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" style="width:100%; height:100%; object-fit:{{ ch.fit }}; display:block; user-select:none;">
+                    <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:{{ ch.fit }}; display:block; user-select:none;">
                   </sc-if>
                   <sc-if value="{{ ch.isStack }}" hint-placeholder-val="{{ false }}">
                     <sc-for list="{{ ch.items }}" as="p" hint-placeholder-count="0">
-                      <img src="{{ p.src }}" alt="{{ ch.alt }}" draggable="false" onClick="{{ p.go }}" style="{{ p.style }}">
+                      <img src="{{ p.src }}" alt="{{ ch.alt }}" draggable="false" loading="lazy" decoding="async" onClick="{{ p.go }}" style="{{ p.style }}">
                     </sc-for>
                   </sc-if>
                   <sc-if value="{{ ch.isGrid }}" hint-placeholder-val="{{ false }}">
                     <div style="display:flex; flex-wrap:wrap; align-content:flex-start; gap:5px; width:100%; height:100%;">
                       <sc-for list="{{ ch.items }}" as="p" hint-placeholder-count="0">
-                        <img src="{{ p.src }}" alt="{{ ch.alt }}" draggable="false" style="{{ p.style }}">
+                        <img src="{{ p.src }}" alt="{{ ch.alt }}" draggable="false" loading="lazy" decoding="async" style="{{ p.style }}">
                       </sc-for>
                     </div>
                   </sc-if>
@@ -472,7 +476,7 @@
               <sc-if value="{{ s.bare }}" hint-placeholder-val="{{ false }}">
               <div style="position:relative; text-align:center; transform:rotate({{ s.tilt }}deg);">
                 <div style="position:relative; line-height:0; display:inline-block; max-width:100%;" onPointerDown="{{ s.swipeDown }}">
-                  <img src="{{ s.curSrc }}" alt="{{ s.alt }}" draggable="false" style="display:block; width:auto; height:auto; max-width:82vw; max-height:46vh; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
+                  <img src="{{ s.curSrc }}" alt="{{ s.alt }}" draggable="false" loading="lazy" decoding="async" style="display:block; width:auto; height:auto; max-width:82vw; max-height:46vh; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
                   <sc-if value="{{ s.showNav }}" hint-placeholder-val="{{ false }}">
                     <button onClick="{{ s.prev }}" aria-label="Previous photo" style="position:absolute; left:0; top:0; width:50%; height:100%; border:0; background:transparent; padding:0 0 0 6px; cursor:pointer; z-index:4; display:flex; align-items:center; justify-content:flex-start;">
                       <span style="width:34px; height:34px; border-radius:50%; border:1px solid rgba(255,247,224,.55); background:rgba(20,16,30,.55); color:#fdf3e0; font-family:'Playfair Display',serif; font-size:18px; line-height:32px; text-align:center; display:block; pointer-events:none; box-shadow:0 2px 10px rgba(0,0,0,.35);">&lsaquo;</span>
@@ -495,17 +499,17 @@
               <div style="position:relative; background:#fffdf8; padding:12px; border-radius:6px; box-shadow:0 28px 64px -24px rgba(60,36,20,.45); transform:rotate({{ s.tilt }}deg);">
                 <div style="position:relative; width:{{ s.frameW }}; height:{{ s.frameH }}; overflow:hidden; border-radius:4px; background:rgba(0,0,0,.04);" onPointerDown="{{ s.swipeDown }}">
                   <sc-if value="{{ s.isCarousel }}" hint-placeholder-val="{{ true }}">
-                    <img src="{{ s.curSrc }}" alt="{{ s.alt }}" draggable="false" style="width:100%; height:100%; object-fit:{{ s.fit }}; display:block; user-select:none;">
+                    <img src="{{ s.curSrc }}" alt="{{ s.alt }}" draggable="false" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:{{ s.fit }}; display:block; user-select:none;">
                   </sc-if>
                   <sc-if value="{{ s.isStack }}" hint-placeholder-val="{{ false }}">
                     <sc-for list="{{ s.items }}" as="p" hint-placeholder-count="0">
-                      <img src="{{ p.src }}" alt="{{ s.alt }}" draggable="false" onClick="{{ p.go }}" style="{{ p.style }}">
+                      <img src="{{ p.src }}" alt="{{ s.alt }}" draggable="false" loading="lazy" decoding="async" onClick="{{ p.go }}" style="{{ p.style }}">
                     </sc-for>
                   </sc-if>
                   <sc-if value="{{ s.isGrid }}" hint-placeholder-val="{{ false }}">
                     <div style="display:flex; flex-wrap:wrap; align-content:flex-start; gap:5px; width:100%; height:100%;">
                       <sc-for list="{{ s.items }}" as="p" hint-placeholder-count="0">
-                        <img src="{{ p.src }}" alt="{{ s.alt }}" draggable="false" style="{{ p.style }}">
+                        <img src="{{ p.src }}" alt="{{ s.alt }}" draggable="false" loading="lazy" decoding="async" style="{{ p.style }}">
                       </sc-for>
                     </div>
                   </sc-if>
@@ -855,6 +859,13 @@ class Component extends DCLogic {
     this._showLang = true;
     // Per-chapter last auto-advance time (ms), so manual taps defer the timer.
     this._autoLast = {};
+    // Auto-cycle-through-chapters state (off unless enabled in the dashboard).
+    this._autoCycle = false;
+    this._cycleOn = null;
+    this._cycleStart = 0;
+    this._cyclePhotoAt = 0;
+    this._cyclePausedUntil = 0;
+    this._cycleLockUntil = 0;
     this._syncChapters();
   }
 
@@ -899,6 +910,7 @@ class Component extends DCLogic {
         if (Number.isFinite(nf) && nf >= 1) this._nightFrom = nf;
         this._showLang = map.showLangPicker !== 'false';
         this._hideNavMobile = map.hideNavMobile === 'true';
+        this._autoCycle = map.autoCycle === 'true';
         ['tr', 'en'].forEach((lang) => {
           const raw = map[lang === 'tr' ? 'storyTr' : 'storyEn'];
           if (!raw) return;
@@ -926,8 +938,10 @@ class Component extends DCLogic {
   _setPhoto(slug, i, len) {
     if (len < 1) return;
     // A manual tap restarts this chapter's auto-rotation clock, so the photo
-    // the guest chose gets a full dwell before the timer moves on.
+    // the guest chose gets a full dwell before the timer moves on. It also
+    // pauses the auto-cycle so it doesn't fight the guest.
     if (this._autoLast) this._autoLast[slug] = Date.now();
+    if (this._autoCycle) this._cyclePausedUntil = Date.now() + 9000;
     const next = Object.assign({}, this.state.photoIdx);
     next[slug] = ((i % len) + len) % len;
     this.setState({ photoIdx: next });
@@ -935,10 +949,20 @@ class Component extends DCLogic {
 
   // Advance every chapter whose auto-rotation is on and whose interval has
   // elapsed. One batched setState per tick keeps concurrent chapters in sync.
+  // The chapter currently on screen — photos only rotate for this one.
+  _activeSlug() {
+    if (this.state.view === 'timeline') {
+      const c = (this._visible || [])[this.state.tlIndex];
+      return c ? c.slug : null;
+    }
+    return this._chIds ? this._chIds[this.state.activeCh] : null;
+  }
+
   _autoTick() {
     if (typeof document !== 'undefined' && document.hidden) return;
     const now = Date.now();
     const list = this._visible || [];
+    const activeSlug = this._activeSlug();
     const next = Object.assign({}, this.state.photoIdx);
     let changed = false;
     for (const c of list) {
@@ -946,6 +970,9 @@ class Component extends DCLogic {
       if (!c.autoplay || n < 2) continue;
       const rotating = c.photoLayout === 'carousel' || c.photoLayout === 'carousel-bare' || c.photoLayout === 'stack';
       if (!rotating) continue;
+      // Only rotate the chapter that's in view; keep others parked and reset
+      // their clock so they dwell fresh when scrolled to.
+      if (c.slug !== activeSlug) { this._autoLast[c.slug] = now; continue; }
       const iv = Math.max(1000, c.autoplayMs || 4000);
       const last = this._autoLast[c.slug];
       if (last == null) { this._autoLast[c.slug] = now; continue; } // dwell on the first photo
@@ -956,6 +983,85 @@ class Component extends DCLogic {
       }
     }
     if (changed) this.setState({ photoIdx: next });
+  }
+
+  // ── Auto-cycle through chapters (dashboard toggle). A single-photo chapter
+  // dwells 3s; a multi-photo chapter shows each photo (3s each, or the
+  // chapter's own interval) then moves on. Manual scroll/taps pause it. ──
+  _setIdx(slug, i) {
+    const next = Object.assign({}, this.state.photoIdx);
+    next[slug] = i;
+    this.setState({ photoIdx: next });
+  }
+
+  _cycleTick() {
+    if (typeof document !== 'undefined' && document.hidden) return;
+    const now = Date.now();
+    if (now < this._cyclePausedUntil || now < this._cycleLockUntil) return;
+    if (this.state.view === 'timeline') return this._cycleTickTimeline(now);
+
+    const ids = this._chIds || [];
+    const ai = this.state.activeCh || 0;
+    const currentId = ids[ai];
+    if (currentId == null) return;
+    const c = (this._visible || []).find((x) => x.slug === currentId);
+    const photoCount = c && c.photos ? c.photos.length : 0;
+
+    // A new chapter scrolled into view — (re)start its dwell from its first photo.
+    if (currentId !== this._cycleOn) {
+      this._cycleOn = currentId;
+      this._cycleStart = now;
+      this._cyclePhotoAt = now;
+      if (c && photoCount > 1 && (this.state.photoIdx[c.slug] || 0) !== 0) this._setIdx(c.slug, 0);
+      return;
+    }
+    if (currentId === 'finale') return; // reached the end — stop
+
+    const photoMs = c && c.autoplay && c.autoplayMs ? c.autoplayMs : 3000;
+    if (c && photoCount > 1) {
+      const cur = this.state.photoIdx[c.slug] || 0;
+      if (now - this._cyclePhotoAt >= photoMs) {
+        if (cur < photoCount - 1) { this._setIdx(c.slug, cur + 1); this._cyclePhotoAt = now; }
+        else this._cycleAdvanceStory(ai);
+      }
+    } else if (now - this._cycleStart >= 3000) {
+      this._cycleAdvanceStory(ai);
+    }
+  }
+
+  _cycleAdvanceStory(ai) {
+    const ids = this._chIds || [];
+    const nextIdx = Math.min(ids.length - 1, ai + 1);
+    if (nextIdx === ai) return; // already at the finale
+    const el = document.getElementById(ids[nextIdx]);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    this._cycleLockUntil = Date.now() + 1500; // let the smooth scroll settle
+  }
+
+  _cycleTickTimeline(now) {
+    const list = this._visible || [];
+    const i = this.state.tlIndex || 0;
+    const c = list[i];
+    if (!c) return;
+    const photoCount = c.photos ? c.photos.length : 0;
+    if (c.slug !== this._cycleOn) {
+      this._cycleOn = c.slug;
+      this._cycleStart = now;
+      this._cyclePhotoAt = now;
+      if (photoCount > 1 && (this.state.photoIdx[c.slug] || 0) !== 0) this._setIdx(c.slug, 0);
+      return;
+    }
+    const photoMs = c.autoplay && c.autoplayMs ? c.autoplayMs : 3000;
+    const advance = () => { if (i < list.length - 1) { this._go(i + 1); this._cycleLockUntil = now + 900; } };
+    if (photoCount > 1) {
+      const cur = this.state.photoIdx[c.slug] || 0;
+      if (now - this._cyclePhotoAt >= photoMs) {
+        if (cur < photoCount - 1) { this._setIdx(c.slug, cur + 1); this._cyclePhotoAt = now; }
+        else advance();
+      }
+    } else if (now - this._cycleStart >= 3000) {
+      advance();
+    }
   }
 
   _swipeHandler(slug, len) {
@@ -1063,7 +1169,13 @@ class Component extends DCLogic {
     this._scrolled();
     this._scheduleCats();
     this._loadRemote();
-    this._autoTimer = setInterval(() => this._autoTick(), 750);
+    this._autoTimer = setInterval(() => (this._autoCycle ? this._cycleTick() : this._autoTick()), 350);
+    // Any real scroll/gesture pauses the auto-cycle for a few seconds so it
+    // never fights a guest who is reading. Programmatic smooth-scroll fires
+    // 'scroll' (not wheel/touchmove), so it doesn't trip this.
+    this._onUserGesture = () => { if (this._autoCycle) this._cyclePausedUntil = Date.now() + 9000; };
+    window.addEventListener('wheel', this._onUserGesture, { passive: true });
+    window.addEventListener('touchmove', this._onUserGesture, { passive: true });
     this._attachThreadRO();
     setTimeout(() => this._layoutThread(), 400);
     setTimeout(() => this._layoutThread(), 1600);
@@ -1079,6 +1191,10 @@ class Component extends DCLogic {
     if (this._wedIo) this._wedIo.disconnect();
     if (this._catTimer) clearTimeout(this._catTimer);
     if (this._autoTimer) clearInterval(this._autoTimer);
+    if (this._onUserGesture) {
+      window.removeEventListener('wheel', this._onUserGesture);
+      window.removeEventListener('touchmove', this._onUserGesture);
+    }
     if (this._ro) this._ro.disconnect();
   }
 
@@ -1689,8 +1805,9 @@ class Component extends DCLogic {
       isStory, isTimeline: !isStory,
       showRail: isStory && !isNarrow,
       showTopBtn: isStory && showTop,
-      goTop: () => { this._releaseCats(); window.scrollTo({ top: 0, behavior: 'smooth' }); },
+      goTop: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
       tTop: S.top,
+      tReleaseCats: S.closeBtn,
       storyClick: this._storyClick,
       railEnter: () => this.setState({ railHover: true }),
       railLeave: () => this.setState({ railHover: false, hoverCh: -1 }),

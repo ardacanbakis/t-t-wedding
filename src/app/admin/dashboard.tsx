@@ -394,6 +394,7 @@ export function Dashboard() {
     "nightFrom",
     "showLangPicker",
     "hideNavMobile",
+    "autoCycle",
     "inviteMessage",
     "generalTr",
     "generalEn",
@@ -461,6 +462,11 @@ export function Dashboard() {
   const doSaveHideNavMobile = async (value: string) => {
     await saveSettingRows([{ key: "hideNavMobile", value }]);
     setS((prev) => ({ ...prev, hideNavMobile: value }));
+  };
+
+  const doSaveAutoCycle = async (value: string) => {
+    await saveSettingRows([{ key: "autoCycle", value }]);
+    setS((prev) => ({ ...prev, autoCycle: value }));
   };
 
   const doSaveInviteMessage = async (value: string) => {
@@ -905,6 +911,7 @@ export function Dashboard() {
         onSaveNightFrom={doSaveNightFrom}
         onSaveShowLang={doSaveShowLang}
         onSaveHideNavMobile={doSaveHideNavMobile}
+        onSaveAutoCycle={doSaveAutoCycle}
         reloadSettings={reload}
       />
       )}
