@@ -14,6 +14,7 @@ import {
 } from "@/lib/model";
 import type { GeneralTexts } from "@/lib/model";
 import { parseLayout, type Layout } from "@/lib/blocks";
+import { copyText } from "@/lib/clipboard";
 import { BASE_PATH, getSupabase } from "@/lib/supabase";
 import { GeneralCard } from "./general-card";
 import { LayoutCard } from "./layout-card";
@@ -46,11 +47,7 @@ function CopyLinkButton({ token }: { token: string }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     const url = inviteUrl(token);
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch {
-      window.prompt("Copy the link:", url);
-    }
+    if (!(await copyText(url))) window.prompt("Copy the link:", url);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -75,11 +72,7 @@ function CopyMessageButton({
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     const msg = fillInviteMessage(template, name, inviteUrl(token));
-    try {
-      await navigator.clipboard.writeText(msg);
-    } catch {
-      window.prompt("Copy the message:", msg);
-    }
+    if (!(await copyText(msg))) window.prompt("Copy the message:", msg);
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
   };

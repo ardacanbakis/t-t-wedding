@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { Lang } from "@/lib/i18n";
 import { defaultGeneral, GENERAL_FIELDS, mergeGeneral, type GeneralTexts, type SiteSettings } from "@/lib/model";
 import { BASE_PATH, getSupabase } from "@/lib/supabase";
+import { copyText } from "@/lib/clipboard";
 
 /**
  * The GENERAL INVITATION tab: the one universal (no-RSVP) link, its open /
@@ -52,11 +53,7 @@ export function GeneralCard({
   }, [loadCounts]);
 
   const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(link);
-    } catch {
-      window.prompt("Copy the link:", link);
-    }
+    if (!(await copyText(link))) window.prompt("Copy the link:", link);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
