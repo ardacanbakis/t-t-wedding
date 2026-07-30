@@ -195,6 +195,7 @@ const server = http.createServer(async (req, res) => {
               party_size: inv.party_size,
               note: inv.note,
               personal_note: inv.personal_note,
+              invite_lang: inv.invite_lang ?? "auto",
             },
           ]
         : []
@@ -314,6 +315,7 @@ const server = http.createServer(async (req, res) => {
           invite_group: row.invite_group ?? null,
           sent: !!row.sent,
           opened_at: null,
+          invite_lang: row.invite_lang ?? "auto",
           responded_at: null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),

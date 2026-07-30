@@ -36,6 +36,9 @@ alter table public.invitations add column if not exists personal_note text;
 alter table public.invitations add column if not exists invite_group text;
 alter table public.invitations add column if not exists sent boolean not null default false;
 alter table public.invitations add column if not exists opened_at timestamptz;
+-- 'auto' = bilingual (browser default); 'en'/'tr' = locked to that language.
+alter table public.invitations add column if not exists invite_lang text not null default 'auto'
+  check (invite_lang in ('auto', 'tr', 'en'));
 
 create table if not exists public.settings (
   key text primary key,
@@ -258,12 +261,13 @@ returns table (
   status text,
   party_size integer,
   note text,
-  personal_note text
+  personal_note text,
+  invite_lang text
 )
 language sql stable security definer
 set search_path = public
 as $$
-  select i.name, i.max_guests, i.status, i.party_size, i.note, i.personal_note
+  select i.name, i.max_guests, i.status, i.party_size, i.note, i.personal_note, i.invite_lang
   from public.invitations i
   where i.token = p_token;
 $$;

@@ -176,6 +176,7 @@ function EditRow({
     max: string;
     personal: string;
     group: string;
+    lang: "auto" | "tr" | "en";
     status: Invitation["status"];
     partySize: string;
   }) => Promise<void>;
@@ -185,6 +186,7 @@ function EditRow({
   const [max, setMax] = useState(inv.max_guests == null ? "unlimited" : String(inv.max_guests));
   const [personal, setPersonal] = useState(inv.personal_note ?? "");
   const [group, setGroup] = useState(inv.invite_group ?? "");
+  const [ilang, setILang] = useState<"auto" | "tr" | "en">(inv.invite_lang ?? "auto");
   const [status, setStatus] = useState<Invitation["status"]>(inv.status);
   const [partySize, setPartySize] = useState(String(inv.party_size ?? 1));
   const [pending, setPending] = useState(false);
@@ -208,13 +210,24 @@ function EditRow({
             placeholder="Group (optional)"
             list="invite-groups"
           />
+          <select
+            className="select-input"
+            style={{ flex: "1 1 130px", width: "auto" }}
+            value={ilang}
+            onChange={(e) => setILang(e.target.value as "auto" | "tr" | "en")}
+            title="Invite language"
+          >
+            <option value="auto">Auto (TR/EN)</option>
+            <option value="en">English only</option>
+            <option value="tr">Turkish only</option>
+          </select>
           <button
             className="mini-btn"
             disabled={pending || !name.trim()}
             onClick={async () => {
               setPending(true);
               try {
-                await onSave({ name, max, personal, group, status, partySize });
+                await onSave({ name, max, personal, group, lang: ilang, status, partySize });
               } finally {
                 setPending(false);
               }
@@ -272,10 +285,11 @@ function toCsv(invitations: Invitation[]): string {
     const v = value == null ? "" : String(value);
     return /[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
   };
-  const header = ["Name", "Group", "Status", "Party size", "Max guests", "Sent", "Opened at", "Note", "Personal message", "Responded at", "Link"];
+  const header = ["Name", "Group", "Language", "Status", "Party size", "Max guests", "Sent", "Opened at", "Note", "Personal message", "Responded at", "Link"];
   const rows = invitations.map((inv) => [
     cell(inv.name),
     cell(inv.invite_group),
+    cell(inv.invite_lang ?? "auto"),
     cell(inv.status),
     cell(inv.status === "accepted" ? inv.party_size ?? 1 : inv.status === "declined" ? 0 : ""),
     cell(inv.max_guests == null ? "unlimited" : inv.max_guests),
@@ -301,9 +315,12 @@ export function Dashboard() {
   const [newMax, setNewMax] = useState("1");
   const [newPersonal, setNewPersonal] = useState("");
   const [newGroup, setNewGroup] = useState("");
+  const [newLang, setNewLang] = useState<"auto" | "tr" | "en">("auto");
   const [importGroup, setImportGroup] = useState("");
+  const [importLang, setImportLang] = useState<"auto" | "tr" | "en">("auto");
   const [groupFilter, setGroupFilter] = useState<string>("all");
   const [sentFilter, setSentFilter] = useState<"all" | "sent" | "unsent">("all");
+  const [openedFilter, setOpenedFilter] = useState<"all" | "opened" | "unopened">("all");
   const [s, setS] = useState<SiteSettings>(DEFAULT_SETTINGS);
   const [settingsMsg, setSettingsMsg] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -365,11 +382,13 @@ export function Dashboard() {
       if (filter !== "all" && i.status !== filter) return false;
       if (sentFilter === "sent" && !i.sent) return false;
       if (sentFilter === "unsent" && i.sent) return false;
+      if (openedFilter === "opened" && !i.opened_at) return false;
+      if (openedFilter === "unopened" && i.opened_at) return false;
       if (groupFilter === "all") return true;
       if (groupFilter === "__none") return !(i.invite_group ?? "").trim();
       return (i.invite_group ?? "").trim() === groupFilter;
     });
-  }, [invitations, filter, groupFilter, sentFilter]);
+  }, [invitations, filter, groupFilter, sentFilter, openedFilter]);
 
   const toggleSent = (inv: Invitation) =>
     run(async () => {
@@ -389,6 +408,7 @@ export function Dashboard() {
         name,
         max_guests: maxGuests,
         invite_group: group,
+        invite_lang: importLang,
         token: newToken(),
       }));
       const { error } = await getSupabase().from("invitations").insert(rows);
@@ -406,6 +426,7 @@ export function Dashboard() {
         max_guests: parseMaxGuests(newMax),
         personal_note: newPersonal.trim() || null,
         invite_group: newGroup.trim() || null,
+        invite_lang: newLang,
         token: newToken(),
       });
       if (error) throw new Error(error.message);
@@ -693,6 +714,17 @@ export function Dashboard() {
               <option value="unsent">Waiting to send</option>
               <option value="sent">Already sent</option>
             </select>
+            <select
+              className="select-input"
+              style={{ width: "auto", padding: "6px 12px", fontSize: 12 }}
+              value={openedFilter}
+              onChange={(e) => setOpenedFilter(e.target.value as "all" | "opened" | "unopened")}
+              title="Filter by whether the guest has opened their invite"
+            >
+              <option value="all">Opened + not</option>
+              <option value="opened">Opened</option>
+              <option value="unopened">Not opened</option>
+            </select>
             {groups.length > 0 && (
               <select
                 className="select-input"
@@ -752,7 +784,7 @@ export function Dashboard() {
                     key={inv.id}
                     inv={inv}
                     onCancel={() => setEditingId(null)}
-                    onSave={async ({ name, max, personal, group, status, partySize }) => {
+                    onSave={async ({ name, max, personal, group, lang, status, partySize }) => {
                       const maxG = parseMaxGuests(max);
                       // Admin override is authoritative (for stats): clamp only to a
                       // sane 1–99, not to the invite's own max_guests.
@@ -769,6 +801,7 @@ export function Dashboard() {
                           max_guests: maxG,
                           personal_note: personal.trim() || null,
                           invite_group: group.trim() || null,
+                          invite_lang: lang,
                           status,
                           party_size: party,
                           responded_at:
@@ -874,6 +907,12 @@ export function Dashboard() {
             placeholder="Tansu's Invites"
             list="invite-groups"
           />
+          <label className="field-label">Language</label>
+          <select className="select-input" value={newLang} onChange={(e) => setNewLang(e.target.value as "auto" | "tr" | "en")}>
+            <option value="auto">Auto — bilingual (guest&apos;s browser)</option>
+            <option value="en">English only</option>
+            <option value="tr">Turkish only</option>
+          </select>
           <label className="field-label">Personal message (optional — shown only on this guest&apos;s card)</label>
           <textarea
             className="textarea-input"
@@ -908,6 +947,12 @@ export function Dashboard() {
             placeholder="Semra's Invites"
             list="invite-groups"
           />
+          <label className="field-label">Language for all of these</label>
+          <select className="select-input" value={importLang} onChange={(e) => setImportLang(e.target.value as "auto" | "tr" | "en")}>
+            <option value="auto">Auto — bilingual</option>
+            <option value="en">English only</option>
+            <option value="tr">Turkish only</option>
+          </select>
           {importMsg && <div style={{ color: "#55632f", fontFamily: "var(--sans)", fontSize: 13, marginTop: 8 }}>{importMsg}</div>}
           <button className="submit-btn" style={{ marginTop: 12 }} onClick={doImport} disabled={pending || !importText.trim()} type="button">
             Import

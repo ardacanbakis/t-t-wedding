@@ -743,6 +743,7 @@ class Component extends DCLogic {
     try {
       const saved = localStorage.getItem('ta-love-lang');
       if (saved === 'tr' || saved === 'en') this.state.lang = saved;
+      else if (typeof navigator !== 'undefined' && (navigator.language || '').toLowerCase().indexOf('en') === 0) this.state.lang = 'en';
     } catch (e) {}
 
     this._dayBgs = ['#fdf8f0', '#faf3e6', '#f9ece4', '#f7e4de', '#f6dcd4', '#f5d5c8', '#f3cfc4', '#f1c9bd'];
