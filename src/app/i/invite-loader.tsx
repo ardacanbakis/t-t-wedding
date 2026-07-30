@@ -12,7 +12,10 @@ import { getSupabase, supabaseConfigured } from "@/lib/supabase";
 import { InviteView } from "./invite-view";
 import { NotFoundView } from "./not-found-view";
 
-type Guest = Pick<Invitation, "name" | "max_guests" | "status" | "party_size" | "note" | "personal_note">;
+type Guest = Pick<
+  Invitation,
+  "name" | "max_guests" | "status" | "party_size" | "note" | "personal_note" | "invite_lang"
+>;
 
 type State =
   | { phase: "loading" }
@@ -99,6 +102,7 @@ export function InviteLoader() {
       personalNote={state.guest.personal_note}
       locked={deadlinePassed(state.settings)}
       settings={state.settings}
+      inviteLang={state.guest.invite_lang}
     />
   );
 }

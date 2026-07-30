@@ -16,6 +16,8 @@ type Props = {
   personalNote: string | null;
   locked: boolean;
   settings: SiteSettings;
+  /** Per-invite language: "auto" (bilingual) or "tr"/"en" locked to one. */
+  inviteLang?: "auto" | "tr" | "en";
   /** "general" = the universal no-RSVP link; hides RSVP, shows a light-touch
    *  positive-response button + reply note, and tracks opens/clicks. */
   mode?: "personal" | "general";
@@ -135,7 +137,11 @@ export function InviteView(props: Props) {
   const schedule = useMemo(() => parseSchedule(s.schedule), [s.schedule]);
   const layout = useMemo(() => parseLayout(s.layout), [s.layout]);
   const tilt = Number.parseFloat(s.cardTilt) || 0;
-  const [lang, setLang] = useState<Lang>("tr");
+  // A "tr"/"en" invite is locked to that language (no toggle). "auto" (or the
+  // general link) is bilingual and defaults to the visitor's language.
+  const forcedLang: Lang | null =
+    props.inviteLang === "en" ? "en" : props.inviteLang === "tr" ? "tr" : null;
+  const [lang, setLang] = useState<Lang>(forcedLang ?? "tr");
   const [answer, setAnswer] = useState<"accepted" | "declined" | null>(
     props.status === "pending" ? null : props.status
   );
@@ -158,13 +164,28 @@ export function InviteView(props: Props) {
     });
   };
 
-  // Share the language choice with the timeline site (same localStorage key).
+  // Pick the starting language and share it with the timeline site (same
+  // localStorage key). Locked invites force their language; auto/general use a
+  // stored choice → the browser's language → Turkish.
   useEffect(() => {
+    if (forcedLang) {
+      try {
+        localStorage.setItem("ta-love-lang", forcedLang);
+      } catch {}
+      return;
+    }
+    let initial: Lang = "tr";
     try {
       const stored = localStorage.getItem("ta-love-lang");
-      if (stored === "tr" || stored === "en") setLang(stored);
+      if (stored === "tr" || stored === "en") initial = stored;
+      else if (typeof navigator !== "undefined" && (navigator.language || "").toLowerCase().startsWith("en"))
+        initial = "en";
     } catch {}
-  }, []);
+    setLang(initial);
+    try {
+      localStorage.setItem("ta-love-lang", initial);
+    } catch {}
+  }, [forcedLang]);
 
   const pickLang = (l: Lang) => {
     setLang(l);
@@ -617,8 +638,9 @@ export function InviteView(props: Props) {
 
   return (
     <div className="fade-in" style={{ minHeight: "100vh", padding: `${topSpace}px 16px 60px`, position: "relative" }}>
-      {/* Language toggle — same corner as the timeline site (hideable) */}
-      {s.showInviteLang !== "false" && (
+      {/* Language toggle — same corner as the timeline site (hidden when the
+          invite is locked to one language, or turned off globally) */}
+      {!forcedLang && s.showInviteLang !== "false" && (
         <div style={{ position: "fixed", top: 16, left: 16, zIndex: 90, display: "flex", gap: 6 }}>
           <button className={`pill-btn${lang === "tr" ? " active" : ""}`} onClick={() => pickLang("tr")}>
             TR

@@ -49,6 +49,8 @@ export type Invitation = {
   sent: boolean;
   /** First time the guest opened their link (null = not opened yet) */
   opened_at: string | null;
+  /** Invite language: "auto" (bilingual), or "tr"/"en" locked to one language */
+  invite_lang: "auto" | "tr" | "en";
   responded_at: string | null;
 };
 
