@@ -14,6 +14,20 @@ import fs from "node:fs";
 import path from "node:path";
 
 const OUT = path.join(process.cwd(), "out");
+
+// Read a PNG's pixel dimensions from its IHDR chunk so the og:image:width /
+// height tags always match the actual file — swap in a square og-image.png and
+// the tags follow, no code change needed.
+function pngSize(file) {
+  try {
+    const b = fs.readFileSync(file);
+    if (b.length > 24 && b.toString("ascii", 12, 16) === "IHDR") {
+      return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
+    }
+  } catch {}
+  return { w: 1200, h: 630 };
+}
+
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/+$/, "");
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
 const supaUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -57,7 +71,7 @@ const PAGES = [
   ["404.html", "/"],
 ];
 
-function tags({ title, description, image, url }) {
+function tags({ title, description, image, url, imgW, imgH }) {
   const m = [
     ['og:type', 'website', "property"],
     ['og:site_name', 'Tansu & Arda', "property"],
@@ -77,8 +91,8 @@ function tags({ title, description, image, url }) {
     lines.push(`<meta property="og:image" content="${esc(image)}">`);
     lines.push(`<meta property="og:image:secure_url" content="${esc(image)}">`);
     lines.push(`<meta property="og:image:type" content="image/png">`);
-    lines.push(`<meta property="og:image:width" content="1200">`);
-    lines.push(`<meta property="og:image:height" content="630">`);
+    lines.push(`<meta property="og:image:width" content="${imgW}">`);
+    lines.push(`<meta property="og:image:height" content="${imgH}">`);
     lines.push(`<meta property="og:image:alt" content="${esc(title)}">`);
     lines.push(`<meta name="twitter:image" content="${esc(image)}">`);
     lines.push(`<meta name="twitter:image:alt" content="${esc(title)}">`);
@@ -104,6 +118,7 @@ async function main() {
   const title = s.ogTitle || DEFAULTS.ogTitle;
   const description = s.ogDescription || DEFAULTS.ogDescription;
   const image = siteUrl ? `${siteUrl}${basePath}/og-image.png` : "";
+  const { w: imgW, h: imgH } = pngSize(path.join(OUT, "og-image.png"));
 
   if (!siteUrl) {
     console.warn(
@@ -118,7 +133,7 @@ async function main() {
     if (!fs.existsSync(full)) continue;
     let html = stripOld(fs.readFileSync(full, "utf8"));
     const url = siteUrl ? `${siteUrl}${basePath}${route}` : "";
-    const block = tags({ title, description, image, url });
+    const block = tags({ title, description, image, url, imgW, imgH });
     if (html.includes("</head>")) {
       html = html.replace("</head>", block + "</head>");
       fs.writeFileSync(full, html);

@@ -87,7 +87,29 @@ export type SiteSettings = {
   /** Social share preview (Open Graph / Twitter) — baked in at build time */
   ogTitle: string;
   ogDescription: string;
+  /** WhatsApp message template for personal invites — {name} and {link} */
+  inviteMessage: string;
+  /** WhatsApp contact number (digits, country code, no +) for help links */
+  contactWhatsapp: string;
 };
+
+/** The default WhatsApp message template for personal invitations. */
+export const DEFAULT_INVITE_MESSAGE = `Sevgili {name},
+
+En özel günümüzde sizi aramızda görmekten büyük mutluluk duyarız. ❤️
+
+Size özel hazırlanan dijital davetiyenizi aşağıdaki bağlantıdan görüntüleyebilir ve katılım durumunuzu birkaç saniye içinde bize iletebilirsiniz.
+
+29 Ağustos 2026 Cumartesi günü Mango Garden İncek'te görüşmek dileğiyle.
+
+🔗 {link}`;
+
+/** Fill an invite message template: {name} → guest name, {link} → invite URL. */
+export function fillInviteMessage(template: string, name: string, link: string): string {
+  return (template || DEFAULT_INVITE_MESSAGE)
+    .replace(/\{name\}/gi, name)
+    .replace(/\{link\}/gi, link);
+}
 
 // ── Story / timeline ────────────────────────────────────────────────
 export type PhotoLayout = "carousel" | "carousel-bare" | "stack" | "grid" | "single";
@@ -179,6 +201,8 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   generalEn: "",
   ogTitle: "Tansu & Arda — Düğün Davetiyesi",
   ogDescription: "Düğünümüze davetlisiniz · 28 Haziran 2026 · Germencik, Aydın",
+  inviteMessage: DEFAULT_INVITE_MESSAGE,
+  contactWhatsapp: "905469660256",
 };
 
 /** General invitation texts for a language: overrides merged over defaults. */
