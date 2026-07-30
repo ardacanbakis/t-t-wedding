@@ -24,18 +24,34 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Work out where the site is served from, in priority order:
+      #   1. repo Actions Variables (manual override), else
+      #   2. a custom domain in public/CNAME (empty base path, https://<domain>), else
+      #   3. the GitHub Pages project page (https://<owner>.github.io/<repo>).
+      # So adding public/CNAME is all it takes to switch to a custom domain —
+      # links and share-preview URLs follow automatically.
+      - name: Resolve site URL + base path
+        id: site
+        run: |
+          if [ -f public/CNAME ]; then
+            DOMAIN="$(tr -d '[:space:]' < public/CNAME)"
+          fi
+          if [ -n "${DOMAIN:-}" ]; then
+            echo "base_path=" >> "$GITHUB_OUTPUT"
+            echo "site_url=https://${DOMAIN}" >> "$GITHUB_OUTPUT"
+          else
+            echo "base_path=/${{ github.event.repository.name }}" >> "$GITHUB_OUTPUT"
+            echo "site_url=https://${{ github.repository_owner }}.github.io" >> "$GITHUB_OUTPUT"
+          fi
       - run: npm run build
         env:
           # Configure these under Settings → Secrets and variables → Actions → Variables
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          # Default to the GitHub Pages project-page location so absolute
-          # share-preview URLs (WhatsApp / iMessage og:image) work out of the
-          # box. Override both under Settings → Variables if you add a custom
-          # domain (set NEXT_PUBLIC_BASE_PATH empty, NEXT_PUBLIC_SITE_URL to it).
-          #   → https://<owner>.github.io/<repo>/og-image.png
-          NEXT_PUBLIC_BASE_PATH: ${{ vars.NEXT_PUBLIC_BASE_PATH || format('/{0}', github.event.repository.name) }}
-          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || format('https://{0}.github.io', github.repository_owner) }}
+          # Repo Variables win if set; otherwise the values resolved above
+          # (custom domain from public/CNAME, else the project-page location).
+          NEXT_PUBLIC_BASE_PATH: ${{ vars.NEXT_PUBLIC_BASE_PATH || steps.site.outputs.base_path }}
+          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || steps.site.outputs.site_url }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out

@@ -55,6 +55,7 @@ const db = {
     ["invitePulse", "true"],
     ["inviteFade", "true"],
     ["inviteConfirm", "true"],
+    ["inviteTopSpace", "24"],
     ["hideNavMobile", "false"],
     ["autoCycle", "false"],
     ["autoCycleSecs", "3"],
