@@ -43,22 +43,28 @@ Invitation links look like `https://…/i/?t=<token>` (the admin **Copy link**
 button produces them). The prettier `/i/<token>` form also works via a small
 `404.html` redirect.
 
-### Custom domain (e.g. `ardacanbakis.com`)
+### Custom domain — subdomain `wedding.ardacanbakis.com` (Cloudflare DNS)
 
-`public/CNAME` already contains `ardacanbakis.com`, and the deploy workflow
+`public/CNAME` contains `wedding.ardacanbakis.com`, and the deploy workflow
 reads it — so links, the base path, and share-preview URLs all switch to the
-domain automatically. You just need DNS + the GitHub setting:
+subdomain automatically. A subdomain leaves the apex (`ardacanbakis.com`,
+e.g. a portfolio) completely untouched. You just need one DNS record + the
+GitHub setting:
 
-1. **DNS (at your registrar) — do this first.** Add records pointing the
-   domain at GitHub Pages:
-   - Apex `ardacanbakis.com` → four **A** records:
-     `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
-     (and, if your DNS supports it, the matching **AAAA** records
-     `2606:50c0:8000::153`, `…8001::153`, `…8002::153`, `…8003::153`).
-   - `www.ardacanbakis.com` → a **CNAME** record → `ardacanbakis.github.io`.
+1. **Cloudflare DNS — do this first.** Add a single record:
+   - **Type:** CNAME
+   - **Name:** `wedding`  (Cloudflare shows it as `wedding.ardacanbakis.com`)
+   - **Target:** `ardacanbakis.github.io`
+   - **Proxy status:** **DNS only (grey cloud)** — important. Turn the orange
+     cloud OFF, at least until HTTPS is working. Proxying (orange cloud) can
+     block GitHub from issuing the certificate and cause redirect loops. If you
+     later want Cloudflare's proxy, first confirm HTTPS works DNS-only, then
+     enable the proxy with SSL/TLS mode **Full (strict)**.
+   - No apex A/AAAA records are needed for a subdomain.
 2. **GitHub → repo Settings → Pages → Custom domain** — enter
-   `ardacanbakis.com`, Save, and once DNS verifies, tick **Enforce HTTPS**.
-3. Merge to `main`. The site deploys at `https://ardacanbakis.com`; new
+   `wedding.ardacanbakis.com`, Save. Once it verifies (green check), tick
+   **Enforce HTTPS**.
+3. Merge to `main`. The site deploys at `https://wedding.ardacanbakis.com`; new
    invitation links and the WhatsApp preview image use it.
 
 To move back to `username.github.io/<repo>`, delete `public/CNAME` (and clear
