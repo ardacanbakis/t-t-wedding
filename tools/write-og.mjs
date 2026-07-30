@@ -72,10 +72,16 @@ function tags({ title, description, image, url }) {
     .filter(([, v]) => v)
     .map(([k, v, attr]) => `<meta ${attr}="${k}" content="${esc(v)}">`);
   if (image) {
+    // WhatsApp / iMessage / Facebook want an absolute URL plus the type and
+    // dimensions; secure_url + type make the thumbnail render more reliably.
     lines.push(`<meta property="og:image" content="${esc(image)}">`);
+    lines.push(`<meta property="og:image:secure_url" content="${esc(image)}">`);
+    lines.push(`<meta property="og:image:type" content="image/png">`);
     lines.push(`<meta property="og:image:width" content="1200">`);
     lines.push(`<meta property="og:image:height" content="630">`);
+    lines.push(`<meta property="og:image:alt" content="${esc(title)}">`);
     lines.push(`<meta name="twitter:image" content="${esc(image)}">`);
+    lines.push(`<meta name="twitter:image:alt" content="${esc(title)}">`);
   }
   return OG_START + "\n" + lines.join("\n") + "\n" + OG_END + "\n";
 }
