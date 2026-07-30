@@ -69,6 +69,7 @@ insert into public.settings (key, value) values
   ('showLangPicker','true'),
   ('showInviteLang','true'),
   ('hideNavMobile','false'),
+  ('autoCycle','false'),
   ('contactWhatsapp','905469660256'),
   ('ogTitle',      'Tansu & Arda — Düğün Davetiyesi'),
   ('ogDescription','Düğünümüze davetlisiniz · 28 Haziran 2026 · Germencik, Aydın')

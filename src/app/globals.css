@@ -222,6 +222,43 @@ body {
   box-shadow: 0 12px 28px -12px rgba(60, 40, 25, 0.55);
 }
 
+/* Once an answer is picked, the choice buttons drop their fill (go transparent)
+   so the eye moves to the pulsing Send button. The selected one keeps a
+   coloured outline; the other fades back. */
+.choice-btn.chosen {
+  background: transparent;
+  box-shadow: none;
+}
+.choice-btn.chosen.selected-yes {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.choice-btn.chosen.selected-no {
+  border-color: #6b543f;
+  color: #6b543f;
+}
+.choice-btn.chosen:not(.selected-yes):not(.selected-no) {
+  opacity: 0.5;
+}
+
+/* Once a choice is made the Send button grows (rests enlarged) and gently
+   breathes up to 1.5×, so it's the obvious next step while staying tappable. */
+@keyframes sendGrow {
+  0%,
+  100% {
+    transform: scale(1.4);
+    box-shadow: 0 14px 32px -12px rgba(120, 72, 40, 0.55);
+  }
+  50% {
+    transform: scale(1.5);
+    box-shadow: 0 20px 44px -10px rgba(191, 155, 95, 0.85);
+  }
+}
+.submit-btn.send-grow {
+  animation: sendGrow 1.6s ease-in-out infinite;
+  transform: scale(1.4);
+}
+
 /* ── Admin ─────────────────────────────────────────────── */
 .admin-card {
   background: rgba(255, 253, 248, 0.92);

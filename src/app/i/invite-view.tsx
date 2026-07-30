@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { blockStyle, parseLayout, type BlockId } from "@/lib/blocks";
 import { fmt, formatDeadline, formatEventDate, type GuestTexts, type Lang } from "@/lib/i18n";
 import { mergeGeneral, mergeTexts, parseSchedule, parseVars, type GeneralTexts, type SiteSettings } from "@/lib/model";
@@ -146,6 +146,17 @@ export function InviteView(props: Props) {
   );
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [showStoryPopup, setShowStoryPopup] = useState(false);
+  const rsvpRef = useRef<HTMLDivElement | null>(null);
+
+  // Picking an answer scrolls the RSVP options up to the top so the Send
+  // button (which then pulses) is front-and-centre.
+  const selectAnswer = (a: "accepted" | "declined") => {
+    setAnswer(a);
+    requestAnimationFrame(() => {
+      rsvpRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
 
   // Share the language choice with the timeline site (same localStorage key).
   useEffect(() => {
@@ -195,6 +206,7 @@ export function InviteView(props: Props) {
         status: row?.status ?? answer,
         partySize: row?.party_size && row.party_size > 0 ? row.party_size : partySize,
       });
+      setShowStoryPopup(true);
     } catch {
       setError(t.error);
     } finally {
@@ -222,6 +234,7 @@ export function InviteView(props: Props) {
   const sayYes = async () => {
     if (gYes) return;
     setGYes(true); // optimistic + guards against a second click
+    setShowStoryPopup(true);
     try {
       await getSupabase().rpc("general_track", { p_kind: "yes" });
     } catch {}
@@ -242,6 +255,13 @@ export function InviteView(props: Props) {
           }}
         >
           {g.thanks}
+          {t.storyButton && (
+            <div style={{ marginTop: 12 }}>
+              <a className="pill-btn" href={withBase(s.storyUrl)} onClick={() => setShowStoryPopup(true)}>
+                {t.storyButton} ♥
+              </a>
+            </div>
+          )}
         </div>
       ) : (
         <button className="submit-btn" onClick={sayYes} type="button" style={{ fontSize: 15 }}>
@@ -284,7 +304,7 @@ export function InviteView(props: Props) {
       )}
     </div>
   ) : (
-    <div style={{ maxWidth: 440, margin: "0 auto" }}>
+    <div ref={rsvpRef} style={{ maxWidth: 440, margin: "0 auto", scrollMarginTop: 76 }}>
       <h2
         style={{
           fontFamily: "var(--blk-ff, var(--serif))",
@@ -317,20 +337,27 @@ export function InviteView(props: Props) {
               ? fmt(t.savedAcceptedMany, { n: saved.partySize })
               : t.savedAcceptedOne
             : t.savedDeclined}
+          {t.storyButton && (
+            <div style={{ marginTop: 12 }}>
+              <a className="pill-btn" href={withBase(s.storyUrl)} onClick={() => setShowStoryPopup(true)}>
+                {t.storyButton} ♥
+              </a>
+            </div>
+          )}
         </div>
       )}
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <button
-          className={`choice-btn${answer === "accepted" ? " selected-yes" : ""}`}
-          onClick={() => setAnswer("accepted")}
+          className={`choice-btn${answer ? " chosen" : ""}${answer === "accepted" ? " selected-yes" : ""}`}
+          onClick={() => selectAnswer("accepted")}
           type="button"
         >
           {t.accept}
         </button>
         <button
-          className={`choice-btn${answer === "declined" ? " selected-no" : ""}`}
-          onClick={() => setAnswer("declined")}
+          className={`choice-btn${answer ? " chosen" : ""}${answer === "declined" ? " selected-no" : ""}`}
+          onClick={() => selectAnswer("declined")}
           type="button"
         >
           {t.decline}
@@ -392,19 +419,21 @@ export function InviteView(props: Props) {
 
       {error && <div style={{ color: "#a83232", fontFamily: "var(--sans)", fontSize: 13, marginTop: 12 }}>{error}</div>}
 
-      <div style={{ textAlign: "center", marginTop: 22 }}>
-        <button className="submit-btn" onClick={submit} disabled={!answer || pending} type="button">
+      <div style={{ textAlign: "center", margin: "34px 0 8px", minHeight: 52 }}>
+        <button
+          className={`submit-btn${answer && !pending && !saved ? " send-grow" : ""}`}
+          onClick={submit}
+          disabled={!answer || pending}
+          type="button"
+        >
           {pending ? "…" : saved ? t.update : t.send}
         </button>
-        <div style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 12, color: "var(--brown-soft)", marginTop: 12 }}>
+        <div style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 12, color: "var(--brown-soft)", marginTop: 22 }}>
           {fmt(t.editUntil, { date: formatDeadline(s.rsvpDeadline, lang) })}
         </div>
       </div>
     </div>
   );
-
-  // True once the guest has answered — RSVP saved, or tapped "I'll be there".
-  const rsvpDone = !!saved || gYes;
 
   const content: Record<BlockId, ReactNode> = {
     kicker: t.kicker ? (
@@ -533,22 +562,83 @@ export function InviteView(props: Props) {
           </button>
         </div>
       )}
-      {/* Story button — top centre and bottom centre. After an RSVP is made
-          it pulses in gold to draw the eye toward the story. */}
-      <a
-        className={`pill-btn story-cta${rsvpDone ? " pulsing" : ""}`}
-        href={withBase(s.storyUrl)}
-        style={{ position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 90 }}
-      >
-        {t.storyButton} ♥
-      </a>
-      <a
-        className={`pill-btn story-cta${rsvpDone ? " pulsing" : ""}`}
-        href={withBase(s.storyUrl)}
-        style={{ position: "fixed", bottom: 18, left: "50%", transform: "translateX(-50%)", zIndex: 90 }}
-      >
-        {t.storyButton} ♥
-      </a>
+      {/* Thank-you popup — appears after the guest sends their RSVP, inviting
+          them to the story. Text is editable under Invitation Styling. */}
+      {showStoryPopup && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowStoryPopup(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 200,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20,
+            background: "rgba(40,26,20,.5)",
+            backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)",
+            animation: "viewIn .3s ease both",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: "relative",
+              width: "100%",
+              maxWidth: 400,
+              background: "var(--paper)",
+              borderRadius: 18,
+              padding: "30px 24px 26px",
+              textAlign: "center",
+              boxShadow: "0 20px 60px -18px rgba(120,72,40,.55)",
+              border: "1px solid var(--gold-soft)",
+            }}
+          >
+            <button
+              onClick={() => setShowStoryPopup(false)}
+              aria-label="Close"
+              type="button"
+              style={{
+                position: "absolute",
+                top: 10,
+                right: 12,
+                border: "none",
+                background: "transparent",
+                fontSize: 22,
+                lineHeight: 1,
+                color: "var(--brown-soft)",
+                cursor: "pointer",
+              }}
+            >
+              ×
+            </button>
+            <div style={{ fontFamily: "var(--script)", fontSize: 30, color: "var(--gold)", marginBottom: 6 }}>
+              <CoupleNames value={s.coupleNames} />
+            </div>
+            {t.storyPrompt && (
+              <p
+                style={{
+                  fontFamily: "var(--sans)",
+                  fontWeight: 300,
+                  fontSize: 15,
+                  lineHeight: 1.7,
+                  color: "var(--brown-mid)",
+                  margin: "0 0 20px",
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {t.storyPrompt}
+              </p>
+            )}
+            <a className="pill-btn story-cta pulse-inline" href={withBase(s.storyUrl)}>
+              {t.storyButton} ♥
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Invitation card hung on the red thread */}
       <div style={{ maxWidth: 640, margin: "40px auto 0", position: "relative" }}>

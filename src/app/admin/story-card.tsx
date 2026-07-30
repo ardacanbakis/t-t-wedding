@@ -142,6 +142,7 @@ export function StoryCard({
   onSaveNightFrom,
   onSaveShowLang,
   onSaveHideNavMobile,
+  onSaveAutoCycle,
   reloadSettings,
 }: {
   settings: SiteSettings;
@@ -149,6 +150,7 @@ export function StoryCard({
   onSaveNightFrom: (n: string) => Promise<void>;
   onSaveShowLang: (v: string) => Promise<void>;
   onSaveHideNavMobile: (v: string) => Promise<void>;
+  onSaveAutoCycle: (v: string) => Promise<void>;
   reloadSettings: () => Promise<void>;
 }) {
   const [chapters, setChapters] = useState<StoryChapter[]>([]);
@@ -160,6 +162,7 @@ export function StoryCard({
   }
   const showLang = settings.showLangPicker !== "false";
   const hideNavMobile = settings.hideNavMobile === "true";
+  const autoCycle = settings.autoCycle === "true";
   const [openId, setOpenId] = useState<number | null>(null);
   const [tab, setTab] = useState<Lang>("tr");
   const [pending, setPending] = useState(false);
@@ -366,6 +369,19 @@ export function StoryCard({
             </button>
             <div style={{ fontFamily: "var(--sans)", fontSize: 12, color: "var(--brown-soft)", marginTop: 6 }}>
               Hides the top-right “Our Story · Timeline” switch on small screens only. It stays visible on desktop.
+            </div>
+            <label className="field-label">Auto-cycle through chapters</label>
+            <button
+              className="mini-btn"
+              style={autoCycle ? { background: "var(--gold)", color: "#fffdf8", borderColor: "var(--gold)" } : undefined}
+              onClick={() => run(() => onSaveAutoCycle(autoCycle ? "false" : "true"))}
+              type="button"
+            >
+              {autoCycle ? "▶ Auto-cycle on" : "⏸ Off"}
+            </button>
+            <div style={{ fontFamily: "var(--sans)", fontSize: 12, color: "var(--brown-soft)", marginTop: 6 }}>
+              Both the story and timeline pages advance on their own — a single-photo chapter holds ~3s, a multi-photo
+              chapter shows each photo then moves on. Any scroll or tap pauses it for a few seconds.
             </div>
           </div>
         );

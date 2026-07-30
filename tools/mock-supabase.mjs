@@ -53,6 +53,7 @@ const db = {
     ["showLangPicker", "true"],
     ["showInviteLang", "true"],
     ["hideNavMobile", "false"],
+    ["autoCycle", "false"],
     ["contactWhatsapp", "905469660256"],
     ["inviteMessage", "Sevgili {name},\n\nDijital davetiyeniz: {link}"],
     ["ogTitle", "Tansu & Arda — Düğün Davetiyesi"],
