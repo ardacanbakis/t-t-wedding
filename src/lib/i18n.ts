@@ -34,6 +34,7 @@ export type GuestTexts = {
   answerAcceptedMany: string;
   answerDeclined: string;
   storyButton: string;
+  storyPrompt: string;
   closing: string;
   notFoundTitle: string;
   notFoundBody: string;
@@ -72,6 +73,7 @@ export const defaultTexts: Record<Lang, GuestTexts> = {
     answerAcceptedMany: "Geliyoruz — {n} kişi",
     answerDeclined: "Gelemiyoruz",
     storyButton: "Hikâyemiz",
+    storyPrompt: "Teşekkürler! 💛 Hazır buradayken, bu güne nasıl geldiğimizi anlattığımız küçük hikâyemize göz atmak ister misiniz?",
     closing: "Ad astra per aspera",
     notFoundTitle: "Davetiye bulunamadı",
     notFoundBody: "Bu bağlantı geçerli bir davetiyeye ait değil. Lütfen size gönderilen bağlantıyı kontrol edin.",
@@ -108,7 +110,8 @@ export const defaultTexts: Record<Lang, GuestTexts> = {
     answerAcceptedMany: "Attending — {n} guests",
     answerDeclined: "Not attending",
     storyButton: "Our Story",
-    closing: "Ad astra per aspera",
+    storyPrompt: "Thank you! 💛 While you're here, would you like to peek at our little story of how we got to this day?",
+    closing:"Ad astra per aspera",
     notFoundTitle: "Invitation not found",
     notFoundBody: "This link doesn't match a valid invitation. Please check the link you were sent.",
     error: "Something went wrong, please try again.",
@@ -151,7 +154,8 @@ export const TEXT_FIELDS: { key: keyof GuestTexts; label: string; multiline?: bo
   { key: "answerAcceptedOne", label: "Locked answer — accepted, 1 person" },
   { key: "answerAcceptedMany", label: "Locked answer — accepted, {n} people" },
   { key: "answerDeclined", label: "Locked answer — declined" },
-  { key: "storyButton", label: "Story button (top & bottom centre)" },
+  { key: "storyButton", label: "Story button (in the thank-you popup)" },
+  { key: "storyPrompt", label: "Thank-you popup message (shown after Send)", multiline: true },
   { key: "closing", label: "Closing motto (bottom of card)" },
   { key: "notFoundTitle", label: "Invalid-link page title" },
   { key: "notFoundBody", label: "Invalid-link page text", multiline: true },
