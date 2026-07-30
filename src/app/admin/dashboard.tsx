@@ -1010,6 +1010,16 @@ export function Dashboard() {
               The confirm popup wording is editable under <strong>Texts</strong> above (Confirm popup — title / message /
               buttons).
             </div>
+            <label className="field-label">Empty space above the card — {Number(s.inviteTopSpace) || 0}px</label>
+            <input
+              type="range"
+              min={0}
+              max={160}
+              step={4}
+              value={Number(s.inviteTopSpace) || 0}
+              onChange={(e) => setS({ ...s, inviteTopSpace: e.target.value })}
+              style={{ width: "100%", accentColor: "var(--gold)" }}
+            />
             <label className="field-label">Schedule — one per line: HH:MM | Türkçe | English</label>
             <textarea
               className="textarea-input"

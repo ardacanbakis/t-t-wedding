@@ -613,8 +613,10 @@ export function InviteView(props: Props) {
   // guest focuses on sending (toggle in Invitation Styling).
   const faded = !!answer && !saved && s.inviteFade !== "false";
 
+  const topSpace = Math.max(0, Number(s.inviteTopSpace ?? 24) || 0);
+
   return (
-    <div className="fade-in" style={{ minHeight: "100vh", padding: "24px 16px 60px", position: "relative" }}>
+    <div className="fade-in" style={{ minHeight: "100vh", padding: `${topSpace}px 16px 60px`, position: "relative" }}>
       {/* Language toggle — same corner as the timeline site (hideable) */}
       {s.showInviteLang !== "false" && (
         <div style={{ position: "fixed", top: 16, left: 16, zIndex: 90, display: "flex", gap: 6 }}>

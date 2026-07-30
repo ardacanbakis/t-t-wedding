@@ -45,11 +45,25 @@ button produces them). The prettier `/i/<token>` form also works via a small
 
 ### Custom domain (e.g. `ardacanbakis.com`)
 
-1. Add a `public/CNAME` file containing just the domain, and point the domain's
-   DNS at GitHub Pages (Settings → Pages → Custom domain).
-2. Set repo Actions **Variables**: `NEXT_PUBLIC_SITE_URL=https://ardacanbakis.com`
-   and `NEXT_PUBLIC_BASE_PATH=` (empty — a custom domain serves from the root).
-3. Redeploy. Links and share-preview images then use the custom domain.
+`public/CNAME` already contains `ardacanbakis.com`, and the deploy workflow
+reads it — so links, the base path, and share-preview URLs all switch to the
+domain automatically. You just need DNS + the GitHub setting:
+
+1. **DNS (at your registrar) — do this first.** Add records pointing the
+   domain at GitHub Pages:
+   - Apex `ardacanbakis.com` → four **A** records:
+     `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
+     (and, if your DNS supports it, the matching **AAAA** records
+     `2606:50c0:8000::153`, `…8001::153`, `…8002::153`, `…8003::153`).
+   - `www.ardacanbakis.com` → a **CNAME** record → `ardacanbakis.github.io`.
+2. **GitHub → repo Settings → Pages → Custom domain** — enter
+   `ardacanbakis.com`, Save, and once DNS verifies, tick **Enforce HTTPS**.
+3. Merge to `main`. The site deploys at `https://ardacanbakis.com`; new
+   invitation links and the WhatsApp preview image use it.
+
+To move back to `username.github.io/<repo>`, delete `public/CNAME` (and clear
+the Pages custom-domain setting). Setting repo Actions Variables still overrides
+everything if you ever need to.
 
 ## 3. Local development
 

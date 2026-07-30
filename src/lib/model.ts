@@ -91,6 +91,8 @@ export type SiteSettings = {
   inviteFade: string;
   /** "true"/"false" — ask a confirm popup before sending the RSVP */
   inviteConfirm: string;
+  /** Empty space above the invitation card, in px (as a string number) */
+  inviteTopSpace: string;
   /** "true"/"false" — hide the Story/Timeline switch on phones */
   hideNavMobile: string;
   /** "true"/"false" — auto-cycle through story/timeline chapters */
@@ -228,6 +230,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   invitePulse: "true",
   inviteFade: "true",
   inviteConfirm: "true",
+  inviteTopSpace: "24",
   hideNavMobile: "false",
   autoCycle: "false",
   autoCycleSecs: "3",
