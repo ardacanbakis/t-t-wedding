@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { GuestTexts } from "@/lib/i18n";
 import {
   DEFAULT_SETTINGS,
@@ -61,7 +61,17 @@ function CopyLinkButton({ token }: { token: string }) {
   );
 }
 
-function CopyMessageButton({ name, token, template }: { name: string; token: string; template: string }) {
+function CopyMessageButton({
+  name,
+  token,
+  template,
+  label = "Copy message",
+}: {
+  name: string;
+  token: string;
+  template: string;
+  label?: string;
+}) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     const msg = fillInviteMessage(template, name, inviteUrl(token));
@@ -74,13 +84,25 @@ function CopyMessageButton({ name, token, template }: { name: string; token: str
     setTimeout(() => setCopied(false), 1800);
   };
   return (
-    <button className="mini-btn" onClick={copy} type="button" title="Copy the WhatsApp message with this guest's name + link">
-      {copied ? "Copied ✓" : "Copy message"}
+    <button className="mini-btn" onClick={copy} type="button" title={`${label} — with this guest's name + link`}>
+      {copied ? "Copied ✓" : label}
     </button>
   );
 }
 
-function MessageTemplateCard({ value, onSave }: { value: string; onSave: (v: string) => Promise<void> }) {
+function MessageTemplateCard({
+  value,
+  onSave,
+  title,
+  buttonLabel,
+  description,
+}: {
+  value: string;
+  onSave: (v: string) => Promise<void>;
+  title: string;
+  buttonLabel: string;
+  description: ReactNode;
+}) {
   const [text, setText] = useState(value);
   const [seed, setSeed] = useState(value);
   if (seed !== value) {
@@ -92,11 +114,9 @@ function MessageTemplateCard({ value, onSave }: { value: string; onSave: (v: str
   const preview = fillInviteMessage(text, "Ayşe & Mehmet", "https://ardacanbakis.github.io/t-t-wedding/i/?t=…");
   return (
     <div className="admin-card" style={{ marginBottom: 22 }}>
-      <h2 className="admin-h2">WhatsApp invite message</h2>
+      <h2 className="admin-h2">{title}</h2>
       <p style={{ fontFamily: "var(--sans)", fontSize: 13, color: "var(--brown-mid)", margin: "0 0 12px", lineHeight: 1.6 }}>
-        The message the <strong>Copy message</strong> button puts on your clipboard for each guest — paste it straight into
-        WhatsApp. Use <code>{"{name}"}</code> for the guest&apos;s name and <code>{"{link}"}</code> for their personal
-        invitation link.
+        {description}
       </p>
       <textarea
         className="textarea-input"
@@ -139,7 +159,7 @@ function MessageTemplateCard({ value, onSave }: { value: string; onSave: (v: str
         disabled={saving}
         type="button"
       >
-        {saving ? "Saving…" : saved ? "Saved ✓" : "Save message"}
+        {saving ? "Saving…" : saved ? "Saved ✓" : buttonLabel}
       </button>
     </div>
   );
@@ -170,7 +190,7 @@ function EditRow({
   const [pending, setPending] = useState(false);
   return (
     <tr style={{ background: "rgba(191,155,95,.08)" }}>
-      <td colSpan={8}>
+      <td colSpan={10}>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", padding: "4px 0" }}>
           <input className="text-input" style={{ flex: "2 1 220px" }} value={name} onChange={(e) => setName(e.target.value)} />
           <input
@@ -252,13 +272,15 @@ function toCsv(invitations: Invitation[]): string {
     const v = value == null ? "" : String(value);
     return /[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
   };
-  const header = ["Name", "Group", "Status", "Party size", "Max guests", "Note", "Personal message", "Responded at", "Link"];
+  const header = ["Name", "Group", "Status", "Party size", "Max guests", "Sent", "Opened at", "Note", "Personal message", "Responded at", "Link"];
   const rows = invitations.map((inv) => [
     cell(inv.name),
     cell(inv.invite_group),
     cell(inv.status),
     cell(inv.status === "accepted" ? inv.party_size ?? 1 : inv.status === "declined" ? 0 : ""),
     cell(inv.max_guests == null ? "unlimited" : inv.max_guests),
+    cell(inv.sent ? "yes" : "no"),
+    cell(inv.opened_at),
     cell(inv.note),
     cell(inv.personal_note),
     cell(inv.responded_at),
@@ -281,6 +303,7 @@ export function Dashboard() {
   const [newGroup, setNewGroup] = useState("");
   const [importGroup, setImportGroup] = useState("");
   const [groupFilter, setGroupFilter] = useState<string>("all");
+  const [sentFilter, setSentFilter] = useState<"all" | "sent" | "unsent">("all");
   const [s, setS] = useState<SiteSettings>(DEFAULT_SETTINGS);
   const [settingsMsg, setSettingsMsg] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -340,11 +363,22 @@ export function Dashboard() {
   const visible = useMemo(() => {
     return invitations.filter((i) => {
       if (filter !== "all" && i.status !== filter) return false;
+      if (sentFilter === "sent" && !i.sent) return false;
+      if (sentFilter === "unsent" && i.sent) return false;
       if (groupFilter === "all") return true;
       if (groupFilter === "__none") return !(i.invite_group ?? "").trim();
       return (i.invite_group ?? "").trim() === groupFilter;
     });
-  }, [invitations, filter, groupFilter]);
+  }, [invitations, filter, groupFilter, sentFilter]);
+
+  const toggleSent = (inv: Invitation) =>
+    run(async () => {
+      const { error } = await getSupabase()
+        .from("invitations")
+        .update({ sent: !inv.sent, updated_at: new Date().toISOString() })
+        .eq("id", inv.id);
+      if (error) throw new Error(error.message);
+    });
 
   const doImport = () =>
     run(async () => {
@@ -398,6 +432,7 @@ export function Dashboard() {
     "autoCycleSecs",
     "mobileImages",
     "inviteMessage",
+    "reminderMessage",
     "generalTr",
     "generalEn",
     "ogTitle",
@@ -484,6 +519,11 @@ export function Dashboard() {
   const doSaveInviteMessage = async (value: string) => {
     await saveSettingRows([{ key: "inviteMessage", value }]);
     setS((prev) => ({ ...prev, inviteMessage: value }));
+  };
+
+  const doSaveReminderMessage = async (value: string) => {
+    await saveSettingRows([{ key: "reminderMessage", value }]);
+    setS((prev) => ({ ...prev, reminderMessage: value }));
   };
 
   const doSaveSocial = (ogTitle: string, ogDescription: string) =>
@@ -642,6 +682,17 @@ export function Dashboard() {
             Invitations
           </h2>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+            <select
+              className="select-input"
+              style={{ width: "auto", padding: "6px 12px", fontSize: 12 }}
+              value={sentFilter}
+              onChange={(e) => setSentFilter(e.target.value as "all" | "sent" | "unsent")}
+              title="Filter by whether the invite has been sent"
+            >
+              <option value="all">Sent + unsent</option>
+              <option value="unsent">Waiting to send</option>
+              <option value="sent">Already sent</option>
+            </select>
             {groups.length > 0 && (
               <select
                 className="select-input"
@@ -681,6 +732,8 @@ export function Dashboard() {
                 <th>Status</th>
                 <th>Party</th>
                 <th>Note</th>
+                <th>Sent</th>
+                <th>Opened</th>
                 <th>Share</th>
                 <th></th>
               </tr>
@@ -688,7 +741,7 @@ export function Dashboard() {
             <tbody>
               {visible.length === 0 && (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: "center", padding: 24, color: "var(--brown-soft)" }}>
+                  <td colSpan={10} style={{ textAlign: "center", padding: 24, color: "var(--brown-soft)" }}>
                     No invitations here yet.
                   </td>
                 </tr>
@@ -752,10 +805,27 @@ export function Dashboard() {
                     </td>
                     <td>{inv.status === "accepted" ? inv.party_size ?? 1 : inv.status === "declined" ? 0 : "—"}</td>
                     <td style={{ maxWidth: 260, whiteSpace: "pre-wrap", fontSize: 13 }}>{inv.note || "—"}</td>
+                    <td style={{ textAlign: "center" }}>
+                      <input
+                        type="checkbox"
+                        checked={inv.sent}
+                        onChange={() => toggleSent(inv)}
+                        title={inv.sent ? "Sent — click to mark as not sent" : "Not sent yet — click when you've sent it"}
+                        style={{ width: 17, height: 17, cursor: "pointer", accentColor: "var(--gold)" }}
+                      />
+                    </td>
+                    <td style={{ textAlign: "center" }} title={inv.opened_at ? `Opened ${new Date(inv.opened_at).toLocaleString()}` : "Not opened yet"}>
+                      {inv.opened_at ? (
+                        <span style={{ color: "#55632f", fontWeight: 700 }}>✓</span>
+                      ) : (
+                        <span style={{ color: "var(--brown-soft)" }}>—</span>
+                      )}
+                    </td>
                     <td>
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                         <CopyLinkButton token={inv.token} />
-                        <CopyMessageButton name={inv.name} token={inv.token} template={s.inviteMessage} />
+                        <CopyMessageButton name={inv.name} token={inv.token} template={s.inviteMessage} label="Copy message" />
+                        <CopyMessageButton name={inv.name} token={inv.token} template={s.reminderMessage} label="Copy reminder" />
                       </div>
                     </td>
                     <td>
@@ -785,8 +855,6 @@ export function Dashboard() {
           </table>
         </div>
       </div>
-
-      <MessageTemplateCard value={s.inviteMessage} onSave={doSaveInviteMessage} />
 
       {/* Add + bulk import */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 22, marginBottom: 22 }}>
@@ -846,6 +914,33 @@ export function Dashboard() {
           </button>
         </div>
       </div>
+
+      <MessageTemplateCard
+        value={s.inviteMessage}
+        onSave={doSaveInviteMessage}
+        title="WhatsApp invite message"
+        buttonLabel="Save invite message"
+        description={
+          <>
+            The message the <strong>Copy message</strong> button copies for each guest — paste it straight into WhatsApp.
+            Use <code>{"{name}"}</code> for the guest&apos;s name and <code>{"{link}"}</code> for their personal invitation
+            link.
+          </>
+        }
+      />
+      <MessageTemplateCard
+        value={s.reminderMessage}
+        onSave={doSaveReminderMessage}
+        title="WhatsApp reminder message"
+        buttonLabel="Save reminder message"
+        description={
+          <>
+            A gentle nudge for guests who haven&apos;t responded — the <strong>Copy reminder</strong> button on each row
+            copies this one. Same <code>{"{name}"}</code> / <code>{"{link}"}</code> placeholders. Tip: filter to{" "}
+            <em>Waiting to send</em> or check who hasn&apos;t <em>Opened</em> to find who to nudge.
+          </>
+        }
+      />
 
   </>
       )}

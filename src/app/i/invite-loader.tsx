@@ -49,6 +49,9 @@ export function InviteLoader() {
           setState({ phase: "notfound", settings: setRes.data ? settings : undefined });
           return;
         }
+        // Record (once) that this guest opened their link, so the couple can
+        // see who's clicked through. Fire-and-forget; never blocks the invite.
+        supabase.rpc("mark_invitation_opened", { p_token: token }).then(() => {}, () => {});
         setState({ phase: "ready", guest, settings });
       } catch {
         if (!cancelled) setState({ phase: "notfound" });

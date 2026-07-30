@@ -58,6 +58,7 @@ const db = {
     ["mobileImages", "true"],
     ["contactWhatsapp", "905469660256"],
     ["inviteMessage", "Sevgili {name},\n\nDijital davetiyeniz: {link}"],
+    ["reminderMessage", "Sevgili {name},\n\nHatırlatma: {link}"],
     ["ogTitle", "Tansu & Arda — Düğün Davetiyesi"],
     ["ogDescription", "Düğünümüze davetlisiniz · 28 Haziran 2026 · Germencik, Aydın"],
   ]),
@@ -195,6 +196,12 @@ const server = http.createServer(async (req, res) => {
         : []
     );
   }
+  if (pathname === "/rest/v1/rpc/mark_invitation_opened" && req.method === "POST") {
+    const body = await readBody(req);
+    const inv = db.invitations.find((i) => i.token === body?.p_token);
+    if (inv && !inv.opened_at) inv.opened_at = new Date().toISOString();
+    return send(res, 204);
+  }
   if (pathname === "/rest/v1/rpc/general_track" && req.method === "POST") {
     const body = await readBody(req);
     const kind = body?.p_kind;
@@ -301,6 +308,8 @@ const server = http.createServer(async (req, res) => {
           note: null,
           personal_note: row.personal_note ?? null,
           invite_group: row.invite_group ?? null,
+          sent: !!row.sent,
+          opened_at: null,
           responded_at: null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),

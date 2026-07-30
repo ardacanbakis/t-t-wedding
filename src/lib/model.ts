@@ -45,6 +45,10 @@ export type Invitation = {
   personal_note: string | null;
   /** Optional grouping/tag, e.g. "Tansu's Invites" — admin-only, never shown to guests */
   invite_group: string | null;
+  /** Admin checkbox: has this invitation been sent to the guest yet? */
+  sent: boolean;
+  /** First time the guest opened their link (null = not opened yet) */
+  opened_at: string | null;
   responded_at: string | null;
 };
 
@@ -97,6 +101,8 @@ export type SiteSettings = {
   ogDescription: string;
   /** WhatsApp message template for personal invites — {name} and {link} */
   inviteMessage: string;
+  /** WhatsApp reminder message template for personal invites — {name} and {link} */
+  reminderMessage: string;
   /** WhatsApp contact number (digits, country code, no +) for help links */
   contactWhatsapp: string;
 };
@@ -109,6 +115,15 @@ En özel günümüzde sizi aramızda görmekten büyük mutluluk duyarız. ❤�
 Size özel hazırlanan dijital davetiyenizi aşağıdaki bağlantıdan görüntüleyebilir ve katılım durumunuzu birkaç saniye içinde bize iletebilirsiniz.
 
 29 Ağustos 2026 Cumartesi günü Mango Garden İncek'te görüşmek dileğiyle.
+
+🔗 {link}`;
+
+/** The default WhatsApp reminder message for personal invitations. */
+export const DEFAULT_REMINDER_MESSAGE = `Sevgili {name},
+
+Düğünümüz yaklaşırken kibarca hatırlatmak istedik. 💛 Henüz katılım durumunuzu iletmediyseniz, dijital davetiyeniz üzerinden birkaç saniyede bize bildirebilirsiniz.
+
+Sizi aramızda görmeyi çok isteriz.
 
 🔗 {link}`;
 
@@ -213,6 +228,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   ogTitle: "Tansu & Arda — Düğün Davetiyesi",
   ogDescription: "Düğünümüze davetlisiniz · 28 Haziran 2026 · Germencik, Aydın",
   inviteMessage: DEFAULT_INVITE_MESSAGE,
+  reminderMessage: DEFAULT_REMINDER_MESSAGE,
   contactWhatsapp: "905469660256",
 };
 
