@@ -85,6 +85,12 @@ export type SiteSettings = {
   showLangPicker: string;
   /** "true"/"false" — show the TR/EN picker on the invitation pages */
   showInviteLang: string;
+  /** "true"/"false" — pulse the RSVP options + party selector to draw the eye */
+  invitePulse: string;
+  /** "true"/"false" — fade the rest of the card once an answer is picked */
+  inviteFade: string;
+  /** "true"/"false" — ask a confirm popup before sending the RSVP */
+  inviteConfirm: string;
   /** "true"/"false" — hide the Story/Timeline switch on phones */
   hideNavMobile: string;
   /** "true"/"false" — auto-cycle through story/timeline chapters */
@@ -219,6 +225,9 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   nightFrom: "9",
   showLangPicker: "true",
   showInviteLang: "true",
+  invitePulse: "true",
+  inviteFade: "true",
+  inviteConfirm: "true",
   hideNavMobile: "false",
   autoCycle: "false",
   autoCycleSecs: "3",

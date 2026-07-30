@@ -991,6 +991,25 @@ export function Dashboard() {
               <option value="true">Shown (TR/EN toggle)</option>
               <option value="false">Hidden</option>
             </select>
+            <label className="field-label">Pulse the RSVP choices &amp; guest-count selector</label>
+            <select className="select-input" value={s.invitePulse} onChange={(e) => setS({ ...s, invitePulse: e.target.value })}>
+              <option value="true">On — draw the eye to the RSVP</option>
+              <option value="false">Off</option>
+            </select>
+            <label className="field-label">Fade the rest of the card once an answer is picked</label>
+            <select className="select-input" value={s.inviteFade} onChange={(e) => setS({ ...s, inviteFade: e.target.value })}>
+              <option value="true">On — spotlight the Send button</option>
+              <option value="false">Off</option>
+            </select>
+            <label className="field-label">Confirm popup before sending the RSVP</label>
+            <select className="select-input" value={s.inviteConfirm} onChange={(e) => setS({ ...s, inviteConfirm: e.target.value })}>
+              <option value="true">On — ask “send your response?”</option>
+              <option value="false">Off — send immediately</option>
+            </select>
+            <div style={{ fontFamily: "var(--sans)", fontSize: 12, color: "var(--brown-soft)", marginTop: 6 }}>
+              The confirm popup wording is editable under <strong>Texts</strong> above (Confirm popup — title / message /
+              buttons).
+            </div>
             <label className="field-label">Schedule — one per line: HH:MM | Türkçe | English</label>
             <textarea
               className="textarea-input"
