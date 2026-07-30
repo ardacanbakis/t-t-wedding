@@ -32,26 +32,32 @@ jobs:
       # links and share-preview URLs follow automatically.
       - name: Resolve site URL + base path
         id: site
+        env:
+          VAR_BASE: ${{ vars.NEXT_PUBLIC_BASE_PATH }}
+          VAR_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
         run: |
           if [ -f public/CNAME ]; then
             DOMAIN="$(tr -d '[:space:]' < public/CNAME)"
           fi
           if [ -n "${DOMAIN:-}" ]; then
+            # A custom domain ALWAYS serves from the root, so the base path must
+            # be empty — even if an old NEXT_PUBLIC_BASE_PATH repo Variable is
+            # still set (that would 404 every asset at the domain root).
             echo "base_path=" >> "$GITHUB_OUTPUT"
-            echo "site_url=https://${DOMAIN}" >> "$GITHUB_OUTPUT"
+            echo "site_url=${VAR_URL:-https://${DOMAIN}}" >> "$GITHUB_OUTPUT"
           else
-            echo "base_path=/${{ github.event.repository.name }}" >> "$GITHUB_OUTPUT"
-            echo "site_url=https://${{ github.repository_owner }}.github.io" >> "$GITHUB_OUTPUT"
+            echo "base_path=${VAR_BASE:-/${{ github.event.repository.name }}}" >> "$GITHUB_OUTPUT"
+            echo "site_url=${VAR_URL:-https://${{ github.repository_owner }}.github.io}" >> "$GITHUB_OUTPUT"
           fi
       - run: npm run build
         env:
-          # Configure these under Settings → Secrets and variables → Actions → Variables
+          # Supabase keys come from Settings → Secrets and variables → Actions → Variables
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          # Repo Variables win if set; otherwise the values resolved above
-          # (custom domain from public/CNAME, else the project-page location).
-          NEXT_PUBLIC_BASE_PATH: ${{ vars.NEXT_PUBLIC_BASE_PATH || steps.site.outputs.base_path }}
-          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || steps.site.outputs.site_url }}
+          # Resolved above: custom domain (public/CNAME) forces an empty base
+          # path; otherwise repo Variables, else the project-page location.
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.site.outputs.base_path }}
+          NEXT_PUBLIC_SITE_URL: ${{ steps.site.outputs.site_url }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out
