@@ -68,8 +68,22 @@ insert into public.settings (key, value) values
   ('showLangPicker','true'),
   ('showInviteLang','true'),
   ('hideNavMobile','false'),
+  ('contactWhatsapp','905469660256'),
   ('ogTitle',      'Tansu & Arda — Düğün Davetiyesi'),
   ('ogDescription','Düğünümüze davetlisiniz · 28 Haziran 2026 · Germencik, Aydın')
+on conflict do nothing;
+
+-- Default WhatsApp message template for personal invites ({name} / {link}).
+insert into public.settings (key, value) values
+  ('inviteMessage', $md$Sevgili {name},
+
+En özel günümüzde sizi aramızda görmekten büyük mutluluk duyarız. ❤️
+
+Size özel hazırlanan dijital davetiyenizi aşağıdaki bağlantıdan görüntüleyebilir ve katılım durumunuzu birkaç saniye içinde bize iletebilirsiniz.
+
+29 Ağustos 2026 Cumartesi günü Mango Garden İncek'te görüşmek dileğiyle.
+
+🔗 {link}$md$)
 on conflict do nothing;
 
 -- Story-site strings that don't belong to a single chapter (nav labels,

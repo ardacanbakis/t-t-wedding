@@ -365,3 +365,26 @@ body {
 .story-cta.pulsing:hover {
   background: linear-gradient(135deg, #d8b477, #c9a568);
 }
+
+/* Same gold pulse for a button in normal flow (no fixed centering to preserve). */
+@keyframes storyPulsePlain {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 8px 22px -10px rgba(191, 155, 95, 0.6);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 10px 30px -8px rgba(191, 155, 95, 0.9);
+  }
+}
+
+.story-cta.pulse-inline {
+  background: linear-gradient(135deg, #cfa96b, #bf9b5f);
+  color: #fffdf8;
+  border-color: var(--gold);
+  animation: storyPulsePlain 1.5s ease-in-out infinite;
+}
+
+.story-cta.pulse-inline:hover {
+  background: linear-gradient(135deg, #d8b477, #c9a568);
+}
