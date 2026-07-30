@@ -151,16 +151,17 @@ function EditRow({
   onCancel,
 }: {
   inv: Invitation;
-  onSave: (fields: { name: string; max: string; personal: string }) => Promise<void>;
+  onSave: (fields: { name: string; max: string; personal: string; group: string }) => Promise<void>;
   onCancel: () => void;
 }) {
   const [name, setName] = useState(inv.name);
   const [max, setMax] = useState(inv.max_guests == null ? "unlimited" : String(inv.max_guests));
   const [personal, setPersonal] = useState(inv.personal_note ?? "");
+  const [group, setGroup] = useState(inv.invite_group ?? "");
   const [pending, setPending] = useState(false);
   return (
     <tr style={{ background: "rgba(191,155,95,.08)" }}>
-      <td colSpan={7}>
+      <td colSpan={8}>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", padding: "4px 0" }}>
           <input className="text-input" style={{ flex: "2 1 220px" }} value={name} onChange={(e) => setName(e.target.value)} />
           <input
@@ -170,13 +171,21 @@ function EditRow({
             onChange={(e) => setMax(e.target.value)}
             placeholder="max guests or 'unlimited'"
           />
+          <input
+            className="text-input"
+            style={{ flex: "1 1 150px" }}
+            value={group}
+            onChange={(e) => setGroup(e.target.value)}
+            placeholder="Group (optional)"
+            list="invite-groups"
+          />
           <button
             className="mini-btn"
             disabled={pending || !name.trim()}
             onClick={async () => {
               setPending(true);
               try {
-                await onSave({ name, max, personal });
+                await onSave({ name, max, personal, group });
               } finally {
                 setPending(false);
               }
@@ -206,9 +215,10 @@ function toCsv(invitations: Invitation[]): string {
     const v = value == null ? "" : String(value);
     return /[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
   };
-  const header = ["Name", "Status", "Party size", "Max guests", "Note", "Personal message", "Responded at", "Link"];
+  const header = ["Name", "Group", "Status", "Party size", "Max guests", "Note", "Personal message", "Responded at", "Link"];
   const rows = invitations.map((inv) => [
     cell(inv.name),
+    cell(inv.invite_group),
     cell(inv.status),
     cell(inv.status === "accepted" ? inv.party_size ?? 1 : inv.status === "declined" ? 0 : ""),
     cell(inv.max_guests == null ? "unlimited" : inv.max_guests),
@@ -231,6 +241,9 @@ export function Dashboard() {
   const [newName, setNewName] = useState("");
   const [newMax, setNewMax] = useState("1");
   const [newPersonal, setNewPersonal] = useState("");
+  const [newGroup, setNewGroup] = useState("");
+  const [importGroup, setImportGroup] = useState("");
+  const [groupFilter, setGroupFilter] = useState<string>("all");
   const [s, setS] = useState<SiteSettings>(DEFAULT_SETTINGS);
   const [settingsMsg, setSettingsMsg] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -277,19 +290,39 @@ export function Dashboard() {
     return { accepted, declined, pendingInv, headcount };
   }, [invitations]);
 
+  // Distinct groups in use, for the filter dropdown and the input datalist.
+  const groups = useMemo(() => {
+    const set = new Set<string>();
+    for (const i of invitations) {
+      const g = (i.invite_group ?? "").trim();
+      if (g) set.add(g);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [invitations]);
+
   const visible = useMemo(() => {
-    if (filter === "all") return invitations;
-    return invitations.filter((i) => i.status === filter);
-  }, [invitations, filter]);
+    return invitations.filter((i) => {
+      if (filter !== "all" && i.status !== filter) return false;
+      if (groupFilter === "all") return true;
+      if (groupFilter === "__none") return !(i.invite_group ?? "").trim();
+      return (i.invite_group ?? "").trim() === groupFilter;
+    });
+  }, [invitations, filter, groupFilter]);
 
   const doImport = () =>
     run(async () => {
       const parsed = parseImportLines(importText);
       if (!parsed.length) return;
-      const rows = parsed.map(({ name, maxGuests }) => ({ name, max_guests: maxGuests, token: newToken() }));
+      const group = importGroup.trim() || null;
+      const rows = parsed.map(({ name, maxGuests }) => ({
+        name,
+        max_guests: maxGuests,
+        invite_group: group,
+        token: newToken(),
+      }));
       const { error } = await getSupabase().from("invitations").insert(rows);
       if (error) throw new Error(error.message);
-      setImportMsg(`Imported ${rows.length} invitation${rows.length === 1 ? "" : "s"}.`);
+      setImportMsg(`Imported ${rows.length} invitation${rows.length === 1 ? "" : "s"}${group ? ` into “${group}”` : ""}.`);
       setImportText("");
       setTimeout(() => setImportMsg(null), 4000);
     });
@@ -301,12 +334,14 @@ export function Dashboard() {
         name: newName.trim(),
         max_guests: parseMaxGuests(newMax),
         personal_note: newPersonal.trim() || null,
+        invite_group: newGroup.trim() || null,
         token: newToken(),
       });
       if (error) throw new Error(error.message);
       setNewName("");
       setNewMax("1");
       setNewPersonal("");
+      // keep newGroup so several guests can be added to the same group in a row
     });
 
   // Keys owned by their own editor cards — the Settings button must not
@@ -530,13 +565,36 @@ export function Dashboard() {
         </div>
       )}
 
+      {/* Shared suggestions for every group input on this tab */}
+      <datalist id="invite-groups">
+        {groups.map((g) => (
+          <option key={g} value={g} />
+        ))}
+      </datalist>
+
       {/* Invitations table */}
       <div className="admin-card" style={{ marginBottom: 22 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
           <h2 className="admin-h2" style={{ margin: 0 }}>
             Invitations
           </h2>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+            {groups.length > 0 && (
+              <select
+                className="select-input"
+                style={{ width: "auto", padding: "6px 12px", fontSize: 12 }}
+                value={groupFilter}
+                onChange={(e) => setGroupFilter(e.target.value)}
+              >
+                <option value="all">All groups</option>
+                {groups.map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
+                ))}
+                <option value="__none">Ungrouped</option>
+              </select>
+            )}
             {(["all", "accepted", "declined", "pending"] as Filter[]).map((f) => (
               <button
                 key={f}
@@ -555,6 +613,7 @@ export function Dashboard() {
             <thead>
               <tr>
                 <th>Name</th>
+                <th>Group</th>
                 <th>Max</th>
                 <th>Status</th>
                 <th>Party</th>
@@ -566,7 +625,7 @@ export function Dashboard() {
             <tbody>
               {visible.length === 0 && (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: "center", padding: 24, color: "var(--brown-soft)" }}>
+                  <td colSpan={8} style={{ textAlign: "center", padding: 24, color: "var(--brown-soft)" }}>
                     No invitations here yet.
                   </td>
                 </tr>
@@ -577,13 +636,14 @@ export function Dashboard() {
                     key={inv.id}
                     inv={inv}
                     onCancel={() => setEditingId(null)}
-                    onSave={async ({ name, max, personal }) => {
+                    onSave={async ({ name, max, personal, group }) => {
                       const { error } = await getSupabase()
                         .from("invitations")
                         .update({
                           name: name.trim(),
                           max_guests: parseMaxGuests(max),
                           personal_note: personal.trim() || null,
+                          invite_group: group.trim() || null,
                           updated_at: new Date().toISOString(),
                         })
                         .eq("id", inv.id);
@@ -595,6 +655,21 @@ export function Dashboard() {
                 ) : (
                   <tr key={inv.id}>
                     <td style={{ fontWeight: 600, color: "var(--brown)" }}>{inv.name}</td>
+                    <td>
+                      {inv.invite_group ? (
+                        <button
+                          className="mini-btn"
+                          style={{ padding: "3px 10px", fontSize: 11 }}
+                          onClick={() => setGroupFilter(inv.invite_group!)}
+                          title={`Filter by ${inv.invite_group}`}
+                          type="button"
+                        >
+                          {inv.invite_group}
+                        </button>
+                      ) : (
+                        <span style={{ color: "var(--brown-soft)" }}>—</span>
+                      )}
+                    </td>
                     <td>{inv.max_guests == null ? "∞" : inv.max_guests}</td>
                     <td>
                       <StatusBadge status={inv.status} />
@@ -647,6 +722,14 @@ export function Dashboard() {
           <input className="text-input" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Ayşe & Mehmet Yılmaz" />
           <label className="field-label">Max guests — a number, or “unlimited”</label>
           <input className="text-input" value={newMax} onChange={(e) => setNewMax(e.target.value)} placeholder="4" />
+          <label className="field-label">Group (optional — e.g. “Tansu&apos;s Invites”)</label>
+          <input
+            className="text-input"
+            value={newGroup}
+            onChange={(e) => setNewGroup(e.target.value)}
+            placeholder="Tansu's Invites"
+            list="invite-groups"
+          />
           <label className="field-label">Personal message (optional — shown only on this guest&apos;s card)</label>
           <textarea
             className="textarea-input"
@@ -672,6 +755,14 @@ export function Dashboard() {
             value={importText}
             onChange={(e) => setImportText(e.target.value)}
             placeholder={"Ayşe & Mehmet Yılmaz, 4\nJohn Smith, unlimited\nJane Doe"}
+          />
+          <label className="field-label">Add all of these to group (optional)</label>
+          <input
+            className="text-input"
+            value={importGroup}
+            onChange={(e) => setImportGroup(e.target.value)}
+            placeholder="Semra's Invites"
+            list="invite-groups"
           />
           {importMsg && <div style={{ color: "#55632f", fontFamily: "var(--sans)", fontSize: 13, marginTop: 8 }}>{importMsg}</div>}
           <button className="submit-btn" style={{ marginTop: 12 }} onClick={doImport} disabled={pending || !importText.trim()} type="button">

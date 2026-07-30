@@ -43,6 +43,8 @@ export type Invitation = {
   note: string | null;
   /** Optional per-guest message written by the couple, shown on the card */
   personal_note: string | null;
+  /** Optional grouping/tag, e.g. "Tansu's Invites" — admin-only, never shown to guests */
+  invite_group: string | null;
   responded_at: string | null;
 };
 

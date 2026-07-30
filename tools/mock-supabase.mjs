@@ -297,6 +297,7 @@ const server = http.createServer(async (req, res) => {
           party_size: null,
           note: null,
           personal_note: row.personal_note ?? null,
+          invite_group: row.invite_group ?? null,
           responded_at: null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),

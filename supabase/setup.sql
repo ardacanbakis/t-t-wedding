@@ -33,6 +33,7 @@ create table if not exists public.invitations (
 
 -- For projects that ran an earlier version of this script:
 alter table public.invitations add column if not exists personal_note text;
+alter table public.invitations add column if not exists invite_group text;
 
 create table if not exists public.settings (
   key text primary key,
