@@ -173,6 +173,52 @@ export function InviteView(props: Props) {
     } catch {}
   };
 
+  // Warm the story page in the background once the invite is on screen, so it's
+  // already cached when the guest taps "Our Story". Runs at idle and bows out
+  // on data-saver / very slow connections.
+  useEffect(() => {
+    const conn = (navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    if (conn && (conn.saveData || /(^|-)2g/.test(conn.effectiveType || ""))) return;
+    let cancelled = false;
+    const warm = () => {
+      if (cancelled) return;
+      try {
+        const link = document.createElement("link");
+        link.rel = "prefetch";
+        link.href = withBase(s.storyUrl);
+        document.head.appendChild(link);
+      } catch {}
+      const mobile = window.innerWidth < 820 && s.mobileImages !== "false";
+      getSupabase()
+        .from("story_chapters")
+        .select("photos, visible")
+        .then(({ data }) => {
+          if (cancelled || !data) return;
+          const seen = new Set<string>();
+          for (const row of data as { photos: unknown; visible: boolean }[]) {
+            if (row.visible === false) continue;
+            const photos = Array.isArray(row.photos) ? row.photos : [];
+            for (const f of photos) {
+              if (typeof f !== "string" || !f.trim() || seen.has(f)) continue;
+              seen.add(f);
+              const rel = /^(https?:|assets\/|data:)/.test(f) ? f : "assets/" + f;
+              let path = /^(https?:|data:)/.test(rel) ? rel : withBase("/story/") + rel;
+              if (mobile && !/^(https?:|data:)/.test(rel)) path = path.replace(/(\.[a-z0-9]+)(\?.*)?$/i, "-mobile$1$2");
+              const img = new Image();
+              img.decoding = "async";
+              img.src = path;
+            }
+          }
+        }, () => {});
+    };
+    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
+    const id = ric ? ric(warm) : window.setTimeout(warm, 1200);
+    return () => {
+      cancelled = true;
+      if (!ric) clearTimeout(id);
+    };
+  }, [s.storyUrl, s.mobileImages]);
+
   const rawTexts = useMemo(() => mergeTexts(lang, s), [lang, s]);
   // Texts switched off in the dashboard become empty; then any custom
   // {placeholders} are substituted into what remains.
@@ -186,8 +232,18 @@ export function InviteView(props: Props) {
     return out;
   }, [rawTexts, lang, s.varsTr, s.varsEn, layout.hiddenTexts]);
 
+  // Clicking Send opens a polite confirm popup first (when enabled); the popup's
+  // "yes" calls submit() directly.
+  const [showConfirm, setShowConfirm] = useState(false);
+  const onSendClick = () => {
+    if (!answer || pending) return;
+    if (s.inviteConfirm !== "false") setShowConfirm(true);
+    else submit();
+  };
+
   const submit = async () => {
     if (!answer || pending) return;
+    setShowConfirm(false);
     setError(null);
     setPending(true);
     try {
@@ -349,14 +405,18 @@ export function InviteView(props: Props) {
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <button
-          className={`choice-btn${answer ? " chosen" : ""}${answer === "accepted" ? " selected-yes" : ""}`}
+          className={`choice-btn${answer ? " chosen" : ""}${answer === "accepted" ? " selected-yes" : ""}${
+            !answer && s.invitePulse !== "false" ? " rsvp-pulse" : ""
+          }`}
           onClick={() => selectAnswer("accepted")}
           type="button"
         >
           {t.accept}
         </button>
         <button
-          className={`choice-btn${answer ? " chosen" : ""}${answer === "declined" ? " selected-no" : ""}`}
+          className={`choice-btn${answer ? " chosen" : ""}${answer === "declined" ? " selected-no" : ""}${
+            !answer && s.invitePulse !== "false" ? " rsvp-pulse" : ""
+          }`}
           onClick={() => selectAnswer("declined")}
           type="button"
         >
@@ -373,7 +433,7 @@ export function InviteView(props: Props) {
             <>
               <select
                 id="party-size"
-                className="select-input"
+                className={`select-input${s.invitePulse !== "false" ? " rsvp-pulse" : ""}`}
                 value={partySize}
                 onChange={(e) => setPartySize(Number(e.target.value))}
               >
@@ -390,7 +450,7 @@ export function InviteView(props: Props) {
           ) : (
             <input
               id="party-size"
-              className="text-input"
+              className={`text-input${s.invitePulse !== "false" ? " rsvp-pulse" : ""}`}
               type="number"
               min={1}
               max={99}
@@ -422,7 +482,7 @@ export function InviteView(props: Props) {
       <div style={{ textAlign: "center", margin: "34px 0 8px", minHeight: 52 }}>
         <button
           className={`submit-btn${answer && !pending && !saved ? " send-grow" : ""}`}
-          onClick={submit}
+          onClick={onSendClick}
           disabled={!answer || pending}
           type="button"
         >
@@ -549,8 +609,12 @@ export function InviteView(props: Props) {
     ) : null,
   };
 
+  // Once an answer is picked, everything except the RSVP block dims away so the
+  // guest focuses on sending (toggle in Invitation Styling).
+  const faded = !!answer && !saved && s.inviteFade !== "false";
+
   return (
-    <div className="fade-in" style={{ minHeight: "100vh", padding: "84px 16px 60px", position: "relative" }}>
+    <div className="fade-in" style={{ minHeight: "100vh", padding: "24px 16px 60px", position: "relative" }}>
       {/* Language toggle — same corner as the timeline site (hideable) */}
       {s.showInviteLang !== "false" && (
         <div style={{ position: "fixed", top: 16, left: 16, zIndex: 90, display: "flex", gap: 6 }}>
@@ -641,7 +705,7 @@ export function InviteView(props: Props) {
       )}
 
       {/* Invitation card hung on the red thread */}
-      <div style={{ maxWidth: 640, margin: "40px auto 0", position: "relative" }}>
+      <div style={{ maxWidth: 640, margin: "24px auto 0", position: "relative" }}>
         <Thread />
         <div
           style={{
@@ -660,14 +724,78 @@ export function InviteView(props: Props) {
             if (!style.visible) return null;
             const node = content[id];
             if (!node) return null;
+            const dim = faded && id !== "rsvp";
             return (
-              <div key={id} data-block={id} style={blockStyle(style)}>
+              <div
+                key={id}
+                data-block={id}
+                style={{
+                  ...blockStyle(style),
+                  opacity: dim ? 0.12 : 1,
+                  transition: "opacity .5s ease",
+                }}
+              >
                 {node}
               </div>
             );
           })}
         </div>
       </div>
+
+      {/* Confirm-send popup — polite, editable under Invitation Styling. */}
+      {showConfirm && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowConfirm(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 210,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20,
+            background: "rgba(40,26,20,.5)",
+            backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)",
+            animation: "viewIn .25s ease both",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%",
+              maxWidth: 380,
+              background: "var(--paper)",
+              borderRadius: 18,
+              padding: "26px 22px 22px",
+              textAlign: "center",
+              boxShadow: "0 20px 60px -18px rgba(120,72,40,.55)",
+              border: "1px solid var(--gold-soft)",
+            }}
+          >
+            {t.confirmTitle && (
+              <h3 style={{ fontFamily: "var(--serif)", fontWeight: 600, fontSize: 20, color: "var(--brown)", margin: "0 0 8px" }}>
+                {t.confirmTitle}
+              </h3>
+            )}
+            {t.confirmBody && (
+              <p style={{ fontFamily: "var(--sans)", fontWeight: 300, fontSize: 14, lineHeight: 1.6, color: "var(--brown-mid)", margin: "0 0 18px", whiteSpace: "pre-wrap" }}>
+                {t.confirmBody}
+              </p>
+            )}
+            <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+              <button className="submit-btn" onClick={submit} type="button" disabled={pending}>
+                {pending ? "…" : t.confirmYes || t.send}
+              </button>
+              <button className="pill-btn" onClick={() => setShowConfirm(false)} type="button">
+                {t.confirmNo}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

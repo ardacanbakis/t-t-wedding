@@ -34,6 +34,8 @@ create table if not exists public.invitations (
 -- For projects that ran an earlier version of this script:
 alter table public.invitations add column if not exists personal_note text;
 alter table public.invitations add column if not exists invite_group text;
+alter table public.invitations add column if not exists sent boolean not null default false;
+alter table public.invitations add column if not exists opened_at timestamptz;
 
 create table if not exists public.settings (
   key text primary key,
@@ -68,8 +70,13 @@ insert into public.settings (key, value) values
   ('nightFrom',    '9'),
   ('showLangPicker','true'),
   ('showInviteLang','true'),
+  ('invitePulse','true'),
+  ('inviteFade','true'),
+  ('inviteConfirm','true'),
   ('hideNavMobile','false'),
   ('autoCycle','false'),
+  ('autoCycleSecs','3'),
+  ('mobileImages','true'),
   ('contactWhatsapp','905469660256'),
   ('ogTitle',      'Tansu & Arda — Düğün Davetiyesi'),
   ('ogDescription','Düğünümüze davetlisiniz · 28 Haziran 2026 · Germencik, Aydın')
@@ -84,6 +91,17 @@ En özel günümüzde sizi aramızda görmekten büyük mutluluk duyarız. ❤�
 Size özel hazırlanan dijital davetiyenizi aşağıdaki bağlantıdan görüntüleyebilir ve katılım durumunuzu birkaç saniye içinde bize iletebilirsiniz.
 
 29 Ağustos 2026 Cumartesi günü Mango Garden İncek'te görüşmek dileğiyle.
+
+🔗 {link}$md$)
+on conflict do nothing;
+
+-- Default WhatsApp reminder message for personal invites ({name} / {link}).
+insert into public.settings (key, value) values
+  ('reminderMessage', $md$Sevgili {name},
+
+Düğünümüz yaklaşırken kibarca hatırlatmak istedik. 💛 Henüz katılım durumunuzu iletmediyseniz, dijital davetiyeniz üzerinden birkaç saniyede bize bildirebilirsiniz.
+
+Sizi aramızda görmeyi çok isteriz.
 
 🔗 {link}$md$)
 on conflict do nothing;
@@ -319,6 +337,20 @@ begin
 end;
 $$;
 
+-- Stamp the first time a guest opens their personal invitation link, so the
+-- couple can see who has clicked through. Only ever sets it once.
+create or replace function public.mark_invitation_opened(p_token text)
+returns void
+language plpgsql security definer
+set search_path = public
+as $$
+begin
+  update public.invitations
+     set opened_at = coalesce(opened_at, now())
+   where token = p_token;
+end;
+$$;
+
 -- Reset both counters to zero — admins only (e.g. after test clicks).
 create or replace function public.general_reset()
 returns void
@@ -338,8 +370,10 @@ revoke all on function public.general_track(text)                    from public
 revoke all on function public.general_reset()                        from public;
 revoke all on function public.get_invitation(text)                    from public;
 revoke all on function public.submit_rsvp(text, text, integer, text)  from public;
+revoke all on function public.mark_invitation_opened(text)            from public;
 grant execute on function public.is_admin()                             to anon, authenticated;
 grant execute on function public.get_invitation(text)                   to anon, authenticated;
 grant execute on function public.submit_rsvp(text, text, integer, text) to anon, authenticated;
 grant execute on function public.general_track(text)                    to anon, authenticated;
+grant execute on function public.mark_invitation_opened(text)           to anon, authenticated;
 grant execute on function public.general_reset()                        to authenticated;

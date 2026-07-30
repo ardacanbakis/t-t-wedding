@@ -35,6 +35,10 @@ export type GuestTexts = {
   answerDeclined: string;
   storyButton: string;
   storyPrompt: string;
+  confirmTitle: string;
+  confirmBody: string;
+  confirmYes: string;
+  confirmNo: string;
   closing: string;
   notFoundTitle: string;
   notFoundBody: string;
@@ -74,6 +78,10 @@ export const defaultTexts: Record<Lang, GuestTexts> = {
     answerDeclined: "Gelemiyoruz",
     storyButton: "Hikâyemiz",
     storyPrompt: "Teşekkürler! 💛 Hazır buradayken, bu güne nasıl geldiğimizi anlattığımız küçük hikâyemize göz atmak ister misiniz?",
+    confirmTitle: "Yanıtınızı gönderelim mi?",
+    confirmBody: "Seçiminizi bize iletmek üzeresiniz. Onaylıyor musunuz?",
+    confirmYes: "Evet, gönder",
+    confirmNo: "Bir daha bakayım",
     closing: "Ad astra per aspera",
     notFoundTitle: "Davetiye bulunamadı",
     notFoundBody: "Bu bağlantı geçerli bir davetiyeye ait değil. Lütfen size gönderilen bağlantıyı kontrol edin.",
@@ -111,6 +119,10 @@ export const defaultTexts: Record<Lang, GuestTexts> = {
     answerDeclined: "Not attending",
     storyButton: "Our Story",
     storyPrompt: "Thank you! 💛 While you're here, would you like to peek at our little story of how we got to this day?",
+    confirmTitle: "Send your response?",
+    confirmBody: "You're about to send us your choice. Shall we?",
+    confirmYes: "Yes, send it",
+    confirmNo: "Let me check again",
     closing:"Ad astra per aspera",
     notFoundTitle: "Invitation not found",
     notFoundBody: "This link doesn't match a valid invitation. Please check the link you were sent.",
@@ -156,6 +168,10 @@ export const TEXT_FIELDS: { key: keyof GuestTexts; label: string; multiline?: bo
   { key: "answerDeclined", label: "Locked answer — declined" },
   { key: "storyButton", label: "Story button (in the thank-you popup)" },
   { key: "storyPrompt", label: "Thank-you popup message (shown after Send)", multiline: true },
+  { key: "confirmTitle", label: "Confirm popup — title" },
+  { key: "confirmBody", label: "Confirm popup — message", multiline: true },
+  { key: "confirmYes", label: "Confirm popup — send button" },
+  { key: "confirmNo", label: "Confirm popup — cancel button" },
   { key: "closing", label: "Closing motto (bottom of card)" },
   { key: "notFoundTitle", label: "Invalid-link page title" },
   { key: "notFoundBody", label: "Invalid-link page text", multiline: true },

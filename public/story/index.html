@@ -191,7 +191,7 @@
               <sc-if value="{{ ch.bare }}" hint-placeholder-val="{{ false }}">
               <div style="position:relative; text-align:center; transform:rotate({{ ch.tilt }}deg);">
                 <div style="position:relative; line-height:0; display:inline-block; max-width:100%;" onPointerDown="{{ ch.swipeDown }}">
-                  <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" loading="lazy" decoding="async" style="display:block; width:{{ ch.frameW }}; height:auto; max-width:82vw; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
+                  <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" decoding="async" style="display:block; width:{{ ch.frameW }}; height:auto; max-width:82vw; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
                   <sc-if value="{{ ch.showNav }}" hint-placeholder-val="{{ false }}">
                     <button onClick="{{ ch.prev }}" aria-label="Previous photo" style="position:absolute; left:0; top:0; width:50%; height:100%; border:0; background:transparent; padding:0 0 0 6px; cursor:pointer; z-index:4; display:flex; align-items:center; justify-content:flex-start;">
                       <span style="width:34px; height:34px; border-radius:50%; border:1px solid rgba(255,247,224,.55); background:rgba(20,16,30,.55); color:#fdf3e0; font-family:'Playfair Display',serif; font-size:18px; line-height:32px; text-align:center; display:block; pointer-events:none; box-shadow:0 2px 10px rgba(0,0,0,.35);">&lsaquo;</span>
@@ -215,17 +215,17 @@
               <div style="position:relative; background:#fffdf8; padding:{{ ch.matPad }}; border-radius:5px; box-shadow:0 8px 22px -12px rgba(120,72,40,.3), 0 26px 62px -22px rgba(120,72,40,.38); transform:rotate({{ ch.tilt }}deg);">
                 <div style="position:relative; width:{{ ch.frameW }}; height:{{ ch.frameH }}; overflow:hidden; border-radius:4px; background:rgba(0,0,0,.04);" onPointerDown="{{ ch.swipeDown }}">
                   <sc-if value="{{ ch.isCarousel }}" hint-placeholder-val="{{ true }}">
-                    <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:{{ ch.fit }}; display:block; user-select:none;">
+                    <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" decoding="async" style="width:100%; height:100%; object-fit:{{ ch.fit }}; display:block; user-select:none;">
                   </sc-if>
                   <sc-if value="{{ ch.isStack }}" hint-placeholder-val="{{ false }}">
                     <sc-for list="{{ ch.items }}" as="p" hint-placeholder-count="0">
-                      <img src="{{ p.src }}" alt="{{ ch.alt }}" draggable="false" loading="lazy" decoding="async" onClick="{{ p.go }}" style="{{ p.style }}">
+                      <img src="{{ p.src }}" alt="{{ ch.alt }}" draggable="false" decoding="async" onClick="{{ p.go }}" style="{{ p.style }}">
                     </sc-for>
                   </sc-if>
                   <sc-if value="{{ ch.isGrid }}" hint-placeholder-val="{{ false }}">
                     <div style="display:flex; flex-wrap:wrap; align-content:flex-start; gap:5px; width:100%; height:100%;">
                       <sc-for list="{{ ch.items }}" as="p" hint-placeholder-count="0">
-                        <img src="{{ p.src }}" alt="{{ ch.alt }}" draggable="false" loading="lazy" decoding="async" style="{{ p.style }}">
+                        <img src="{{ p.src }}" alt="{{ ch.alt }}" draggable="false" decoding="async" style="{{ p.style }}">
                       </sc-for>
                     </div>
                   </sc-if>
@@ -295,7 +295,7 @@
                 <sc-if value="{{ ch.bare }}" hint-placeholder-val="{{ false }}">
               <div style="position:relative; text-align:center; transform:rotate({{ ch.tilt }}deg);">
                 <div style="position:relative; line-height:0; display:inline-block; max-width:100%;" onPointerDown="{{ ch.swipeDown }}">
-                  <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" loading="lazy" decoding="async" style="display:block; width:{{ ch.frameW }}; height:auto; max-width:82vw; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
+                  <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" decoding="async" style="display:block; width:{{ ch.frameW }}; height:auto; max-width:82vw; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
                   <sc-if value="{{ ch.showNav }}" hint-placeholder-val="{{ false }}">
                     <button onClick="{{ ch.prev }}" aria-label="Previous photo" style="position:absolute; left:0; top:0; width:50%; height:100%; border:0; background:transparent; padding:0 0 0 6px; cursor:pointer; z-index:4; display:flex; align-items:center; justify-content:flex-start;">
                       <span style="width:34px; height:34px; border-radius:50%; border:1px solid rgba(255,247,224,.55); background:rgba(20,16,30,.55); color:#fdf3e0; font-family:'Playfair Display',serif; font-size:18px; line-height:32px; text-align:center; display:block; pointer-events:none; box-shadow:0 2px 10px rgba(0,0,0,.35);">&lsaquo;</span>
@@ -319,17 +319,17 @@
               <div style="position:relative; background:#fffdf8; padding:{{ ch.matPad }}; border-radius:5px; box-shadow:0 0 0 1px rgba(217,179,108,.35), 0 34px 80px -20px rgba(0,0,0,.6); transform:rotate({{ ch.tilt }}deg);">
                   <div style="position:relative; width:{{ ch.frameW }}; height:{{ ch.frameH }}; overflow:hidden; border-radius:4px; background:rgba(0,0,0,.04);" onPointerDown="{{ ch.swipeDown }}">
                   <sc-if value="{{ ch.isCarousel }}" hint-placeholder-val="{{ true }}">
-                    <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:{{ ch.fit }}; display:block; user-select:none;">
+                    <img src="{{ ch.curSrc }}" alt="{{ ch.alt }}" draggable="false" decoding="async" style="width:100%; height:100%; object-fit:{{ ch.fit }}; display:block; user-select:none;">
                   </sc-if>
                   <sc-if value="{{ ch.isStack }}" hint-placeholder-val="{{ false }}">
                     <sc-for list="{{ ch.items }}" as="p" hint-placeholder-count="0">
-                      <img src="{{ p.src }}" alt="{{ ch.alt }}" draggable="false" loading="lazy" decoding="async" onClick="{{ p.go }}" style="{{ p.style }}">
+                      <img src="{{ p.src }}" alt="{{ ch.alt }}" draggable="false" decoding="async" onClick="{{ p.go }}" style="{{ p.style }}">
                     </sc-for>
                   </sc-if>
                   <sc-if value="{{ ch.isGrid }}" hint-placeholder-val="{{ false }}">
                     <div style="display:flex; flex-wrap:wrap; align-content:flex-start; gap:5px; width:100%; height:100%;">
                       <sc-for list="{{ ch.items }}" as="p" hint-placeholder-count="0">
-                        <img src="{{ p.src }}" alt="{{ ch.alt }}" draggable="false" loading="lazy" decoding="async" style="{{ p.style }}">
+                        <img src="{{ p.src }}" alt="{{ ch.alt }}" draggable="false" decoding="async" style="{{ p.style }}">
                       </sc-for>
                     </div>
                   </sc-if>
@@ -476,7 +476,7 @@
               <sc-if value="{{ s.bare }}" hint-placeholder-val="{{ false }}">
               <div style="position:relative; text-align:center; transform:rotate({{ s.tilt }}deg);">
                 <div style="position:relative; line-height:0; display:inline-block; max-width:100%;" onPointerDown="{{ s.swipeDown }}">
-                  <img src="{{ s.curSrc }}" alt="{{ s.alt }}" draggable="false" loading="lazy" decoding="async" style="display:block; width:auto; height:auto; max-width:82vw; max-height:46vh; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
+                  <img src="{{ s.curSrc }}" alt="{{ s.alt }}" draggable="false" decoding="async" style="display:block; width:auto; height:auto; max-width:82vw; max-height:46vh; border-radius:8px; box-shadow:0 0 0 1px rgba(217,179,108,.4), 0 34px 80px -20px rgba(0,0,0,.55); user-select:none;">
                   <sc-if value="{{ s.showNav }}" hint-placeholder-val="{{ false }}">
                     <button onClick="{{ s.prev }}" aria-label="Previous photo" style="position:absolute; left:0; top:0; width:50%; height:100%; border:0; background:transparent; padding:0 0 0 6px; cursor:pointer; z-index:4; display:flex; align-items:center; justify-content:flex-start;">
                       <span style="width:34px; height:34px; border-radius:50%; border:1px solid rgba(255,247,224,.55); background:rgba(20,16,30,.55); color:#fdf3e0; font-family:'Playfair Display',serif; font-size:18px; line-height:32px; text-align:center; display:block; pointer-events:none; box-shadow:0 2px 10px rgba(0,0,0,.35);">&lsaquo;</span>
@@ -499,17 +499,17 @@
               <div style="position:relative; background:#fffdf8; padding:12px; border-radius:6px; box-shadow:0 28px 64px -24px rgba(60,36,20,.45); transform:rotate({{ s.tilt }}deg);">
                 <div style="position:relative; width:{{ s.frameW }}; height:{{ s.frameH }}; overflow:hidden; border-radius:4px; background:rgba(0,0,0,.04);" onPointerDown="{{ s.swipeDown }}">
                   <sc-if value="{{ s.isCarousel }}" hint-placeholder-val="{{ true }}">
-                    <img src="{{ s.curSrc }}" alt="{{ s.alt }}" draggable="false" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:{{ s.fit }}; display:block; user-select:none;">
+                    <img src="{{ s.curSrc }}" alt="{{ s.alt }}" draggable="false" decoding="async" style="width:100%; height:100%; object-fit:{{ s.fit }}; display:block; user-select:none;">
                   </sc-if>
                   <sc-if value="{{ s.isStack }}" hint-placeholder-val="{{ false }}">
                     <sc-for list="{{ s.items }}" as="p" hint-placeholder-count="0">
-                      <img src="{{ p.src }}" alt="{{ s.alt }}" draggable="false" loading="lazy" decoding="async" onClick="{{ p.go }}" style="{{ p.style }}">
+                      <img src="{{ p.src }}" alt="{{ s.alt }}" draggable="false" decoding="async" onClick="{{ p.go }}" style="{{ p.style }}">
                     </sc-for>
                   </sc-if>
                   <sc-if value="{{ s.isGrid }}" hint-placeholder-val="{{ false }}">
                     <div style="display:flex; flex-wrap:wrap; align-content:flex-start; gap:5px; width:100%; height:100%;">
                       <sc-for list="{{ s.items }}" as="p" hint-placeholder-count="0">
-                        <img src="{{ p.src }}" alt="{{ s.alt }}" draggable="false" loading="lazy" decoding="async" style="{{ p.style }}">
+                        <img src="{{ p.src }}" alt="{{ s.alt }}" draggable="false" decoding="async" style="{{ p.style }}">
                       </sc-for>
                     </div>
                   </sc-if>
@@ -631,14 +631,14 @@
 </div>
 </sc-if>
 
-<sc-if value="{{ catsRunning }}" hint-placeholder-val="{{ false }}">
-  <div style="position:fixed; left:0; bottom:0; width:100%; height:150px; z-index:70; pointer-events:none; overflow:hidden;">
-
-    <div style="position:absolute; bottom:12px; left:0; transform:translateX(-30vw); animation:{{ cat1Anim }};">
+<div style="position:fixed; left:0; bottom:0; width:100%; height:210px; z-index:70; pointer-events:none; overflow:hidden;">
+  <sc-for list="{{ catRuns }}" as="run" hint-placeholder-count="0">
+  <div>
+    <div style="position:absolute; bottom:{{ run.lane1 }}; left:0; transform:translateX(-30vw); animation:{{ run.cat1Anim }};">
       <div style="position:relative; animation:catBob .3s ease-in-out infinite alternate;">
         <div style="position:absolute; left:34px; top:-14px; font-size:15px; color:#e08a9b; opacity:0; animation:heartPop 1.3s ease-out .2s infinite;">♥</div>
         <div style="position:absolute; left:76px; top:-10px; font-size:11px; color:#d9b36c; opacity:0; animation:heartPop 1.5s ease-out .8s infinite;">♥</div>
-        <svg viewBox="0 0 150 96" style="width:126px; height:80px; display:block; overflow:visible; transform:{{ catFlip }};">
+        <svg viewBox="0 0 150 96" style="width:126px; height:80px; display:block; overflow:visible; transform:{{ run.flip }};">
           <g style="transform-box:fill-box; transform-origin:100% 100%; animation:tailSway .5s ease-in-out infinite alternate;">
             <path d="M28 52 C 12 46, 4 30, 12 12" fill="none" stroke="#17120e" stroke-width="8" stroke-linecap="round"></path>
           </g>
@@ -670,10 +670,10 @@
       </div>
     </div>
 
-    <div style="position:absolute; bottom:10px; left:0; transform:translateX(-30vw); animation:{{ cat2Anim }};">
+    <div style="position:absolute; bottom:{{ run.lane2 }}; left:0; transform:translateX(-30vw); animation:{{ run.cat2Anim }};">
       <div style="position:relative; animation:catBob .26s ease-in-out infinite alternate;">
         <div style="position:absolute; left:26px; top:-10px; font-size:11px; color:#e08a9b; opacity:0; animation:heartPop 1.4s ease-out .5s infinite;">♥</div>
-        <svg viewBox="0 0 150 96" style="width:78px; height:50px; display:block; overflow:visible; transform:{{ catFlip }};">
+        <svg viewBox="0 0 150 96" style="width:78px; height:50px; display:block; overflow:visible; transform:{{ run.flip }};">
           <defs>
             <clipPath id="didiBody"><rect x="26" y="34" width="92" height="30" rx="15"></rect></clipPath>
           </defs>
@@ -715,13 +715,13 @@
         <div style="width:58px; height:7px; border-radius:50%; background:rgba(40,25,12,.14); filter:blur(2px); margin:2px 0 0 10px;"></div>
       </div>
     </div>
-
   </div>
-</sc-if>
+  </sc-for>
+</div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;petalStyle&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;sakura&quot;, &quot;rose&quot;, &quot;stardust&quot;, &quot;fireflies&quot;], &quot;default&quot;: &quot;sakura&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Ambience&quot;}, &quot;petalDensity&quot;: {&quot;editor&quot;: &quot;range&quot;, &quot;min&quot;: 0, &quot;max&quot;: 100, &quot;step&quot;: 5, &quot;default&quot;: 45, &quot;unit&quot;: &quot;&quot;, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Ambience&quot;}, &quot;showFerula&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Ambience&quot;}, &quot;showThread&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Ambience&quot;}}">
 class Component extends DCLogic {
-  state = { view: 'story', tlIndex: 0, activeCh: 0, hoverCh: -1, railHover: false, dragPct: 0, dragging: false, catsRunning: false, catsDir: 'ltr', settingsOpen: false, isNarrow: false, lang: 'tr', showTop: false, photoIdx: {}, dataVer: 0 };
+  state = { view: 'story', tlIndex: 0, activeCh: 0, hoverCh: -1, railHover: false, dragPct: 0, dragging: false, catRuns: [], settingsOpen: false, isNarrow: false, lang: 'tr', showTop: false, photoIdx: {}, dataVer: 0 };
 
   constructor(props) {
     super(props);
@@ -861,11 +861,24 @@ class Component extends DCLogic {
     this._autoLast = {};
     // Auto-cycle-through-chapters state (off unless enabled in the dashboard).
     this._autoCycle = false;
+    this._cycleSecs = 3;        // seconds each photo is held during auto-cycle
+    this._mobileImages = true;  // load <name>-mobile.<ext> on phones (fallback to full)
     this._cycleOn = null;
     this._cycleStart = 0;
     this._cyclePhotoAt = 0;
     this._cyclePausedUntil = 0;
     this._cycleLockUntil = 0;
+    this._catSeq = 0;
+    // If a "-mobile" image 404s (couple didn't make one), fall back to the full
+    // file. Image error events don't bubble, so we listen on window in the
+    // capture phase. Idempotent per src: once stripped there's nothing to retry.
+    this._onImgError = (e) => {
+      const el = e && e.target;
+      if (!el || el.tagName !== 'IMG') return;
+      const src = el.getAttribute('src') || '';
+      const re = /-mobile(\.[a-z0-9]+)(\?.*)?$/i;
+      if (re.test(src)) el.setAttribute('src', src.replace(re, '$1$2'));
+    };
     this._syncChapters();
   }
 
@@ -911,6 +924,8 @@ class Component extends DCLogic {
         this._showLang = map.showLangPicker !== 'false';
         this._hideNavMobile = map.hideNavMobile === 'true';
         this._autoCycle = map.autoCycle === 'true';
+        this._mobileImages = map.mobileImages !== 'false';
+        { const sec = parseFloat(map.autoCycleSecs); if (Number.isFinite(sec) && sec >= 1) this._cycleSecs = sec; }
         ['tr', 'en'].forEach((lang) => {
           const raw = map[lang === 'tr' ? 'storyTr' : 'storyEn'];
           if (!raw) return;
@@ -1015,16 +1030,27 @@ class Component extends DCLogic {
       if (c && photoCount > 1 && (this.state.photoIdx[c.slug] || 0) !== 0) this._setIdx(c.slug, 0);
       return;
     }
-    if (currentId === 'finale') return; // reached the end — stop
+    // Reached the finale: linger 15s, glide back to the very top, then rest
+    // 30s of quiet before the whole cycle begins again.
+    if (currentId === 'finale') {
+      if (now - this._cycleStart >= 15000) {
+        const top = document.getElementById(this._chIds[0]);
+        if (top) top.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        this._cycleLockUntil = now + 1800;
+        this._cyclePausedUntil = now + 30000;
+        this._cycleOn = null;
+      }
+      return;
+    }
 
-    const photoMs = c && c.autoplay && c.autoplayMs ? c.autoplayMs : 3000;
+    const photoMs = Math.max(1000, this._cycleSecs * 1000);
     if (c && photoCount > 1) {
       const cur = this.state.photoIdx[c.slug] || 0;
       if (now - this._cyclePhotoAt >= photoMs) {
         if (cur < photoCount - 1) { this._setIdx(c.slug, cur + 1); this._cyclePhotoAt = now; }
         else this._cycleAdvanceStory(ai);
       }
-    } else if (now - this._cycleStart >= 3000) {
+    } else if (now - this._cycleStart >= photoMs) {
       this._cycleAdvanceStory(ai);
     }
   }
@@ -1051,15 +1077,26 @@ class Component extends DCLogic {
       if (photoCount > 1 && (this.state.photoIdx[c.slug] || 0) !== 0) this._setIdx(c.slug, 0);
       return;
     }
-    const photoMs = c.autoplay && c.autoplayMs ? c.autoplayMs : 3000;
-    const advance = () => { if (i < list.length - 1) { this._go(i + 1); this._cycleLockUntil = now + 900; } };
+    const photoMs = Math.max(1000, this._cycleSecs * 1000);
+    const atLast = i >= list.length - 1;
+    // Linger 15s on the last slide, jump back to the first, rest 30s, repeat.
+    if (atLast) {
+      if (now - this._cycleStart >= 15000) {
+        this._go(0);
+        this._cycleLockUntil = now + 900;
+        this._cyclePausedUntil = now + 30000;
+        this._cycleOn = null;
+      }
+      return;
+    }
+    const advance = () => { this._go(i + 1); this._cycleLockUntil = now + 900; };
     if (photoCount > 1) {
       const cur = this.state.photoIdx[c.slug] || 0;
       if (now - this._cyclePhotoAt >= photoMs) {
         if (cur < photoCount - 1) { this._setIdx(c.slug, cur + 1); this._cyclePhotoAt = now; }
         else advance();
       }
-    } else if (now - this._cycleStart >= 3000) {
+    } else if (now - this._cycleStart >= photoMs) {
       advance();
     }
   }
@@ -1082,7 +1119,14 @@ class Component extends DCLogic {
   _photoProps(c, w, h) {
     const n = c.photos.length;
     const idx = Math.min(this._photoAt(c.slug), Math.max(0, n - 1));
-    const url = (f) => /^(https?:|assets\/|data:)/.test(f) ? f : 'assets/' + f;
+    // On phones, ask for a "<name>-mobile.<ext>" variant if the couple made one;
+    // the img's onError quietly falls back to the full image when it's absent.
+    const mobile = this._mobileImages && typeof window !== 'undefined' && window.innerWidth < 820;
+    const url = (f) => {
+      let s = /^(https?:|assets\/|data:)/.test(f) ? f : 'assets/' + f;
+      if (mobile && !/^data:/.test(s)) s = s.replace(/(\.[a-z0-9]+)(\?.*)?$/i, '-mobile$1$2');
+      return s;
+    };
     // 'single' reproduces the original pre-multi-photo look: the whole
     // image at its natural aspect, no white mat, no arrows or dots. Honoured
     // even with a single photo (so it isn't collapsed into 'carousel').
@@ -1176,6 +1220,7 @@ class Component extends DCLogic {
     this._onUserGesture = () => { if (this._autoCycle) this._cyclePausedUntil = Date.now() + 9000; };
     window.addEventListener('wheel', this._onUserGesture, { passive: true });
     window.addEventListener('touchmove', this._onUserGesture, { passive: true });
+    window.addEventListener('error', this._onImgError, true);
     this._attachThreadRO();
     setTimeout(() => this._layoutThread(), 400);
     setTimeout(() => this._layoutThread(), 1600);
@@ -1195,6 +1240,7 @@ class Component extends DCLogic {
       window.removeEventListener('wheel', this._onUserGesture);
       window.removeEventListener('touchmove', this._onUserGesture);
     }
+    if (this._onImgError) window.removeEventListener('error', this._onImgError, true);
     if (this._ro) this._ro.disconnect();
   }
 
@@ -1333,10 +1379,19 @@ class Component extends DCLogic {
     }, delay);
   }
 
+  // Each press releases one "run" (Hecate + Didi). Up to 2 runs — i.e. 4 cats —
+  // may be on screen at once; presses beyond that are ignored until one clears.
+  // Each run walks off in ~4.2s, so pressing repeatedly keeps sending them.
   _releaseCats() {
-    if (this.state.catsRunning) return;
-    this.setState({ catsRunning: true, catsDir: Math.random() < 0.5 ? 'rtl' : 'ltr' });
-    setTimeout(() => this.setState({ catsRunning: false }), 7800);
+    const runs = this.state.catRuns || [];
+    if (runs.length >= 2) return;
+    const id = ++this._catSeq;
+    const dir = Math.random() < 0.5 ? 'rtl' : 'ltr';
+    const lane = runs.length === 0 ? 0 : 1;
+    this.setState({ catRuns: runs.concat([{ id, dir, lane }]) });
+    setTimeout(() => {
+      this.setState((st) => ({ catRuns: (st.catRuns || []).filter((r) => r.id !== id) }));
+    }, 4200);
   }
 
   // ---------- fireworks ----------
@@ -1725,7 +1780,7 @@ class Component extends DCLogic {
   };
 
   renderVals() {
-    const { view, tlIndex, activeCh, hoverCh, railHover, dragPct, dragging, catsRunning, settingsOpen, isNarrow, lang, showTop } = this.state;
+    const { view, tlIndex, activeCh, hoverCh, railHover, dragPct, dragging, catRuns, settingsOpen, isNarrow, lang, showTop } = this.state;
     const S = this._site[lang] || this._site.tr;
     const list = this._visible || [];
     const T = (c) => (c && (c[lang] || c.tr)) || {};
@@ -1874,10 +1929,16 @@ class Component extends DCLogic {
       tlFerulaLRef: this.tlFerulaLRef,
       tlFerulaRRef: this.tlFerulaRRef,
       showTlFerula: !isNarrow,
-      catsRunning,
-      cat1Anim: (this.state.catsDir === 'rtl' ? 'catAcrossR' : 'catAcross') + ' 5.6s cubic-bezier(.35,.02,.65,.98) forwards',
-      cat2Anim: (this.state.catsDir === 'rtl' ? 'catAcrossR' : 'catAcross') + ' 6.3s cubic-bezier(.35,.02,.65,.98) .7s forwards',
-      catFlip: this.state.catsDir === 'rtl' ? 'scaleX(-1)' : 'none',
+      catRuns: (catRuns || []).map((r) => {
+        const across = r.dir === 'rtl' ? 'catAcrossR' : 'catAcross';
+        return {
+          cat1Anim: across + ' 3.8s cubic-bezier(.35,.02,.65,.98) forwards',
+          cat2Anim: across + ' 4.2s cubic-bezier(.35,.02,.65,.98) .2s forwards',
+          flip: r.dir === 'rtl' ? 'scaleX(-1)' : 'none',
+          lane1: (r.lane === 0 ? 12 : 96) + 'px',
+          lane2: (r.lane === 0 ? 10 : 94) + 'px',
+        };
+      }),
       releaseCats: () => this._releaseCats()
     };
   }

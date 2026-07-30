@@ -143,6 +143,8 @@ export function StoryCard({
   onSaveShowLang,
   onSaveHideNavMobile,
   onSaveAutoCycle,
+  onSaveAutoCycleSecs,
+  onSaveMobileImages,
   reloadSettings,
 }: {
   settings: SiteSettings;
@@ -151,6 +153,8 @@ export function StoryCard({
   onSaveShowLang: (v: string) => Promise<void>;
   onSaveHideNavMobile: (v: string) => Promise<void>;
   onSaveAutoCycle: (v: string) => Promise<void>;
+  onSaveAutoCycleSecs: (v: string) => Promise<void>;
+  onSaveMobileImages: (v: string) => Promise<void>;
   reloadSettings: () => Promise<void>;
 }) {
   const [chapters, setChapters] = useState<StoryChapter[]>([]);
@@ -163,6 +167,8 @@ export function StoryCard({
   const showLang = settings.showLangPicker !== "false";
   const hideNavMobile = settings.hideNavMobile === "true";
   const autoCycle = settings.autoCycle === "true";
+  const autoCycleSecs = Number(settings.autoCycleSecs) || 3;
+  const mobileImages = settings.mobileImages !== "false";
   const [openId, setOpenId] = useState<number | null>(null);
   const [tab, setTab] = useState<Lang>("tr");
   const [pending, setPending] = useState(false);
@@ -380,8 +386,36 @@ export function StoryCard({
               {autoCycle ? "▶ Auto-cycle on" : "⏸ Off"}
             </button>
             <div style={{ fontFamily: "var(--sans)", fontSize: 12, color: "var(--brown-soft)", marginTop: 6 }}>
-              Both the story and timeline pages advance on their own — a single-photo chapter holds ~3s, a multi-photo
-              chapter shows each photo then moves on. Any scroll or tap pauses it for a few seconds.
+              Both the story and timeline pages advance on their own. Any scroll or tap pauses it; it lingers 15s on the
+              last chapter, glides back to the top, and restarts after 30s of quiet.
+            </div>
+            {autoCycle && (
+              <>
+                <label className="field-label">Seconds per photo — {autoCycleSecs}s</label>
+                <input
+                  type="range"
+                  min={1}
+                  max={15}
+                  step={0.5}
+                  value={autoCycleSecs}
+                  onChange={(e) => run(() => onSaveAutoCycleSecs(e.target.value))}
+                  style={{ width: "100%", accentColor: "var(--gold)" }}
+                />
+              </>
+            )}
+            <label className="field-label">Smaller images on phones</label>
+            <button
+              className="mini-btn"
+              style={mobileImages ? { background: "var(--gold)", color: "#fffdf8", borderColor: "var(--gold)" } : undefined}
+              onClick={() => run(() => onSaveMobileImages(mobileImages ? "false" : "true"))}
+              type="button"
+            >
+              {mobileImages ? "📱 On — use “-mobile” images" : "🚫 Off — full images everywhere"}
+            </button>
+            <div style={{ fontFamily: "var(--sans)", fontSize: 12, color: "var(--brown-soft)", marginTop: 6 }}>
+              On phones the story page loads a <code>photo-mobile.jpg</code> next to each <code>photo.jpg</code> when you
+              provide one, falling back to the full image automatically. Upload the smaller copies with the same name plus
+              <code>-mobile</code> to <code>public/story/assets/</code>.
             </div>
           </div>
         );

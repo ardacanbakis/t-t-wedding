@@ -259,6 +259,22 @@ body {
   transform: scale(1.4);
 }
 
+/* Gentle attention pulse for the RSVP choices + party selector (stays tappable). */
+@keyframes rsvpPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(191, 155, 95, 0);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 0 4px rgba(191, 155, 95, 0.2);
+  }
+}
+.rsvp-pulse {
+  animation: rsvpPulse 1.6s ease-in-out infinite;
+}
+
 /* ── Admin ─────────────────────────────────────────────── */
 .admin-card {
   background: rgba(255, 253, 248, 0.92);
