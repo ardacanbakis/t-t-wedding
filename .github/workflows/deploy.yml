@@ -29,10 +29,13 @@ jobs:
           # Configure these under Settings → Secrets and variables → Actions → Variables
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          # "/t-t-wedding" for username.github.io/t-t-wedding; empty for a custom domain
-          NEXT_PUBLIC_BASE_PATH: ${{ vars.NEXT_PUBLIC_BASE_PATH }}
-          # Full origin for absolute share-preview URLs, e.g. https://ardacanbakis.github.io
-          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+          # Default to the GitHub Pages project-page location so absolute
+          # share-preview URLs (WhatsApp / iMessage og:image) work out of the
+          # box. Override both under Settings → Variables if you add a custom
+          # domain (set NEXT_PUBLIC_BASE_PATH empty, NEXT_PUBLIC_SITE_URL to it).
+          #   → https://<owner>.github.io/<repo>/og-image.png
+          NEXT_PUBLIC_BASE_PATH: ${{ vars.NEXT_PUBLIC_BASE_PATH || format('/{0}', github.event.repository.name) }}
+          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || format('https://{0}.github.io', github.repository_owner) }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out
