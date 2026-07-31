@@ -52,6 +52,7 @@ const db = {
     ["nightFrom", "9"],
     ["showLangPicker", "true"],
     ["showInviteLang", "true"],
+    ["defaultLang", "tr"],
     ["invitePulse", "true"],
     ["inviteFade", "true"],
     ["inviteConfirm", "true"],
@@ -325,16 +326,28 @@ const server = http.createServer(async (req, res) => {
       }
       return send(res, 201, inserted);
     }
-    const idFilter = url.searchParams.get("id");
-    const id = idFilter?.startsWith("eq.") ? Number(idFilter.slice(3)) : NaN;
+    const idFilter = url.searchParams.get("id") ?? "";
+    // Supports both single (id=eq.N) and bulk (id=in.(a,b,c)) filters, the
+    // latter used by the bulk language editor's one-shot update.
+    const idMatch = (v) => {
+      if (idFilter.startsWith("eq.")) return v === Number(idFilter.slice(3));
+      if (idFilter.startsWith("in.")) {
+        const list = idFilter
+          .slice(3)
+          .replace(/^\(|\)$/g, "")
+          .split(",")
+          .map((x) => Number(x.replace(/"/g, "")));
+        return list.includes(v);
+      }
+      return false;
+    };
     if (req.method === "PATCH") {
       const body = await readBody(req);
-      const inv = db.invitations.find((i) => i.id === id);
-      if (inv) Object.assign(inv, body);
+      for (const inv of db.invitations) if (idMatch(inv.id)) Object.assign(inv, body);
       return send(res, 204);
     }
     if (req.method === "DELETE") {
-      db.invitations = db.invitations.filter((i) => i.id !== id);
+      db.invitations = db.invitations.filter((i) => !idMatch(i.id));
       return send(res, 204);
     }
   }
