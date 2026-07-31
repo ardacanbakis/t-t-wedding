@@ -236,7 +236,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   nightFrom: "9",
   showLangPicker: "true",
   showInviteLang: "true",
-  defaultLang: "tr",
+  defaultLang: "auto",
   invitePulse: "true",
   inviteFade: "true",
   inviteConfirm: "true",
