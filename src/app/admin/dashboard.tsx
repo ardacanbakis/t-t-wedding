@@ -33,7 +33,7 @@ const TABS: { id: Tab; label: string }[] = [
 
 type Filter = "all" | "accepted" | "declined" | "pending";
 
-type SortKey = "name" | "group" | "max" | "status" | "party" | "note" | "sent" | "opened";
+type SortKey = "name" | "group" | "max" | "status" | "party" | "note" | "sent" | "opened" | "responded";
 
 // A comparable value per column. Numbers sort numerically, strings alphabetically;
 // unlimited max sorts high, missing text/dates sort low.
@@ -56,8 +56,29 @@ function sortValue(inv: Invitation, key: SortKey): string | number {
       return inv.sent ? 1 : 0;
     case "opened":
       return inv.opened_at ? Date.parse(inv.opened_at) || 1 : 0;
+    case "responded":
+      return inv.responded_at ? Date.parse(inv.responded_at) || 1 : 0;
   }
 }
+
+// Optional table columns the couple can show/hide (Name is always shown).
+type ColKey = "group" | "max" | "status" | "party" | "note" | "sent" | "opened" | "responded" | "share" | "actions";
+const COLUMNS: { key: ColKey; label: string; sort?: SortKey }[] = [
+  { key: "group", label: "Group", sort: "group" },
+  { key: "max", label: "Max", sort: "max" },
+  { key: "status", label: "Status", sort: "status" },
+  { key: "party", label: "Party", sort: "party" },
+  { key: "note", label: "Note", sort: "note" },
+  { key: "sent", label: "Sent", sort: "sent" },
+  { key: "opened", label: "Opened", sort: "opened" },
+  { key: "responded", label: "Responded", sort: "responded" },
+  { key: "share", label: "Share links" },
+  { key: "actions", label: "Edit / Delete" },
+];
+const DEFAULT_COLS: Record<ColKey, boolean> = {
+  group: true, max: true, status: true, party: true, note: true,
+  sent: true, opened: true, responded: false, share: true, actions: true,
+};
 
 function StatusBadge({ status }: { status: Invitation["status"] }) {
   const label = status === "accepted" ? "Accepted" : status === "declined" ? "Declined" : "No response";
@@ -195,6 +216,7 @@ function EditRow({
   inv,
   onSave,
   onCancel,
+  colSpan,
 }: {
   inv: Invitation;
   onSave: (fields: {
@@ -207,6 +229,7 @@ function EditRow({
     partySize: string;
   }) => Promise<void>;
   onCancel: () => void;
+  colSpan: number;
 }) {
   const [name, setName] = useState(inv.name);
   const [max, setMax] = useState(inv.max_guests == null ? "unlimited" : String(inv.max_guests));
@@ -218,7 +241,7 @@ function EditRow({
   const [pending, setPending] = useState(false);
   return (
     <tr style={{ background: "rgba(191,155,95,.08)" }}>
-      <td colSpan={11}>
+      <td colSpan={colSpan}>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", padding: "4px 0" }}>
           <input className="text-input" style={{ flex: "2 1 220px" }} value={name} onChange={(e) => setName(e.target.value)} />
           <input
@@ -353,7 +376,9 @@ export function Dashboard() {
   const [bulkLang, setBulkLang] = useState<"auto" | "tr" | "en">("auto");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  const [showShare, setShowShare] = useState(true);
+  const [cols, setCols] = useState<Record<ColKey, boolean>>(DEFAULT_COLS);
+  const [colsOpen, setColsOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
   const [s, setS] = useState<SiteSettings>(DEFAULT_SETTINGS);
   const [settingsMsg, setSettingsMsg] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -451,6 +476,10 @@ export function Dashboard() {
     });
   const caret = (key: SortKey) =>
     sortKey === key ? <span className="sort-caret">{sortDir === "asc" ? "▲" : "▼"}</span> : null;
+
+  const toggleCol = (key: ColKey) => setCols((prev) => ({ ...prev, [key]: !prev[key] }));
+  // Columns actually rendered: the always-on select + Name, plus each shown option.
+  const colCount = 2 + COLUMNS.filter((c) => cols[c.key]).length;
 
   const toggleSent = (inv: Invitation) =>
     run(async () => {
@@ -826,9 +855,69 @@ export function Dashboard() {
       <div className="admin-card" style={{ marginBottom: 22 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
           <h2 className="admin-h2" style={{ margin: 0 }}>
-            Invitations
+            Invitations{" "}
+            <span style={{ fontFamily: "var(--sans)", fontSize: 14, fontWeight: 600, color: "var(--brown-soft)" }}>
+              ({sorted.length})
+            </span>
           </h2>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+            <button
+              className="mini-btn"
+              onClick={() => setShowFilters((v) => !v)}
+              title={showFilters ? "Hide the filter controls" : "Show the filter controls"}
+              type="button"
+            >
+              Filters {showFilters ? "▲" : "▼"}
+            </button>
+            <div style={{ position: "relative" }}>
+              <button className="mini-btn" onClick={() => setColsOpen((v) => !v)} type="button" title="Show/hide table columns">
+                Columns ▾
+              </button>
+              {colsOpen && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 6px)",
+                    right: 0,
+                    zIndex: 60,
+                    background: "var(--paper)",
+                    border: "1px solid var(--gold-soft)",
+                    borderRadius: 12,
+                    boxShadow: "0 16px 40px -18px rgba(120,72,40,.5)",
+                    padding: "10px 12px",
+                    minWidth: 170,
+                  }}
+                >
+                  {COLUMNS.map((c) => (
+                    <label
+                      key={c.key}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        padding: "5px 4px",
+                        fontFamily: "var(--sans)",
+                        fontSize: 13,
+                        color: "var(--brown-mid)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={cols[c.key]}
+                        onChange={() => toggleCol(c.key)}
+                        style={{ width: 15, height: 15, accentColor: "var(--gold)", cursor: "pointer" }}
+                      />
+                      {c.label}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        {showFilters && (
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginTop: 12 }}>
             <input
               className="text-input"
               style={{ width: "auto", padding: "6px 12px", fontSize: 12, minWidth: 160 }}
@@ -899,7 +988,7 @@ export function Dashboard() {
               </button>
             ))}
           </div>
-        </div>
+        )}
         {selectedVisible.length > 0 && (
           <div
             style={{
@@ -952,31 +1041,22 @@ export function Dashboard() {
                   />
                 </th>
                 <th className="sortable" onClick={() => toggleSort("name")}>Name {caret("name")}</th>
-                <th className="sortable" onClick={() => toggleSort("group")}>Group {caret("group")}</th>
-                <th className="sortable" onClick={() => toggleSort("max")}>Max {caret("max")}</th>
-                <th className="sortable" onClick={() => toggleSort("status")}>Status {caret("status")}</th>
-                <th className="sortable" onClick={() => toggleSort("party")}>Party {caret("party")}</th>
-                <th className="sortable" onClick={() => toggleSort("note")}>Note {caret("note")}</th>
-                <th className="sortable" onClick={() => toggleSort("sent")}>Sent {caret("sent")}</th>
-                <th className="sortable" onClick={() => toggleSort("opened")}>Opened {caret("opened")}</th>
-                <th>
-                  <button
-                    className="mini-btn"
-                    style={{ padding: "2px 8px", fontSize: 11 }}
-                    onClick={() => setShowShare((v) => !v)}
-                    title={showShare ? "Hide the share links" : "Show the share links"}
-                    type="button"
-                  >
-                    Share {showShare ? "▲" : "▼"}
-                  </button>
-                </th>
-                <th></th>
+                {cols.group && <th className="sortable" onClick={() => toggleSort("group")}>Group {caret("group")}</th>}
+                {cols.max && <th className="sortable" onClick={() => toggleSort("max")}>Max {caret("max")}</th>}
+                {cols.status && <th className="sortable" onClick={() => toggleSort("status")}>Status {caret("status")}</th>}
+                {cols.party && <th className="sortable" onClick={() => toggleSort("party")}>Party {caret("party")}</th>}
+                {cols.note && <th className="sortable" onClick={() => toggleSort("note")}>Note {caret("note")}</th>}
+                {cols.sent && <th className="sortable" onClick={() => toggleSort("sent")}>Sent {caret("sent")}</th>}
+                {cols.opened && <th className="sortable" onClick={() => toggleSort("opened")}>Opened {caret("opened")}</th>}
+                {cols.responded && <th className="sortable" onClick={() => toggleSort("responded")}>Responded {caret("responded")}</th>}
+                {cols.share && <th>Share</th>}
+                {cols.actions && <th></th>}
               </tr>
             </thead>
             <tbody>
               {sorted.length === 0 && (
                 <tr>
-                  <td colSpan={11} style={{ textAlign: "center", padding: 24, color: "var(--brown-soft)" }}>
+                  <td colSpan={colCount} style={{ textAlign: "center", padding: 24, color: "var(--brown-soft)" }}>
                     No invitations here yet.
                   </td>
                 </tr>
@@ -986,6 +1066,7 @@ export function Dashboard() {
                   <EditRow
                     key={inv.id}
                     inv={inv}
+                    colSpan={colCount}
                     onCancel={() => setEditingId(null)}
                     onSave={async ({ name, max, personal, group, lang, status, partySize }) => {
                       const maxG = parseMaxGuests(max);
@@ -1029,45 +1110,62 @@ export function Dashboard() {
                       />
                     </td>
                     <td style={{ fontWeight: 600, color: "var(--brown)" }}>{inv.name}</td>
-                    <td>
-                      {inv.invite_group ? (
-                        <button
-                          className="mini-btn"
-                          style={{ padding: "3px 10px", fontSize: 11 }}
-                          onClick={() => setGroupFilter(inv.invite_group!)}
-                          title={`Filter by ${inv.invite_group}`}
-                          type="button"
-                        >
-                          {inv.invite_group}
-                        </button>
-                      ) : (
-                        <span style={{ color: "var(--brown-soft)" }}>—</span>
-                      )}
-                    </td>
-                    <td>{inv.max_guests == null ? "∞" : inv.max_guests}</td>
-                    <td>
-                      <StatusBadge status={inv.status} />
-                    </td>
-                    <td>{inv.status === "accepted" ? inv.party_size ?? 1 : inv.status === "declined" ? 0 : "—"}</td>
-                    <td style={{ maxWidth: 260, whiteSpace: "pre-wrap", fontSize: 13 }}>{inv.note || "—"}</td>
-                    <td style={{ textAlign: "center" }}>
-                      <input
-                        type="checkbox"
-                        checked={inv.sent}
-                        onChange={() => toggleSent(inv)}
-                        title={inv.sent ? "Sent — click to mark as not sent" : "Not sent yet — click when you've sent it"}
-                        style={{ width: 17, height: 17, cursor: "pointer", accentColor: "var(--gold)" }}
-                      />
-                    </td>
-                    <td style={{ textAlign: "center" }} title={inv.opened_at ? `Opened ${new Date(inv.opened_at).toLocaleString()}` : "Not opened yet"}>
-                      {inv.opened_at ? (
-                        <span style={{ color: "#55632f", fontWeight: 700 }}>✓</span>
-                      ) : (
-                        <span style={{ color: "var(--brown-soft)" }}>—</span>
-                      )}
-                    </td>
-                    <td>
-                      {showShare ? (
+                    {cols.group && (
+                      <td>
+                        {inv.invite_group ? (
+                          <button
+                            className="mini-btn"
+                            style={{ padding: "3px 10px", fontSize: 11 }}
+                            onClick={() => setGroupFilter(inv.invite_group!)}
+                            title={`Filter by ${inv.invite_group}`}
+                            type="button"
+                          >
+                            {inv.invite_group}
+                          </button>
+                        ) : (
+                          <span style={{ color: "var(--brown-soft)" }}>—</span>
+                        )}
+                      </td>
+                    )}
+                    {cols.max && <td>{inv.max_guests == null ? "∞" : inv.max_guests}</td>}
+                    {cols.status && (
+                      <td>
+                        <StatusBadge status={inv.status} />
+                      </td>
+                    )}
+                    {cols.party && (
+                      <td>{inv.status === "accepted" ? inv.party_size ?? 1 : inv.status === "declined" ? 0 : "—"}</td>
+                    )}
+                    {cols.note && (
+                      <td style={{ maxWidth: 260, whiteSpace: "pre-wrap", fontSize: 13 }}>{inv.note || "—"}</td>
+                    )}
+                    {cols.sent && (
+                      <td style={{ textAlign: "center" }}>
+                        <input
+                          type="checkbox"
+                          checked={inv.sent}
+                          onChange={() => toggleSent(inv)}
+                          title={inv.sent ? "Sent — click to mark as not sent" : "Not sent yet — click when you've sent it"}
+                          style={{ width: 17, height: 17, cursor: "pointer", accentColor: "var(--gold)" }}
+                        />
+                      </td>
+                    )}
+                    {cols.opened && (
+                      <td style={{ textAlign: "center" }} title={inv.opened_at ? `Opened ${new Date(inv.opened_at).toLocaleString()}` : "Not opened yet"}>
+                        {inv.opened_at ? (
+                          <span style={{ color: "#55632f", fontWeight: 700 }}>✓</span>
+                        ) : (
+                          <span style={{ color: "var(--brown-soft)" }}>—</span>
+                        )}
+                      </td>
+                    )}
+                    {cols.responded && (
+                      <td style={{ fontSize: 12, color: "var(--brown-mid)", whiteSpace: "nowrap" }}>
+                        {inv.responded_at ? new Date(inv.responded_at).toLocaleString() : "—"}
+                      </td>
+                    )}
+                    {cols.share && (
+                      <td>
                         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                           <CopyLinkButton token={inv.token} />
                           <CopyMessageButton name={inv.name} token={inv.token} template={s.inviteMessage} label="Copy message" />
@@ -1075,30 +1173,30 @@ export function Dashboard() {
                             <CopyMessageButton name={inv.name} token={inv.token} template={s.reminderMessage} label="Copy reminder" />
                           )}
                         </div>
-                      ) : (
-                        <span style={{ color: "var(--brown-soft)" }}>—</span>
-                      )}
-                    </td>
-                    <td>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button className="mini-btn" onClick={() => setEditingId(inv.id)} type="button">
-                          Edit
-                        </button>
-                        <button
-                          className="mini-btn danger"
-                          onClick={() => {
-                            if (window.confirm(`Delete invitation for "${inv.name}"?`))
-                              run(async () => {
-                                const { error } = await getSupabase().from("invitations").delete().eq("id", inv.id);
-                                if (error) throw new Error(error.message);
-                              });
-                          }}
-                          type="button"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
+                      </td>
+                    )}
+                    {cols.actions && (
+                      <td>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button className="mini-btn" onClick={() => setEditingId(inv.id)} type="button">
+                            Edit
+                          </button>
+                          <button
+                            className="mini-btn danger"
+                            onClick={() => {
+                              if (window.confirm(`Delete invitation for "${inv.name}"?`))
+                                run(async () => {
+                                  const { error } = await getSupabase().from("invitations").delete().eq("id", inv.id);
+                                  if (error) throw new Error(error.message);
+                                });
+                            }}
+                            type="button"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 )
               )}
