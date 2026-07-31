@@ -376,6 +376,35 @@ body {
   border: 1px solid var(--gold-soft);
   border-radius: 14px;
   padding: 14px 18px;
+  /* Tiles are clickable filters */
+  display: block;
+  width: auto;
+  text-align: left;
+  font: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  transition: box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+}
+.stat-tile:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px -14px rgba(120, 72, 40, 0.5);
+}
+.stat-tile.active {
+  border-color: var(--brown-mid);
+  box-shadow: 0 0 0 2px var(--brown-mid) inset;
+}
+.stat-tile.tone-green.active {
+  border-color: #55632f;
+  box-shadow: 0 0 0 2px #55632f inset;
+}
+.stat-tile.tone-red.active {
+  border-color: #a83232;
+  box-shadow: 0 0 0 2px #a83232 inset;
+}
+.stat-tile.tone-amber.active {
+  border-color: #b08a3e;
+  box-shadow: 0 0 0 2px #b08a3e inset;
 }
 
 .stat-tile .num {

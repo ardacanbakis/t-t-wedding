@@ -748,27 +748,54 @@ export function Dashboard() {
       {tab === "invitations" && (
   <>
       {/* Stats */}
+      {/* Each tile doubles as a filter: click to narrow the table to that
+          slice (Confirmed guests + Accepted both show the accepted list). */}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", margin: "20px 0" }}>
-        <div className="stat-tile tone-green">
+        <button
+          type="button"
+          className={`stat-tile tone-green${filter === "accepted" ? " active" : ""}`}
+          onClick={() => setFilter("accepted")}
+          title="Show the accepted invitations"
+        >
           <div className="num">{stats.headcount}</div>
           <div className="lbl">Confirmed guests</div>
-        </div>
-        <div className="stat-tile tone-green">
+        </button>
+        <button
+          type="button"
+          className={`stat-tile tone-green${filter === "accepted" ? " active" : ""}`}
+          onClick={() => setFilter("accepted")}
+          title="Show the accepted invitations"
+        >
           <div className="num">{stats.accepted.length}</div>
           <div className="lbl">Accepted</div>
-        </div>
-        <div className="stat-tile tone-red">
+        </button>
+        <button
+          type="button"
+          className={`stat-tile tone-red${filter === "declined" ? " active" : ""}`}
+          onClick={() => setFilter("declined")}
+          title="Show the declined invitations"
+        >
           <div className="num">{stats.declined.length}</div>
           <div className="lbl">Declined</div>
-        </div>
-        <div className="stat-tile tone-amber">
+        </button>
+        <button
+          type="button"
+          className={`stat-tile tone-amber${filter === "pending" ? " active" : ""}`}
+          onClick={() => setFilter("pending")}
+          title="Show invitations with no response yet"
+        >
           <div className="num">{stats.pendingInv.length}</div>
           <div className="lbl">No response</div>
-        </div>
-        <div className="stat-tile">
+        </button>
+        <button
+          type="button"
+          className={`stat-tile${filter === "all" ? " active" : ""}`}
+          onClick={() => setFilter("all")}
+          title="Show all invitations"
+        >
           <div className="num">{invitations.length}</div>
           <div className="lbl">Invitations</div>
-        </div>
+        </button>
       </div>
 
       {deadlineOver && (
