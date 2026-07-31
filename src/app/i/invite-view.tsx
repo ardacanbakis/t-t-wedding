@@ -339,13 +339,6 @@ export function InviteView(props: Props) {
           }}
         >
           {g.thanks}
-          {t.storyButton && (
-            <div style={{ marginTop: 12 }}>
-              <a className="pill-btn" href={withBase(s.storyUrl)} onClick={() => setShowStoryPopup(true)}>
-                {t.storyButton} ♥
-              </a>
-            </div>
-          )}
         </div>
       ) : (
         <button className="submit-btn" onClick={sayYes} type="button" style={{ fontSize: 15 }}>
@@ -365,6 +358,15 @@ export function InviteView(props: Props) {
           }}
         >
           {g.replyNote}
+        </div>
+      )}
+      {/* Story button is always available on the general page — guests can
+          explore the story whether or not they've tapped the RSVP button. */}
+      {t.storyButton && (
+        <div style={{ marginTop: 18 }}>
+          <a className="pill-btn" href={withBase(s.storyUrl)}>
+            {t.storyButton} ♥
+          </a>
         </div>
       )}
     </div>
