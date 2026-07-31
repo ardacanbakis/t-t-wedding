@@ -192,7 +192,7 @@ function EditRow({
   const [pending, setPending] = useState(false);
   return (
     <tr style={{ background: "rgba(191,155,95,.08)" }}>
-      <td colSpan={10}>
+      <td colSpan={11}>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", padding: "4px 0" }}>
           <input className="text-input" style={{ flex: "2 1 220px" }} value={name} onChange={(e) => setName(e.target.value)} />
           <input
@@ -321,6 +321,10 @@ export function Dashboard() {
   const [groupFilter, setGroupFilter] = useState<string>("all");
   const [sentFilter, setSentFilter] = useState<"all" | "sent" | "unsent">("all");
   const [openedFilter, setOpenedFilter] = useState<"all" | "opened" | "unopened">("all");
+  const [langFilter, setLangFilter] = useState<"all" | "auto" | "tr" | "en">("all");
+  const [search, setSearch] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkLang, setBulkLang] = useState<"auto" | "tr" | "en">("auto");
   const [s, setS] = useState<SiteSettings>(DEFAULT_SETTINGS);
   const [settingsMsg, setSettingsMsg] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -378,17 +382,21 @@ export function Dashboard() {
   }, [invitations]);
 
   const visible = useMemo(() => {
+    const q = search.trim().toLowerCase();
     return invitations.filter((i) => {
       if (filter !== "all" && i.status !== filter) return false;
       if (sentFilter === "sent" && !i.sent) return false;
       if (sentFilter === "unsent" && i.sent) return false;
       if (openedFilter === "opened" && !i.opened_at) return false;
       if (openedFilter === "unopened" && i.opened_at) return false;
+      if (langFilter !== "all" && (i.invite_lang ?? "auto") !== langFilter) return false;
+      if (q && !i.name.toLowerCase().includes(q) && !(i.invite_group ?? "").toLowerCase().includes(q))
+        return false;
       if (groupFilter === "all") return true;
       if (groupFilter === "__none") return !(i.invite_group ?? "").trim();
       return (i.invite_group ?? "").trim() === groupFilter;
     });
-  }, [invitations, filter, groupFilter, sentFilter, openedFilter]);
+  }, [invitations, filter, groupFilter, sentFilter, openedFilter, langFilter, search]);
 
   const toggleSent = (inv: Invitation) =>
     run(async () => {
@@ -397,6 +405,43 @@ export function Dashboard() {
         .update({ sent: !inv.sent, updated_at: new Date().toISOString() })
         .eq("id", inv.id);
       if (error) throw new Error(error.message);
+    });
+
+  // Selection state is scoped to the rows currently visible, so bulk actions
+  // never silently touch invitations hidden behind a filter.
+  const visibleIds = useMemo(() => visible.map((i) => i.id), [visible]);
+  const selectedVisible = useMemo(
+    () => visibleIds.filter((id) => selectedIds.has(id)),
+    [visibleIds, selectedIds]
+  );
+  const toggleSelect = (id: number) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const toggleSelectAll = () =>
+    setSelectedIds((prev) => {
+      const allSelected = visibleIds.length > 0 && visibleIds.every((id) => prev.has(id));
+      const next = new Set(prev);
+      if (allSelected) visibleIds.forEach((id) => next.delete(id));
+      else visibleIds.forEach((id) => next.add(id));
+      return next;
+    });
+  const clearSelection = () => setSelectedIds(new Set());
+
+  // Bulk-set the invite language on every selected row in a single update.
+  const applyBulkLang = () =>
+    run(async () => {
+      const ids = selectedVisible;
+      if (!ids.length) return;
+      const { error } = await getSupabase()
+        .from("invitations")
+        .update({ invite_lang: bulkLang, updated_at: new Date().toISOString() })
+        .in("id", ids);
+      if (error) throw new Error(error.message);
+      clearSelection();
     });
 
   const doImport = () =>
@@ -703,6 +748,26 @@ export function Dashboard() {
             Invitations
           </h2>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+            <input
+              className="text-input"
+              style={{ width: "auto", padding: "6px 12px", fontSize: 12, minWidth: 160 }}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search name or group…"
+              aria-label="Search invitations"
+            />
+            <select
+              className="select-input"
+              style={{ width: "auto", padding: "6px 12px", fontSize: 12 }}
+              value={langFilter}
+              onChange={(e) => setLangFilter(e.target.value as "all" | "auto" | "tr" | "en")}
+              title="Filter by invite language"
+            >
+              <option value="all">All languages</option>
+              <option value="auto">Auto (TR/EN)</option>
+              <option value="en">English only</option>
+              <option value="tr">Turkish only</option>
+            </select>
             <select
               className="select-input"
               style={{ width: "auto", padding: "6px 12px", fontSize: 12 }}
@@ -754,10 +819,57 @@ export function Dashboard() {
             ))}
           </div>
         </div>
+        {selectedVisible.length > 0 && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              flexWrap: "wrap",
+              marginTop: 12,
+              padding: "10px 14px",
+              background: "rgba(191,155,95,.1)",
+              border: "1px solid var(--gold-soft)",
+              borderRadius: 10,
+            }}
+          >
+            <strong style={{ fontFamily: "var(--sans)", fontSize: 13, color: "var(--brown)" }}>
+              {selectedVisible.length} selected
+            </strong>
+            <span style={{ fontFamily: "var(--sans)", fontSize: 13, color: "var(--brown-mid)" }}>
+              Set language to
+            </span>
+            <select
+              className="select-input"
+              style={{ width: "auto", padding: "6px 12px", fontSize: 12 }}
+              value={bulkLang}
+              onChange={(e) => setBulkLang(e.target.value as "auto" | "tr" | "en")}
+            >
+              <option value="auto">Auto (TR/EN)</option>
+              <option value="en">English only</option>
+              <option value="tr">Turkish only</option>
+            </select>
+            <button className="mini-btn" onClick={applyBulkLang} disabled={pending} type="button">
+              {pending ? "Saving…" : "Apply to selected"}
+            </button>
+            <button className="mini-btn" onClick={clearSelection} type="button">
+              Clear
+            </button>
+          </div>
+        )}
         <div style={{ overflowX: "auto", marginTop: 12 }}>
           <table className="admin-table">
             <thead>
               <tr>
+                <th style={{ width: 34, textAlign: "center" }}>
+                  <input
+                    type="checkbox"
+                    checked={visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id))}
+                    onChange={toggleSelectAll}
+                    title="Select all shown"
+                    style={{ width: 16, height: 16, cursor: "pointer", accentColor: "var(--gold)" }}
+                  />
+                </th>
                 <th>Name</th>
                 <th>Group</th>
                 <th>Max</th>
@@ -773,7 +885,7 @@ export function Dashboard() {
             <tbody>
               {visible.length === 0 && (
                 <tr>
-                  <td colSpan={10} style={{ textAlign: "center", padding: 24, color: "var(--brown-soft)" }}>
+                  <td colSpan={11} style={{ textAlign: "center", padding: 24, color: "var(--brown-soft)" }}>
                     No invitations here yet.
                   </td>
                 </tr>
@@ -815,7 +927,16 @@ export function Dashboard() {
                     }}
                   />
                 ) : (
-                  <tr key={inv.id}>
+                  <tr key={inv.id} style={selectedIds.has(inv.id) ? { background: "rgba(191,155,95,.06)" } : undefined}>
+                    <td style={{ textAlign: "center" }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(inv.id)}
+                        onChange={() => toggleSelect(inv.id)}
+                        title="Select for bulk edit"
+                        style={{ width: 16, height: 16, cursor: "pointer", accentColor: "var(--gold)" }}
+                      />
+                    </td>
                     <td style={{ fontWeight: 600, color: "var(--brown)" }}>{inv.name}</td>
                     <td>
                       {inv.invite_group ? (
@@ -858,7 +979,9 @@ export function Dashboard() {
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                         <CopyLinkButton token={inv.token} />
                         <CopyMessageButton name={inv.name} token={inv.token} template={s.inviteMessage} label="Copy message" />
-                        <CopyMessageButton name={inv.name} token={inv.token} template={s.reminderMessage} label="Copy reminder" />
+                        {inv.sent && (
+                          <CopyMessageButton name={inv.name} token={inv.token} template={s.reminderMessage} label="Copy reminder" />
+                        )}
                       </div>
                     </td>
                     <td>
@@ -980,9 +1103,10 @@ export function Dashboard() {
         buttonLabel="Save reminder message"
         description={
           <>
-            A gentle nudge for guests who haven&apos;t responded — the <strong>Copy reminder</strong> button on each row
-            copies this one. Same <code>{"{name}"}</code> / <code>{"{link}"}</code> placeholders. Tip: filter to{" "}
-            <em>Waiting to send</em> or check who hasn&apos;t <em>Opened</em> to find who to nudge.
+            A gentle nudge for guests who haven&apos;t responded — the <strong>Copy reminder</strong> button copies this
+            one. It appears on a row only once you&apos;ve ticked <em>Sent</em> (there&apos;s nothing to remind about
+            before the first invite goes out). Same <code>{"{name}"}</code> / <code>{"{link}"}</code> placeholders. Tip:
+            check who hasn&apos;t <em>Opened</em> to find who to nudge.
           </>
         }
       />
@@ -1035,6 +1159,17 @@ export function Dashboard() {
             >
               <option value="true">Shown (TR/EN toggle)</option>
               <option value="false">Hidden</option>
+            </select>
+            <label className="field-label">Default language (invitations, welcome &amp; story)</label>
+            <select
+              className="select-input"
+              value={s.defaultLang}
+              onChange={(e) => setS({ ...s, defaultLang: e.target.value })}
+              title="Starting language before the visitor picks one (locked TR/EN invites ignore this)"
+            >
+              <option value="tr">Turkish first</option>
+              <option value="en">English first</option>
+              <option value="auto">Match the visitor’s browser</option>
             </select>
             <label className="field-label">Pulse the RSVP choices &amp; guest-count selector</label>
             <select className="select-input" value={s.invitePulse} onChange={(e) => setS({ ...s, invitePulse: e.target.value })}>

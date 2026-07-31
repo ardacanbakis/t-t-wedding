@@ -740,10 +740,13 @@ class Component extends DCLogic {
     this._fw = [];
     this._shoot = [];
     this._weddingBurstDone = false;
+    // An explicit stored choice always wins. Otherwise the starting language
+    // follows the site-wide `defaultLang` setting, applied once settings load
+    // (see the settings fetch below); Turkish is the provisional default.
+    this._langStored = false;
     try {
       const saved = localStorage.getItem('ta-love-lang');
-      if (saved === 'tr' || saved === 'en') this.state.lang = saved;
-      else if (typeof navigator !== 'undefined' && (navigator.language || '').toLowerCase().indexOf('en') === 0) this.state.lang = 'en';
+      if (saved === 'tr' || saved === 'en') { this.state.lang = saved; this._langStored = true; }
     } catch (e) {}
 
     this._dayBgs = ['#fdf8f0', '#faf3e6', '#f9ece4', '#f7e4de', '#f6dcd4', '#f5d5c8', '#f3cfc4', '#f1c9bd'];
@@ -923,6 +926,16 @@ class Component extends DCLogic {
         const nf = parseInt(map.nightFrom, 10);
         if (Number.isFinite(nf) && nf >= 1) this._nightFrom = nf;
         this._showLang = map.showLangPicker !== 'false';
+        // Apply the site-wide default language when the visitor hasn't chosen
+        // one: "en" starts English, "auto" follows the browser, anything else
+        // (incl. the default) starts Turkish.
+        if (!this._langStored) {
+          const dl = map.defaultLang;
+          let start = 'tr';
+          if (dl === 'en') start = 'en';
+          else if (dl === 'auto' && typeof navigator !== 'undefined' && (navigator.language || '').toLowerCase().indexOf('en') === 0) start = 'en';
+          if (start !== this.state.lang) this.setState({ lang: start });
+        }
         this._hideNavMobile = map.hideNavMobile === 'true';
         this._autoCycle = map.autoCycle === 'true';
         this._mobileImages = map.mobileImages !== 'false';

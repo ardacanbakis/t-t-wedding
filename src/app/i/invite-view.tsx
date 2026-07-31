@@ -141,7 +141,10 @@ export function InviteView(props: Props) {
   // general link) is bilingual and defaults to the visitor's language.
   const forcedLang: Lang | null =
     props.inviteLang === "en" ? "en" : props.inviteLang === "tr" ? "tr" : null;
-  const [lang, setLang] = useState<Lang>(forcedLang ?? "tr");
+  // Site-wide default for non-locked invites: "en" starts English, "auto"
+  // follows the browser, anything else (incl. the default) starts Turkish.
+  const defaultLang: Lang = s.defaultLang === "en" ? "en" : "tr";
+  const [lang, setLang] = useState<Lang>(forcedLang ?? defaultLang);
   const [answer, setAnswer] = useState<"accepted" | "declined" | null>(
     props.status === "pending" ? null : props.status
   );
@@ -174,18 +177,22 @@ export function InviteView(props: Props) {
       } catch {}
       return;
     }
-    let initial: Lang = "tr";
+    let initial: Lang = defaultLang;
     try {
       const stored = localStorage.getItem("ta-love-lang");
       if (stored === "tr" || stored === "en") initial = stored;
-      else if (typeof navigator !== "undefined" && (navigator.language || "").toLowerCase().startsWith("en"))
+      else if (
+        s.defaultLang === "auto" &&
+        typeof navigator !== "undefined" &&
+        (navigator.language || "").toLowerCase().startsWith("en")
+      )
         initial = "en";
     } catch {}
     setLang(initial);
     try {
       localStorage.setItem("ta-love-lang", initial);
     } catch {}
-  }, [forcedLang]);
+  }, [forcedLang, defaultLang, s.defaultLang]);
 
   const pickLang = (l: Lang) => {
     setLang(l);

@@ -87,6 +87,13 @@ export type SiteSettings = {
   showLangPicker: string;
   /** "true"/"false" — show the TR/EN picker on the invitation pages */
   showInviteLang: string;
+  /**
+   * Site-wide starting language for auto/general pages (invitations, welcome,
+   * story) when the visitor hasn't picked one yet: "tr" or "en" force that
+   * language; "auto" follows the browser's language. Force-locked personal
+   * invites (invite_lang tr/en) ignore this.
+   */
+  defaultLang: string;
   /** "true"/"false" — pulse the RSVP options + party selector to draw the eye */
   invitePulse: string;
   /** "true"/"false" — fade the rest of the card once an answer is picked */
@@ -229,6 +236,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   nightFrom: "9",
   showLangPicker: "true",
   showInviteLang: "true",
+  defaultLang: "tr",
   invitePulse: "true",
   inviteFade: "true",
   inviteConfirm: "true",
