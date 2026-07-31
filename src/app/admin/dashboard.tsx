@@ -33,6 +33,32 @@ const TABS: { id: Tab; label: string }[] = [
 
 type Filter = "all" | "accepted" | "declined" | "pending";
 
+type SortKey = "name" | "group" | "max" | "status" | "party" | "note" | "sent" | "opened";
+
+// A comparable value per column. Numbers sort numerically, strings alphabetically;
+// unlimited max sorts high, missing text/dates sort low.
+function sortValue(inv: Invitation, key: SortKey): string | number {
+  switch (key) {
+    case "name":
+      return inv.name.toLowerCase();
+    case "group":
+      return (inv.invite_group ?? "").toLowerCase();
+    case "max":
+      return inv.max_guests == null ? Number.POSITIVE_INFINITY : inv.max_guests;
+    case "status":
+      // waiting → declined → accepted, so the "live" answers cluster together
+      return inv.status === "pending" ? 0 : inv.status === "declined" ? 1 : 2;
+    case "party":
+      return inv.status === "accepted" ? inv.party_size ?? 1 : inv.status === "declined" ? 0 : -1;
+    case "note":
+      return (inv.note ?? "").toLowerCase();
+    case "sent":
+      return inv.sent ? 1 : 0;
+    case "opened":
+      return inv.opened_at ? Date.parse(inv.opened_at) || 1 : 0;
+  }
+}
+
 function StatusBadge({ status }: { status: Invitation["status"] }) {
   const label = status === "accepted" ? "Accepted" : status === "declined" ? "Declined" : "No response";
   return <span className={`status-badge status-${status}`}>{label}</span>;
@@ -325,6 +351,9 @@ export function Dashboard() {
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkLang, setBulkLang] = useState<"auto" | "tr" | "en">("auto");
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [showShare, setShowShare] = useState(true);
   const [s, setS] = useState<SiteSettings>(DEFAULT_SETTINGS);
   const [settingsMsg, setSettingsMsg] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -397,6 +426,31 @@ export function Dashboard() {
       return (i.invite_group ?? "").trim() === groupFilter;
     });
   }, [invitations, filter, groupFilter, sentFilter, openedFilter, langFilter, search]);
+
+  // Sort the filtered rows by the clicked column. A stable name tiebreak keeps
+  // the order predictable when the sort key ties (e.g. everyone "No response").
+  const sorted = useMemo(() => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...visible].sort((a, b) => {
+      const va = sortValue(a, sortKey);
+      const vb = sortValue(b, sortKey);
+      let cmp: number;
+      if (typeof va === "number" && typeof vb === "number") cmp = va - vb;
+      else cmp = String(va).localeCompare(String(vb));
+      if (cmp === 0) cmp = a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+      return cmp * dir;
+    });
+  }, [visible, sortKey, sortDir]);
+
+  // Click a header: same column flips direction, a new column starts ascending.
+  const toggleSort = (key: SortKey) =>
+    setSortDir((prevDir) => {
+      if (sortKey === key) return prevDir === "asc" ? "desc" : "asc";
+      setSortKey(key);
+      return "asc";
+    });
+  const caret = (key: SortKey) =>
+    sortKey === key ? <span className="sort-caret">{sortDir === "asc" ? "▲" : "▼"}</span> : null;
 
   const toggleSent = (inv: Invitation) =>
     run(async () => {
@@ -695,19 +749,19 @@ export function Dashboard() {
   <>
       {/* Stats */}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", margin: "20px 0" }}>
-        <div className="stat-tile">
+        <div className="stat-tile tone-green">
           <div className="num">{stats.headcount}</div>
           <div className="lbl">Confirmed guests</div>
         </div>
-        <div className="stat-tile">
+        <div className="stat-tile tone-green">
           <div className="num">{stats.accepted.length}</div>
           <div className="lbl">Accepted</div>
         </div>
-        <div className="stat-tile">
+        <div className="stat-tile tone-red">
           <div className="num">{stats.declined.length}</div>
           <div className="lbl">Declined</div>
         </div>
-        <div className="stat-tile">
+        <div className="stat-tile tone-amber">
           <div className="num">{stats.pendingInv.length}</div>
           <div className="lbl">No response</div>
         </div>
@@ -870,27 +924,37 @@ export function Dashboard() {
                     style={{ width: 16, height: 16, cursor: "pointer", accentColor: "var(--gold)" }}
                   />
                 </th>
-                <th>Name</th>
-                <th>Group</th>
-                <th>Max</th>
-                <th>Status</th>
-                <th>Party</th>
-                <th>Note</th>
-                <th>Sent</th>
-                <th>Opened</th>
-                <th>Share</th>
+                <th className="sortable" onClick={() => toggleSort("name")}>Name {caret("name")}</th>
+                <th className="sortable" onClick={() => toggleSort("group")}>Group {caret("group")}</th>
+                <th className="sortable" onClick={() => toggleSort("max")}>Max {caret("max")}</th>
+                <th className="sortable" onClick={() => toggleSort("status")}>Status {caret("status")}</th>
+                <th className="sortable" onClick={() => toggleSort("party")}>Party {caret("party")}</th>
+                <th className="sortable" onClick={() => toggleSort("note")}>Note {caret("note")}</th>
+                <th className="sortable" onClick={() => toggleSort("sent")}>Sent {caret("sent")}</th>
+                <th className="sortable" onClick={() => toggleSort("opened")}>Opened {caret("opened")}</th>
+                <th>
+                  <button
+                    className="mini-btn"
+                    style={{ padding: "2px 8px", fontSize: 11 }}
+                    onClick={() => setShowShare((v) => !v)}
+                    title={showShare ? "Hide the share links" : "Show the share links"}
+                    type="button"
+                  >
+                    Share {showShare ? "▲" : "▼"}
+                  </button>
+                </th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-              {visible.length === 0 && (
+              {sorted.length === 0 && (
                 <tr>
                   <td colSpan={11} style={{ textAlign: "center", padding: 24, color: "var(--brown-soft)" }}>
                     No invitations here yet.
                   </td>
                 </tr>
               )}
-              {visible.map((inv) =>
+              {sorted.map((inv) =>
                 editingId === inv.id ? (
                   <EditRow
                     key={inv.id}
@@ -976,13 +1040,17 @@ export function Dashboard() {
                       )}
                     </td>
                     <td>
-                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                        <CopyLinkButton token={inv.token} />
-                        <CopyMessageButton name={inv.name} token={inv.token} template={s.inviteMessage} label="Copy message" />
-                        {inv.sent && (
-                          <CopyMessageButton name={inv.name} token={inv.token} template={s.reminderMessage} label="Copy reminder" />
-                        )}
-                      </div>
+                      {showShare ? (
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          <CopyLinkButton token={inv.token} />
+                          <CopyMessageButton name={inv.name} token={inv.token} template={s.inviteMessage} label="Copy message" />
+                          {inv.sent && (
+                            <CopyMessageButton name={inv.name} token={inv.token} template={s.reminderMessage} label="Copy reminder" />
+                          )}
+                        </div>
+                      ) : (
+                        <span style={{ color: "var(--brown-soft)" }}>—</span>
+                      )}
                     </td>
                     <td>
                       <div style={{ display: "flex", gap: 6 }}>

@@ -396,6 +396,48 @@ body {
   margin-top: 4px;
 }
 
+/* Colour-coded dashboard tiles: green = confirmed/accepted, red = declined,
+   amber = still waiting (no response). The Invitations total stays neutral. */
+.stat-tile.tone-green {
+  background: rgba(108, 122, 69, 0.1);
+  border-color: rgba(108, 122, 69, 0.4);
+}
+.stat-tile.tone-green .num,
+.stat-tile.tone-green .lbl {
+  color: #55632f;
+}
+.stat-tile.tone-red {
+  background: rgba(168, 50, 50, 0.09);
+  border-color: rgba(168, 50, 50, 0.35);
+}
+.stat-tile.tone-red .num,
+.stat-tile.tone-red .lbl {
+  color: #a83232;
+}
+.stat-tile.tone-amber {
+  background: rgba(191, 155, 95, 0.16);
+  border-color: rgba(191, 155, 95, 0.55);
+}
+.stat-tile.tone-amber .num,
+.stat-tile.tone-amber .lbl {
+  color: #8a5a3b;
+}
+
+/* Sortable table headers */
+.admin-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.admin-table th.sortable:hover {
+  color: var(--brown);
+}
+.admin-table th .sort-caret {
+  font-size: 9px;
+  opacity: 0.55;
+  margin-left: 3px;
+}
+
 /* Story call-to-action: gold, pulsing, after an RSVP is submitted */
 @keyframes storyPulse {
   0%, 100% {
