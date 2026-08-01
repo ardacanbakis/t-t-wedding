@@ -484,6 +484,23 @@ export function Dashboard() {
     });
   }, [visible, sortKey, sortDir]);
 
+  // Potential headcount of the rows currently shown: accepted guests bring their
+  // confirmed party; everyone still to answer counts at their max capacity;
+  // declines count as zero. Unlimited invites flag the total as open-ended (+).
+  const shownGuests = useMemo(() => {
+    let count = 0;
+    let openEnded = false;
+    for (const i of sorted) {
+      if (i.status === "declined") continue;
+      if (i.status === "accepted") count += i.party_size ?? 1;
+      else if (i.max_guests == null) {
+        count += 1;
+        openEnded = true;
+      } else count += i.max_guests;
+    }
+    return { count, openEnded };
+  }, [sorted]);
+
   // Click a header: same column flips direction, a new column starts ascending.
   const toggleSort = (key: SortKey) =>
     setSortDir((prevDir) => {
@@ -892,8 +909,12 @@ export function Dashboard() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
           <h2 className="admin-h2" style={{ margin: 0 }}>
             Invitations{" "}
-            <span style={{ fontFamily: "var(--sans)", fontSize: 14, fontWeight: 600, color: "var(--brown-soft)" }}>
-              ({sorted.length})
+            <span
+              style={{ fontFamily: "var(--sans)", fontSize: 14, fontWeight: 600, color: "var(--brown-soft)" }}
+              title="Rows shown · potential guests they could bring (accepted use their party size, still-to-answer use their max, declines count as 0)"
+            >
+              ({sorted.length} {sorted.length === 1 ? "row" : "rows"} · {shownGuests.count}
+              {shownGuests.openEnded ? "+" : ""} {shownGuests.count === 1 && !shownGuests.openEnded ? "guest" : "guests"})
             </span>
           </h2>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
