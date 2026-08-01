@@ -62,22 +62,37 @@ function sortValue(inv: Invitation, key: SortKey): string | number {
 }
 
 // Optional table columns the couple can show/hide (Name is always shown).
+// The array order is also the left-to-right order the columns render in.
 type ColKey = "group" | "max" | "status" | "party" | "note" | "sent" | "opened" | "responded" | "share" | "actions";
 const COLUMNS: { key: ColKey; label: string; sort?: SortKey }[] = [
   { key: "group", label: "Group", sort: "group" },
-  { key: "max", label: "Max", sort: "max" },
+  { key: "responded", label: "Responded", sort: "responded" },
   { key: "status", label: "Status", sort: "status" },
   { key: "party", label: "Party", sort: "party" },
+  { key: "max", label: "Max", sort: "max" },
   { key: "note", label: "Note", sort: "note" },
   { key: "sent", label: "Sent", sort: "sent" },
   { key: "opened", label: "Opened", sort: "opened" },
-  { key: "responded", label: "Responded", sort: "responded" },
   { key: "share", label: "Share links" },
   { key: "actions", label: "Edit / Delete" },
 ];
 const DEFAULT_COLS: Record<ColKey, boolean> = {
-  group: true, max: true, status: true, party: true, note: true,
-  sent: true, opened: true, responded: false, share: true, actions: true,
+  group: true, responded: true, status: true, party: true, max: true,
+  note: true, sent: false, opened: true, share: false, actions: true,
+};
+
+// Optional filter controls the couple can show/hide (via the Filters menu).
+type FilterKey = "search" | "language" | "sent" | "opened" | "group" | "status";
+const FILTER_FIELDS: { key: FilterKey; label: string }[] = [
+  { key: "search", label: "Search box" },
+  { key: "language", label: "Language" },
+  { key: "sent", label: "Sent / unsent" },
+  { key: "opened", label: "Opened" },
+  { key: "group", label: "Group" },
+  { key: "status", label: "Status buttons" },
+];
+const DEFAULT_FILTERS_VIS: Record<FilterKey, boolean> = {
+  search: true, language: false, sent: false, opened: true, group: true, status: true,
 };
 
 function StatusBadge({ status }: { status: Invitation["status"] }) {
@@ -374,11 +389,13 @@ export function Dashboard() {
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkLang, setBulkLang] = useState<"auto" | "tr" | "en">("auto");
-  const [sortKey, setSortKey] = useState<SortKey>("name");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  // Default view: newest responses first.
+  const [sortKey, setSortKey] = useState<SortKey>("responded");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [cols, setCols] = useState<Record<ColKey, boolean>>(DEFAULT_COLS);
   const [colsOpen, setColsOpen] = useState(false);
-  const [showFilters, setShowFilters] = useState(true);
+  const [filtersVis, setFiltersVis] = useState<Record<FilterKey, boolean>>(DEFAULT_FILTERS_VIS);
+  const [filtersMenuOpen, setFiltersMenuOpen] = useState(false);
   const [s, setS] = useState<SiteSettings>(DEFAULT_SETTINGS);
   const [settingsMsg, setSettingsMsg] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -480,6 +497,25 @@ export function Dashboard() {
   const toggleCol = (key: ColKey) => setCols((prev) => ({ ...prev, [key]: !prev[key] }));
   // Columns actually rendered: the always-on select + Name, plus each shown option.
   const colCount = 2 + COLUMNS.filter((c) => cols[c.key]).length;
+
+  const toggleFilterVis = (key: FilterKey) => setFiltersVis((prev) => ({ ...prev, [key]: !prev[key] }));
+  // The Group filter only exists once there are groups; ignore it otherwise.
+  const anyFilterShown =
+    filtersVis.search ||
+    filtersVis.language ||
+    filtersVis.sent ||
+    filtersVis.opened ||
+    (filtersVis.group && groups.length > 0) ||
+    filtersVis.status;
+  // Clear every filter/search/group so the full guest list shows again.
+  const resetFilters = () => {
+    setFilter("all");
+    setGroupFilter("all");
+    setSentFilter("all");
+    setOpenedFilter("all");
+    setLangFilter("all");
+    setSearch("");
+  };
 
   const toggleSent = (inv: Invitation) =>
     run(async () => {
@@ -819,8 +855,8 @@ export function Dashboard() {
         <button
           type="button"
           className={`stat-tile${filter === "all" ? " active" : ""}`}
-          onClick={() => setFilter("all")}
-          title="Show all invitations"
+          onClick={resetFilters}
+          title="Clear every filter, group and search — show all invitations"
         >
           <div className="num">{invitations.length}</div>
           <div className="lbl">Invitations</div>
@@ -861,16 +897,69 @@ export function Dashboard() {
             </span>
           </h2>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-            <button
-              className="mini-btn"
-              onClick={() => setShowFilters((v) => !v)}
-              title={showFilters ? "Hide the filter controls" : "Show the filter controls"}
-              type="button"
-            >
-              Filters {showFilters ? "▲" : "▼"}
-            </button>
             <div style={{ position: "relative" }}>
-              <button className="mini-btn" onClick={() => setColsOpen((v) => !v)} type="button" title="Show/hide table columns">
+              <button
+                className="mini-btn"
+                onClick={() => {
+                  setFiltersMenuOpen((v) => !v);
+                  setColsOpen(false);
+                }}
+                type="button"
+                title="Choose which filter controls to show"
+              >
+                Filters ▾
+              </button>
+              {filtersMenuOpen && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 6px)",
+                    right: 0,
+                    zIndex: 60,
+                    background: "var(--paper)",
+                    border: "1px solid var(--gold-soft)",
+                    borderRadius: 12,
+                    boxShadow: "0 16px 40px -18px rgba(120,72,40,.5)",
+                    padding: "10px 12px",
+                    minWidth: 170,
+                  }}
+                >
+                  {FILTER_FIELDS.map((f) => (
+                    <label
+                      key={f.key}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        padding: "5px 4px",
+                        fontFamily: "var(--sans)",
+                        fontSize: 13,
+                        color: "var(--brown-mid)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={filtersVis[f.key]}
+                        onChange={() => toggleFilterVis(f.key)}
+                        style={{ width: 15, height: 15, accentColor: "var(--gold)", cursor: "pointer" }}
+                      />
+                      {f.label}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div style={{ position: "relative" }}>
+              <button
+                className="mini-btn"
+                onClick={() => {
+                  setColsOpen((v) => !v);
+                  setFiltersMenuOpen(false);
+                }}
+                type="button"
+                title="Show/hide table columns"
+              >
                 Columns ▾
               </button>
               {colsOpen && (
@@ -916,51 +1005,59 @@ export function Dashboard() {
             </div>
           </div>
         </div>
-        {showFilters && (
+        {anyFilterShown && (
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginTop: 12 }}>
-            <input
-              className="text-input"
-              style={{ width: "auto", padding: "6px 12px", fontSize: 12, minWidth: 160 }}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search name or group…"
-              aria-label="Search invitations"
-            />
-            <select
-              className="select-input"
-              style={{ width: "auto", padding: "6px 12px", fontSize: 12 }}
-              value={langFilter}
-              onChange={(e) => setLangFilter(e.target.value as "all" | "auto" | "tr" | "en")}
-              title="Filter by invite language"
-            >
-              <option value="all">All languages</option>
-              <option value="auto">Auto (TR/EN)</option>
-              <option value="en">English only</option>
-              <option value="tr">Turkish only</option>
-            </select>
-            <select
-              className="select-input"
-              style={{ width: "auto", padding: "6px 12px", fontSize: 12 }}
-              value={sentFilter}
-              onChange={(e) => setSentFilter(e.target.value as "all" | "sent" | "unsent")}
-              title="Filter by whether the invite has been sent"
-            >
-              <option value="all">Sent + unsent</option>
-              <option value="unsent">Waiting to send</option>
-              <option value="sent">Already sent</option>
-            </select>
-            <select
-              className="select-input"
-              style={{ width: "auto", padding: "6px 12px", fontSize: 12 }}
-              value={openedFilter}
-              onChange={(e) => setOpenedFilter(e.target.value as "all" | "opened" | "unopened")}
-              title="Filter by whether the guest has opened their invite"
-            >
-              <option value="all">Opened + not</option>
-              <option value="opened">Opened</option>
-              <option value="unopened">Not opened</option>
-            </select>
-            {groups.length > 0 && (
+            {filtersVis.search && (
+              <input
+                className="text-input"
+                style={{ width: "auto", padding: "6px 12px", fontSize: 12, minWidth: 160 }}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search name or group…"
+                aria-label="Search invitations"
+              />
+            )}
+            {filtersVis.language && (
+              <select
+                className="select-input"
+                style={{ width: "auto", padding: "6px 12px", fontSize: 12 }}
+                value={langFilter}
+                onChange={(e) => setLangFilter(e.target.value as "all" | "auto" | "tr" | "en")}
+                title="Filter by invite language"
+              >
+                <option value="all">All languages</option>
+                <option value="auto">Auto (TR/EN)</option>
+                <option value="en">English only</option>
+                <option value="tr">Turkish only</option>
+              </select>
+            )}
+            {filtersVis.sent && (
+              <select
+                className="select-input"
+                style={{ width: "auto", padding: "6px 12px", fontSize: 12 }}
+                value={sentFilter}
+                onChange={(e) => setSentFilter(e.target.value as "all" | "sent" | "unsent")}
+                title="Filter by whether the invite has been sent"
+              >
+                <option value="all">Sent + unsent</option>
+                <option value="unsent">Waiting to send</option>
+                <option value="sent">Already sent</option>
+              </select>
+            )}
+            {filtersVis.opened && (
+              <select
+                className="select-input"
+                style={{ width: "auto", padding: "6px 12px", fontSize: 12 }}
+                value={openedFilter}
+                onChange={(e) => setOpenedFilter(e.target.value as "all" | "opened" | "unopened")}
+                title="Filter by whether the guest has opened their invite"
+              >
+                <option value="all">Opened + not</option>
+                <option value="opened">Opened</option>
+                <option value="unopened">Not opened</option>
+              </select>
+            )}
+            {filtersVis.group && groups.length > 0 && (
               <select
                 className="select-input"
                 style={{ width: "auto", padding: "6px 12px", fontSize: 12 }}
@@ -976,17 +1073,18 @@ export function Dashboard() {
                 <option value="__none">Ungrouped</option>
               </select>
             )}
-            {(["all", "accepted", "declined", "pending"] as Filter[]).map((f) => (
-              <button
-                key={f}
-                className="mini-btn"
-                style={filter === f ? { background: "var(--gold)", color: "#fffdf8", borderColor: "var(--gold)" } : undefined}
-                onClick={() => setFilter(f)}
-                type="button"
-              >
-                {f === "all" ? "All" : f === "pending" ? "No response" : f[0].toUpperCase() + f.slice(1)}
-              </button>
-            ))}
+            {filtersVis.status &&
+              (["all", "accepted", "declined", "pending"] as Filter[]).map((f) => (
+                <button
+                  key={f}
+                  className="mini-btn"
+                  style={filter === f ? { background: "var(--gold)", color: "#fffdf8", borderColor: "var(--gold)" } : undefined}
+                  onClick={() => setFilter(f)}
+                  type="button"
+                >
+                  {f === "all" ? "All" : f === "pending" ? "No response" : f[0].toUpperCase() + f.slice(1)}
+                </button>
+              ))}
           </div>
         )}
         {selectedVisible.length > 0 && (
@@ -1042,13 +1140,13 @@ export function Dashboard() {
                 </th>
                 <th className="sortable" onClick={() => toggleSort("name")}>Name {caret("name")}</th>
                 {cols.group && <th className="sortable" onClick={() => toggleSort("group")}>Group {caret("group")}</th>}
-                {cols.max && <th className="sortable" onClick={() => toggleSort("max")}>Max {caret("max")}</th>}
+                {cols.responded && <th className="sortable" onClick={() => toggleSort("responded")}>Responded {caret("responded")}</th>}
                 {cols.status && <th className="sortable" onClick={() => toggleSort("status")}>Status {caret("status")}</th>}
                 {cols.party && <th className="sortable" onClick={() => toggleSort("party")}>Party {caret("party")}</th>}
+                {cols.max && <th className="sortable" onClick={() => toggleSort("max")}>Max {caret("max")}</th>}
                 {cols.note && <th className="sortable" onClick={() => toggleSort("note")}>Note {caret("note")}</th>}
                 {cols.sent && <th className="sortable" onClick={() => toggleSort("sent")}>Sent {caret("sent")}</th>}
                 {cols.opened && <th className="sortable" onClick={() => toggleSort("opened")}>Opened {caret("opened")}</th>}
-                {cols.responded && <th className="sortable" onClick={() => toggleSort("responded")}>Responded {caret("responded")}</th>}
                 {cols.share && <th>Share</th>}
                 {cols.actions && <th></th>}
               </tr>
@@ -1127,7 +1225,11 @@ export function Dashboard() {
                         )}
                       </td>
                     )}
-                    {cols.max && <td>{inv.max_guests == null ? "∞" : inv.max_guests}</td>}
+                    {cols.responded && (
+                      <td style={{ fontSize: 12, color: "var(--brown-mid)", whiteSpace: "nowrap" }}>
+                        {inv.responded_at ? new Date(inv.responded_at).toLocaleString() : "—"}
+                      </td>
+                    )}
                     {cols.status && (
                       <td>
                         <StatusBadge status={inv.status} />
@@ -1136,6 +1238,7 @@ export function Dashboard() {
                     {cols.party && (
                       <td>{inv.status === "accepted" ? inv.party_size ?? 1 : inv.status === "declined" ? 0 : "—"}</td>
                     )}
+                    {cols.max && <td>{inv.max_guests == null ? "∞" : inv.max_guests}</td>}
                     {cols.note && (
                       <td style={{ maxWidth: 260, whiteSpace: "pre-wrap", fontSize: 13 }}>{inv.note || "—"}</td>
                     )}
@@ -1157,11 +1260,6 @@ export function Dashboard() {
                         ) : (
                           <span style={{ color: "var(--brown-soft)" }}>—</span>
                         )}
-                      </td>
-                    )}
-                    {cols.responded && (
-                      <td style={{ fontSize: 12, color: "var(--brown-mid)", whiteSpace: "nowrap" }}>
-                        {inv.responded_at ? new Date(inv.responded_at).toLocaleString() : "—"}
                       </td>
                     )}
                     {cols.share && (
