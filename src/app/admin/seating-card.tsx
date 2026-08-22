@@ -11,8 +11,13 @@ import { getSupabase } from "@/lib/supabase";
  * still-to-answer. Declines are excluded outright.
  *
  * Seats are allocated **per invitation per table**, so a family of four can sit
- * two-and-two across two tables. The plan lives in the admin-only
- * `seating_plans` table (NOT `settings`, which anon can read).
+ * two-and-two across two tables. Selecting one invitation shows a stepper for
+ * splitting it; selecting several seats each of them in full at one table.
+ * Tables are reordered by dragging the grip or with the arrow buttons — order
+ * is simply the index in `plan.tables`.
+ *
+ * The plan lives in the admin-only `seating_plans` table (NOT `settings`,
+ * which anon can read).
  */
 
 export type SeatTable = {
@@ -106,12 +111,18 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false);
 
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  // A set, so several invitations can be seated at one table in a single click.
+  // Exactly one selected keeps the "seat N of R" stepper, which is what lets a
+  // single party be split across tables.
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [seatN, setSeatN] = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "accepted" | "pending">("all");
   const [groupFilter, setGroupFilter] = useState("all");
   const [newSeats, setNewSeats] = useState("8");
+  // Index of the table being dragged, and the one it is hovering over.
+  const [dragFrom, setDragFrom] = useState<number | null>(null);
+  const [dragOver, setDragOver] = useState<number | null>(null);
 
   // ── Load (or create) the single plan row ──────────────────────────
   const load = useCallback(async () => {
@@ -216,9 +227,22 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
       .sort((a, b) => a.g.name.localeCompare(b.g.name));
   }, [guests, plan, search, statusFilter, groupFilter]);
 
-  const selected = selectedId == null ? null : byId.get(selectedId) ?? null;
+  // The one-and-only selection, when exactly one invitation is picked.
+  const selected = selectedIds.size === 1 ? byId.get([...selectedIds][0]) ?? null : null;
   const selectedRemaining =
     selected && plan ? headsFor(selected, plan.heads) - seatedFor(selected.id, plan.assignments) : 0;
+
+  /** Everyone selected, with the seats each still needs placing. */
+  const selectedParties = useMemo(() => {
+    if (!plan) return [] as { inv: Invitation; remaining: number }[];
+    return [...selectedIds]
+      .map((id) => byId.get(id))
+      .filter((inv): inv is Invitation => !!inv)
+      .map((inv) => ({ inv, remaining: headsFor(inv, plan.heads) - seatedFor(inv.id, plan.assignments) }))
+      .filter(({ remaining }) => remaining > 0);
+  }, [selectedIds, byId, plan]);
+
+  const selectedPeople = selectedParties.reduce((sum, { remaining }) => sum + remaining, 0);
 
   // Keep the stepper inside 1..remaining as the selection changes.
   useEffect(() => {
@@ -226,13 +250,18 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
   }, [selectedRemaining]);
 
   const pickGuest = (inv: Invitation, remaining: number) => {
-    if (selectedId === inv.id) {
-      setSelectedId(null);
-      return;
-    }
-    setSelectedId(inv.id);
-    setSeatN(remaining); // default to seating the whole remaining party
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(inv.id)) next.delete(inv.id);
+      else {
+        next.add(inv.id);
+        if (next.size === 1) setSeatN(remaining); // default: the whole party
+      }
+      return next;
+    });
   };
+
+  const clearSelection = () => setSelectedIds(new Set());
 
   // ── Table + assignment actions ────────────────────────────────────
   const addTable = () =>
@@ -250,6 +279,19 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
       ...p,
       tables: p.tables.map((t) => (t.id === id ? { ...t, seats: Math.max(1, seats) } : t)),
     }));
+
+  /**
+   * Reorder the tables. Position is just the index in `plan.tables`, so this
+   * persists through the normal Save with no schema change.
+   */
+  const moveTable = (from: number, to: number) =>
+    mutate((p) => {
+      if (from === to || from < 0 || to < 0 || from >= p.tables.length || to >= p.tables.length) return p;
+      const tables = [...p.tables];
+      const [moved] = tables.splice(from, 1);
+      tables.splice(to, 0, moved);
+      return { ...p, tables };
+    });
 
   const removeTable = (id: string) =>
     mutate((p) => {
@@ -271,12 +313,28 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
       return { ...p, assignments };
     });
 
+  /**
+   * Seat the current selection at a table. One party honours the stepper (so it
+   * can be split); several are each seated in full. Over-filling is allowed on
+   * purpose — the table turns red rather than silently dropping anyone.
+   */
   const seatSelected = (tableId: string) => {
-    if (!selected) return;
-    const n = Math.max(1, Math.min(seatN, selectedRemaining));
-    if (n <= 0) return;
-    seatAt(tableId, selected.id, n);
-    if (n >= selectedRemaining) setSelectedId(null); // party fully placed
+    if (!plan || selectedParties.length === 0) return;
+    if (selected) {
+      const n = Math.max(1, Math.min(seatN, selectedRemaining));
+      if (n <= 0) return;
+      seatAt(tableId, selected.id, n);
+      if (n >= selectedRemaining) clearSelection(); // party fully placed
+      return;
+    }
+    mutate((p) => {
+      const perTable = { ...(p.assignments[tableId] ?? {}) };
+      for (const { inv, remaining } of selectedParties) {
+        perTable[String(inv.id)] = (perTable[String(inv.id)] ?? 0) + remaining;
+      }
+      return { ...p, assignments: { ...p.assignments, [tableId]: perTable } };
+    });
+    clearSelection();
   };
 
   const setHeads = (invId: number, value: number) =>
@@ -311,7 +369,7 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
   const clearAll = () => {
     if (!window.confirm("Clear every seat assignment? The tables themselves stay.")) return;
     mutate((p) => ({ ...p, assignments: {} }));
-    setSelectedId(null);
+    clearSelection();
   };
 
   // ── Render ────────────────────────────────────────────────────────
@@ -472,7 +530,54 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
             )}
           </div>
 
-          {/* Seat-count stepper for the selected party */}
+          {/* Bulk selection, scoped to the rows the filters actually show */}
+          {unseatedList.length > 0 && (
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 10 }}>
+              <button
+                className="mini-btn"
+                onClick={() => setSelectedIds(new Set(unseatedList.map(({ g }) => g.id)))}
+                type="button"
+                title="Select every guest currently listed"
+              >
+                Select all shown ({unseatedList.length})
+              </button>
+              {selectedIds.size > 0 && (
+                <button className="mini-btn" onClick={clearSelection} type="button">
+                  Clear selection
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Several parties picked: seat each of them in full */}
+          {selectedParties.length > 1 && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                flexWrap: "wrap",
+                padding: "10px 14px",
+                marginBottom: 10,
+                background: "rgba(191,155,95,.1)",
+                border: "1px solid var(--gold-soft)",
+                borderRadius: 10,
+                fontFamily: "var(--sans)",
+                fontSize: 13,
+                color: "var(--brown-mid)",
+              }}
+            >
+              <strong style={{ color: "var(--brown)" }}>
+                {selectedParties.length} invitations · {selectedPeople} people
+              </strong>
+              <span>— click a table to seat them all</span>
+              <button className="mini-btn" onClick={clearSelection} type="button">
+                Cancel
+              </button>
+            </div>
+          )}
+
+          {/* Seat-count stepper — only for a single party, so it can be split */}
           {selected && (
             <div
               style={{
@@ -504,7 +609,7 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
                 +
               </button>
               <span>of {selectedRemaining} — now click a table</span>
-              <button className="mini-btn" onClick={() => setSelectedId(null)} type="button">
+              <button className="mini-btn" onClick={clearSelection} type="button">
                 Cancel
               </button>
             </div>
@@ -517,7 +622,7 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
               </div>
             )}
             {unseatedList.map(({ g, remaining }) => {
-              const isSel = selectedId === g.id;
+              const isSel = selectedIds.has(g.id);
               const total = headsFor(g, plan.heads);
               const unlimited = g.status !== "accepted" && g.max_guests == null;
               return (
@@ -534,6 +639,13 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
                     background: isSel ? "rgba(191,155,95,.14)" : "rgba(255,253,248,.92)",
                   }}
                 >
+                  <input
+                    type="checkbox"
+                    checked={isSel}
+                    onChange={() => pickGuest(g, remaining)}
+                    title="Select this invitation"
+                    style={{ width: 15, height: 15, cursor: "pointer", accentColor: "var(--gold)" }}
+                  />
                   <button
                     onClick={() => pickGuest(g, remaining)}
                     type="button"
@@ -613,21 +725,85 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
           )}
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
-            {plan.tables.map((t) => {
+            {plan.tables.map((t, idx) => {
               const used = tableUsed(t.id, plan.assignments);
               const over = used > t.seats;
               const parties = Object.entries(plan.assignments[t.id] ?? {});
+              const isDropTarget = dragOver === idx && dragFrom !== null && dragFrom !== idx;
               return (
                 <div
                   key={t.id}
+                  onDragOver={(e) => {
+                    if (dragFrom === null) return;
+                    e.preventDefault(); // required for onDrop to fire
+                    setDragOver(idx);
+                  }}
+                  onDragLeave={() => setDragOver((cur) => (cur === idx ? null : cur))}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (dragFrom !== null) moveTable(dragFrom, idx);
+                    setDragFrom(null);
+                    setDragOver(null);
+                  }}
                   style={{
-                    border: `1px solid ${over ? "rgba(168,50,50,.5)" : "var(--gold-soft)"}`,
+                    border: `1px solid ${
+                      isDropTarget ? "var(--gold)" : over ? "rgba(168,50,50,.5)" : "var(--gold-soft)"
+                    }`,
+                    boxShadow: isDropTarget ? "0 0 0 2px var(--gold) inset" : undefined,
                     background: over ? "rgba(168,50,50,.06)" : "rgba(255,253,248,.92)",
                     borderRadius: 14,
                     padding: "12px 14px",
+                    opacity: dragFrom === idx ? 0.45 : 1,
+                    transition: "opacity .15s ease, box-shadow .15s ease",
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 8 }}>
+                    {/* Only the grip is draggable — the whole card would fight
+                        the name input and the seat buttons inside it. HTML5 drag
+                        doesn't fire on touch, so the arrows are the real
+                        fallback there, not just a convenience. */}
+                    <span
+                      draggable
+                      onDragStart={() => {
+                        setDragFrom(idx);
+                        setDragOver(null);
+                      }}
+                      onDragEnd={() => {
+                        setDragFrom(null);
+                        setDragOver(null);
+                      }}
+                      title="Drag to reorder"
+                      style={{
+                        cursor: "grab",
+                        color: "var(--brown-soft)",
+                        fontSize: 14,
+                        lineHeight: 1,
+                        padding: "0 2px",
+                        userSelect: "none",
+                      }}
+                    >
+                      ⠿
+                    </span>
+                    <button
+                      className="mini-btn"
+                      style={{ padding: "2px 6px", fontSize: 11 }}
+                      onClick={() => moveTable(idx, idx - 1)}
+                      disabled={idx === 0}
+                      title="Move this table earlier"
+                      type="button"
+                    >
+                      ◀
+                    </button>
+                    <button
+                      className="mini-btn"
+                      style={{ padding: "2px 6px", fontSize: 11 }}
+                      onClick={() => moveTable(idx, idx + 1)}
+                      disabled={idx === plan.tables.length - 1}
+                      title="Move this table later"
+                      type="button"
+                    >
+                      ▶
+                    </button>
                     <input
                       className="text-input"
                       value={t.name}
@@ -716,16 +892,26 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
                   <button
                     className="mini-btn"
                     style={
-                      selected
+                      selectedParties.length
                         ? { background: "var(--gold)", color: "#fffdf8", borderColor: "var(--gold)", width: "100%" }
                         : { width: "100%" }
                     }
                     onClick={() => seatSelected(t.id)}
-                    disabled={!selected}
-                    title={selected ? `Seat ${seatN} here` : "Pick a guest first"}
+                    disabled={!selectedParties.length}
+                    title={
+                      selected
+                        ? `Seat ${Math.min(seatN, selectedRemaining)} here`
+                        : selectedParties.length
+                          ? `Seat ${selectedPeople} people here`
+                          : "Pick a guest first"
+                    }
                     type="button"
                   >
-                    {selected ? `Seat ${Math.min(seatN, selectedRemaining)} here` : "Seat here"}
+                    {selected
+                      ? `Seat ${Math.min(seatN, selectedRemaining)} here`
+                      : selectedParties.length
+                        ? `Seat ${selectedParties.length} parties here`
+                        : "Seat here"}
                   </button>
                 </div>
               );
