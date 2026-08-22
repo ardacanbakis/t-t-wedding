@@ -21,6 +21,7 @@ const ACCESS_TOKEN = "mock-access-token";
 
 let nextId = 1;
 let nextChapterId = 1;
+let nextPlanId = 1;
 const db = {
   invitations: [],
   story_chapters: [
@@ -38,6 +39,7 @@ const db = {
     },
   ],
   general_stats: { opens: 0, yes: 0 },
+  seating_plans: [],
   settings: new Map([
     ["eventDate", "2026-06-28T14:30:00+03:00"],
     ["rsvpDeadline", "2027-06-14T23:59:00+03:00"],
@@ -80,6 +82,18 @@ function send(res, status, body, extra = {}) {
   const payload = body === undefined ? "" : JSON.stringify(body);
   res.writeHead(status, { "Content-Type": "application/json", ...CORS, ...extra });
   res.end(payload);
+}
+
+// PostgREST returns a BARE OBJECT rather than an array when the client asks for
+// a single row (supabase-js .single()/.maybeSingle() send this Accept header).
+// Without this the mock hands back [row] and callers crash on row.field.
+function sendRows(req, res, status, rows, extra = {}) {
+  const wantsObject = (req.headers.accept || "").includes("application/vnd.pgrst.object+json");
+  if (!wantsObject) return send(res, status, rows, extra);
+  if (rows.length !== 1) {
+    return pgError(res, `JSON object requested, multiple (or no) rows returned`, rows.length ? 406 : 406);
+  }
+  return send(res, status, rows[0], extra);
 }
 
 function pgError(res, message, status = 400) {
@@ -348,6 +362,45 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === "DELETE") {
       db.invitations = db.invitations.filter((i) => !idMatch(i.id));
+      return send(res, 204);
+    }
+  }
+
+  // ── PostgREST: seating_plans (admin only — mirrors the real RLS) ──
+  if (pathname === "/rest/v1/seating_plans") {
+    if (!isAdmin(req)) {
+      // No anon read policy on this table: selects come back empty, writes fail.
+      if (req.method === "GET") return send(res, 200, []);
+      return pgError(res, "new row violates row-level security policy", 401);
+    }
+    if (req.method === "GET") return sendRows(req, res, 200, [...db.seating_plans]);
+    if (req.method === "POST") {
+      const body = await readBody(req);
+      const inserted = [];
+      for (const row of Array.isArray(body) ? body : [body]) {
+        const plan = {
+          id: nextPlanId++,
+          name: row.name ?? "Main plan",
+          tables: row.tables ?? [],
+          assignments: row.assignments ?? {},
+          heads: row.heads ?? {},
+          updated_at: new Date().toISOString(),
+        };
+        db.seating_plans.push(plan);
+        inserted.push(plan);
+      }
+      return sendRows(req, res, 201, inserted);
+    }
+    const pf = url.searchParams.get("id") ?? "";
+    const pid = pf.startsWith("eq.") ? Number(pf.slice(3)) : NaN;
+    if (req.method === "PATCH") {
+      const body = await readBody(req);
+      const plan = db.seating_plans.find((x) => x.id === pid);
+      if (plan) Object.assign(plan, body, { updated_at: new Date().toISOString() });
+      return send(res, 204);
+    }
+    if (req.method === "DELETE") {
+      db.seating_plans = db.seating_plans.filter((x) => x.id !== pid);
       return send(res, 204);
     }
   }

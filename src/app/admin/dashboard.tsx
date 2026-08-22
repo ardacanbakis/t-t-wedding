@@ -16,16 +16,18 @@ import type { GeneralTexts } from "@/lib/model";
 import { parseLayout, type Layout } from "@/lib/blocks";
 import { BASE_PATH, getSupabase } from "@/lib/supabase";
 import { GeneralCard } from "./general-card";
+import { SeatingCard } from "./seating-card";
 import { LayoutCard } from "./layout-card";
 import { SocialCard } from "./social-card";
 import { StoryCard } from "./story-card";
 import { TextsCard } from "./texts-card";
 import { VarsCard } from "./vars-card";
 
-type Tab = "invitations" | "styling" | "story" | "general";
+type Tab = "invitations" | "seating" | "styling" | "story" | "general";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "invitations", label: "INVITATIONS" },
+  { id: "seating", label: "TABLE PLANNER" },
   { id: "styling", label: "INVITATION STYLING" },
   { id: "story", label: "STORY & TIMELINE" },
   { id: "general", label: "GENERAL INVITATION" },
@@ -1545,6 +1547,7 @@ export function Dashboard() {
         reloadSettings={reload}
       />
       )}
+      {tab === "seating" && <SeatingCard invitations={invitations} pending={pending} />}
       {tab === "general" && <GeneralCard settings={s} onSave={doSaveGeneral} pending={pending} />}
     </div>
   );

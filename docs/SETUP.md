@@ -115,3 +115,86 @@ drop in a replacement.
   Settings**.
 - **WhatsApp templates** (invite + reminder) and the **contact number** are at
   the bottom of the Invitations tab / in Settings.
+
+## 6. Backup & restore
+
+The project runs on Supabase's **free tier**, which has **no automatic daily
+backups** and pauses after ~1 week of inactivity. The guest list is
+irreplaceable, so take a manual dump before any schema change (and again close
+to the wedding).
+
+**Step 1 — connection string.** Dashboard → *Project Settings → Database →
+Connection string → URI*. If a direct connection fails, use the **Session
+pooler** URI (direct connections are IPv6-only on newer projects). Then:
+
+```bash
+export SUPABASE_DB_URL='postgresql://postgres:...@...supabase.com:5432/postgres'
+```
+
+**Step 2 — match the Postgres version.** Check it under *Settings →
+Infrastructure*. `pg_dump` refuses to dump from a server **newer** than itself,
+so a PG17 project needs pg_dump 17 (or the Supabase CLI, which bundles a
+matching version).
+
+**Step 3 — take both dumps.** Only the `public` schema; `auth` and `storage`
+are Supabase-managed.
+
+```bash
+mkdir -p backups
+
+# Data only — the one you'll normally restore.
+pg_dump "$SUPABASE_DB_URL" --schema=public --data-only \
+  --inserts --on-conflict-do-nothing --no-owner --no-privileges \
+  -f backups/tt-data-$(date +%F).sql
+
+# Full schema + data — a snapshot for rebuilding from nothing.
+pg_dump "$SUPABASE_DB_URL" --schema=public \
+  --no-owner --no-privileges -f backups/tt-full-$(date +%F).sql
+```
+
+`--inserts --on-conflict-do-nothing` is what makes the data dump safe to re-run
+against a database that already has rows; a plain `COPY` dump collides on
+primary keys.
+
+**Step 4 — verify it.** An untested backup is not a backup. Compare the row
+counts in the dump against the live database:
+
+```bash
+psql "$SUPABASE_DB_URL" -c "select 'invitations' t, count(*) from invitations
+  union all select 'settings', count(*) from settings
+  union all select 'story_chapters', count(*) from story_chapters
+  union all select 'seating_plans', count(*) from seating_plans;"
+grep -c "^INSERT INTO public.invitations" backups/tt-data-$(date +%F).sql
+```
+
+**Step 5 — restore.** Into a fresh or reset project:
+
+```bash
+psql "$SUPABASE_DB_URL" -f supabase/setup.sql          # schema, RLS, RPCs, seeds
+psql "$SUPABASE_DB_URL" -f backups/tt-data-<date>.sql  # rows
+```
+
+**Step 6 — keep dumps out of git.** `backups/` is gitignored. Dumps contain
+guest names and notes, and the connection string embeds the database password —
+never commit one.
+
+> ⚠️ **Admin logins are not in the backup.** They live in `auth.users`, outside
+> the `public` schema. After restoring into a *new* project, re-create an admin
+> user (step 1.3 above) for each address in `admin_emails` — that table *is* in
+> `public`, so the allow-list itself restores fine.
+
+No tooling to hand? **Table Editor → (each table) → Export CSV** is a decent
+belt-and-braces copy, but it carries no schema, RLS or RPCs — you'd re-run
+`setup.sql` and re-import the rows by hand.
+
+### Code restore points
+
+| Tag | Commit | What it is |
+| --- | --- | --- |
+| `v1-admin-baseline` | `12cd267` | Full admin panel before the Table Planner was added |
+
+```bash
+git checkout 12cd267          # inspect the baseline
+git tag -a v1-admin-baseline 12cd267 -m "Baseline before the seating simulator"
+git push origin v1-admin-baseline
+```

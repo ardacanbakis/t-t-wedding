@@ -15,7 +15,7 @@ There is no server to run. The app is 100% static (`output: "export"`).
 | `/` | `page.tsx` | Landing page |
 | `/i/?t=<token>` | `i/page.tsx` → `i/invite-loader.tsx` → `i/invite-view.tsx` | Personal invitation + RSVP. `not-found-view.tsx` for bad tokens |
 | `/welcome/` | `welcome/page.tsx` → `welcome/welcome-loader.tsx` | General (no-RSVP) invite — reuses `InviteView` with `mode="general"` |
-| `/admin/` | `admin/page.tsx` → `admin/dashboard.tsx` (+ `*-card.tsx`) | Login-gated dashboard |
+| `/admin/` | `admin/page.tsx` → `admin/dashboard.tsx` (+ `*-card.tsx`) | Login-gated dashboard: Invitations, Table Planner, Styling, Story, General |
 | `/story/` | `public/story/index.html` | Story + timeline (NOT a Next route — plain static file) |
 
 `invite-view.tsx` renders both personal and general invites and holds all the
@@ -51,7 +51,7 @@ seed, `tools/mock-supabase.mjs` seed, and the admin UI.
 ## Supabase (`supabase/setup.sql`, idempotent)
 
 Tables: `invitations`, `settings`, `admin_emails`, `story_chapters`,
-`general_stats`. RLS: tables are admin-only (email in `admin_emails`, checked
+`general_stats`, `seating_plans`. RLS: tables are admin-only (email in `admin_emails`, checked
 by `is_admin()`); guests only reach data through `SECURITY DEFINER` RPCs:
 `get_invitation`, `submit_rsvp`, `general_track`, `general_reset` (admin),
 `mark_invitation_opened`. All pin `search_path`. Re-running the file is safe;
@@ -107,5 +107,39 @@ in sync with `setup.sql`. Continuously-animated buttons need Playwright
   when touching data.
 - Money-shot files: `invite-view.tsx`, `admin/dashboard.tsx`,
   `public/story/index.html`.
+
+## Table planner (`admin/seating-card.tsx`)
+
+The TABLE PLANNER tab seats guests. Accepted + still-to-answer only — declines
+are excluded outright. Head counts: accepted use `party_size`, everyone else
+their `max_guests` (so tables aren't under-booked), overridable per invitation.
+
+Seats are allocated **per invitation per table**
+(`assignments[tableId][invitationId] = n`), so a family of four can sit
+two-and-two across two tables. Select a guest → set how many → click a table.
+
+The plan is one row in **`seating_plans`**, which is **admin-only — it has no
+`anon` read policy**, unlike `settings`. `normalizePlan()` coerces the jsonb
+columns into shape on load, so a malformed row can't take down the admin page.
+`SeatTable` carries optional `x`/`y`, reserved for a future floor-plan view.
+
+## Known trade-offs
+
+- **`settings` is world-readable** (`for select to anon using (true)`) and every
+  guest page fetches all of it. Never put anything private in a setting — that
+  is exactly why the seating plan has its own table.
+- **`settingsFromRows` silently drops unknown keys** (`if (row.key in out)`). A
+  setting missing from `SiteSettings`/`DEFAULT_SETTINGS` reads back as absent
+  with no error — the easiest footgun in the codebase.
+- **Three-way manual lockstep** between `supabase/setup.sql`,
+  `tools/mock-supabase.mjs` and `src/lib/model.ts`; drift fails silently.
+- **`dashboard.tsx` is ~1550 lines** — filters, sorting, column visibility, bulk
+  edit, CSV export, stats and every settings save handler in one component.
+- **No committed tests** — Playwright suites live in the session scratchpad and
+  are lost between sessions; nothing runs in CI.
+- **Admin view state is in-memory**: column/filter/sort choices reset on reload.
+- **Free-tier Supabase has no automatic backups.** See the Backup & restore
+  section of [docs/SETUP.md](docs/SETUP.md) — and note admin logins live in
+  `auth.users`, outside a `public`-schema dump.
 
 Setup instructions live in **[docs/SETUP.md](docs/SETUP.md)**, not here.
