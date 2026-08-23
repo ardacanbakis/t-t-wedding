@@ -42,7 +42,8 @@ export default function AdminPage() {
     );
   }
 
-  if (!session) return <LoginForm />;
-
-  return <Dashboard />;
+  // The document is lang="tr" for guests, but the admin UI is English-only.
+  // Without this, CSS `text-transform: uppercase` applies Turkish casing and
+  // renders labels as "STİLL TO SEAT" / "CAPACİTY" (dotted capital İ).
+  return <div lang="en">{session ? <Dashboard /> : <LoginForm />}</div>;
 }

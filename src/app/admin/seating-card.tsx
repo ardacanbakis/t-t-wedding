@@ -39,6 +39,43 @@ export type SeatingPlan = {
   heads: Record<string, number>;
 };
 
+/** Map grid: fixed columns, rows grow with the plan. */
+export const MAP_COLS = 8;
+const MAP_MAX_ROWS = 40;
+
+/**
+ * Where each table sits on the map. Stored positions win; tables that have
+ * never been moved fall into the first free cells in row-major order. Deriving
+ * rather than writing means simply opening the map never marks the plan dirty,
+ * and two tables can never land on the same cell.
+ */
+export function mapPositions(tables: SeatTable[]): Map<string, { x: number; y: number }> {
+  const out = new Map<string, { x: number; y: number }>();
+  const taken = new Set<string>();
+  const key = (x: number, y: number) => `${x},${y}`;
+
+  for (const t of tables) {
+    if (Number.isFinite(t.x) && Number.isFinite(t.y)) {
+      const x = t.x as number;
+      const y = t.y as number;
+      if (!taken.has(key(x, y))) {
+        out.set(t.id, { x, y });
+        taken.add(key(x, y));
+      }
+    }
+  }
+  let cursor = 0;
+  for (const t of tables) {
+    if (out.has(t.id)) continue;
+    while (taken.has(key(cursor % MAP_COLS, Math.floor(cursor / MAP_COLS)))) cursor++;
+    const x = cursor % MAP_COLS;
+    const y = Math.floor(cursor / MAP_COLS);
+    out.set(t.id, { x, y });
+    taken.add(key(x, y));
+  }
+  return out;
+}
+
 const EMPTY_PLAN: Omit<SeatingPlan, "id"> = {
   name: "Main plan",
   tables: [],
@@ -63,6 +100,10 @@ function normalizePlan(row: unknown): SeatingPlan | null {
           ...t,
           name: typeof t.name === "string" ? t.name : "Table",
           seats: Number.isFinite(t.seats) ? Math.max(1, Math.floor(t.seats)) : 1,
+          // Map positions are grid cells. Clamp so a bad value can't put a table
+          // off-grid where it would be invisible and unrecoverable.
+          x: Number.isFinite(t.x) ? Math.max(0, Math.min(MAP_COLS - 1, Math.floor(t.x as number))) : undefined,
+          y: Number.isFinite(t.y) ? Math.max(0, Math.min(MAP_MAX_ROWS - 1, Math.floor(t.y as number))) : undefined,
         }))
       : [],
     assignments: obj(r.assignments) as SeatingPlan["assignments"],
@@ -117,12 +158,21 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [seatN, setSeatN] = useState(1);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "accepted" | "pending">("all");
+  // Opens on the people you actually have to seat; the dropdown reveals the rest.
+  const [statusFilter, setStatusFilter] = useState<"all" | "accepted" | "pending">("accepted");
   const [groupFilter, setGroupFilter] = useState("all");
   const [newSeats, setNewSeats] = useState("8");
   // Index of the table being dragged, and the one it is hovering over.
   const [dragFrom, setDragFrom] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
+
+  // ── Map view ──
+  const [view, setView] = useState<"list" | "map">("list");
+  /** Table picked for moving (only when no guests are selected). */
+  const [mapTableId, setMapTableId] = useState<string | null>(null);
+  /** Table being dragged across the map, and the cell under the pointer. */
+  const [mapDragId, setMapDragId] = useState<string | null>(null);
+  const [mapHover, setMapHover] = useState<string | null>(null);
 
   // ── Load (or create) the single plan row ──────────────────────────
   const load = useCallback(async () => {
@@ -197,17 +247,34 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [guests]);
 
+  /**
+   * Split by status on purpose. You are only *expected* to seat guests who have
+   * accepted, so those drive every headline number; invitations still awaiting a
+   * reply are counted separately as a worst case ("possible") and never inflate
+   * "still to seat". They can still be placed early if you want to.
+   */
   const stats = useMemo(() => {
-    if (!plan) return { people: 0, seated: 0, unseated: 0, capacity: 0, over: 0 };
-    let people = 0;
-    let seated = 0;
+    const empty = {
+      confirmed: 0, confirmedSeated: 0, confirmedUnseated: 0,
+      possible: 0, possibleSeated: 0, capacity: 0, over: 0,
+    };
+    if (!plan) return empty;
+    const s = { ...empty };
     for (const g of guests) {
-      people += headsFor(g, plan.heads);
-      seated += Math.min(seatedFor(g.id, plan.assignments), headsFor(g, plan.heads));
+      const heads = headsFor(g, plan.heads);
+      const seated = Math.min(seatedFor(g.id, plan.assignments), heads);
+      if (g.status === "accepted") {
+        s.confirmed += heads;
+        s.confirmedSeated += seated;
+      } else {
+        s.possible += heads;
+        s.possibleSeated += seated;
+      }
     }
-    const capacity = plan.tables.reduce((sum, t) => sum + t.seats, 0);
-    const over = plan.tables.filter((t) => tableUsed(t.id, plan.assignments) > t.seats).length;
-    return { people, seated, unseated: people - seated, capacity, over };
+    s.confirmedUnseated = s.confirmed - s.confirmedSeated;
+    s.capacity = plan.tables.reduce((sum, t) => sum + t.seats, 0);
+    s.over = plan.tables.filter((t) => tableUsed(t.id, plan.assignments) > t.seats).length;
+    return s;
   }, [guests, plan]);
 
   // Guests with seats still to place, after the list filters.
@@ -226,6 +293,22 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
       })
       .sort((a, b) => a.g.name.localeCompare(b.g.name));
   }, [guests, plan, search, statusFilter, groupFilter]);
+
+  /** Where every table sits on the map, and how many rows that needs. */
+  const mapPos = useMemo(() => mapPositions(plan?.tables ?? []), [plan]);
+  const mapRows = useMemo(() => {
+    const count = plan?.tables.length ?? 0;
+    let maxY = 0;
+    for (const { y } of mapPos.values()) maxY = Math.max(maxY, y);
+    // Always keep a spare row so there is somewhere to drop a table.
+    return Math.max(maxY + 2, Math.ceil(count / MAP_COLS) + 1, 3);
+  }, [mapPos, plan]);
+
+  /** People in the rows actually listed, so the heading always matches them. */
+  const listedPeople = useMemo(
+    () => unseatedList.reduce((sum, { remaining }) => sum + remaining, 0),
+    [unseatedList]
+  );
 
   // The one-and-only selection, when exactly one invitation is picked.
   const selected = selectedIds.size === 1 ? byId.get([...selectedIds][0]) ?? null : null;
@@ -291,6 +374,26 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
       const [moved] = tables.splice(from, 1);
       tables.splice(to, 0, moved);
       return { ...p, tables };
+    });
+
+  /** Put a table on a specific map cell, swapping with whatever is already there. */
+  const placeTable = (id: string, x: number, y: number) =>
+    mutate((p) => {
+      const positions = mapPositions(p.tables);
+      const occupant = p.tables.find((t) => {
+        const pos = positions.get(t.id);
+        return t.id !== id && pos && pos.x === x && pos.y === y;
+      });
+      const from = positions.get(id);
+      return {
+        ...p,
+        tables: p.tables.map((t) => {
+          if (t.id === id) return { ...t, x, y };
+          // Swap rather than refuse, so a full grid is never a dead end.
+          if (occupant && t.id === occupant.id && from) return { ...t, x: from.x, y: from.y };
+          return t;
+        }),
+      };
     });
 
   const removeTable = (id: string) =>
@@ -420,7 +523,7 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
         <h2 className="admin-h2" style={{ margin: 0 }}>
           Table planner{" "}
           <span style={{ fontFamily: "var(--sans)", fontSize: 14, fontWeight: 600, color: "var(--brown-soft)" }}>
-            ({stats.seated}/{stats.people} seated)
+            ({stats.confirmedSeated}/{stats.confirmed} seated)
           </span>
         </h2>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
@@ -437,35 +540,42 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
       </div>
 
       <p style={{ fontFamily: "var(--sans)", fontSize: 13, color: "var(--brown-mid)", margin: "10px 0 0", lineHeight: 1.6 }}>
-        Pick a guest, choose how many of their party to seat, then click a table. Guests who
-        declined are left out. People who haven&apos;t answered yet are counted at their full
-        invite size so you don&apos;t under-book — adjust any of them with the seat stepper.
+        Pick a guest, choose how many of their party to seat, then click a table. The numbers
+        below count <strong>accepted</strong> guests only — those are the ones you actually have
+        to seat. Anyone who hasn&apos;t replied is kept separate as a worst case; switch the
+        status filter to place them early.
       </p>
 
-      {/* Stats */}
+      {/* Stats — accepted guests drive everything except the muted "if all reply" tile */}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", margin: "16px 0" }}>
         <div className="stat-tile tone-green">
-          <div className="num">{stats.seated}</div>
+          <div className="num">{stats.confirmedSeated}</div>
           <div className="lbl">Seated</div>
         </div>
-        <div className={`stat-tile${stats.unseated > 0 ? " tone-amber" : ""}`}>
-          <div className="num">{stats.unseated}</div>
+        <div className={`stat-tile${stats.confirmedUnseated > 0 ? " tone-amber" : ""}`}>
+          <div className="num">{stats.confirmedUnseated}</div>
           <div className="lbl">Still to seat</div>
         </div>
         <div className="stat-tile">
-          <div className="num">{stats.people}</div>
-          <div className="lbl">People</div>
+          <div className="num">{stats.confirmed}</div>
+          <div className="lbl">Accepted guests</div>
         </div>
+        {stats.possible > 0 && (
+          <div className="stat-tile" style={{ opacity: 0.72 }} title="Invitations that haven't replied yet, counted at their full size">
+            <div className="num">+{stats.possible}</div>
+            <div className="lbl">If all reply</div>
+          </div>
+        )}
         <div className="stat-tile">
           <div className="num">{plan.tables.length}</div>
           <div className="lbl">Tables</div>
         </div>
-        <div className={`stat-tile${stats.capacity < stats.people ? " tone-red" : ""}`}>
+        <div className={`stat-tile${stats.capacity < stats.confirmed ? " tone-red" : ""}`}>
           <div className="num">{stats.capacity}</div>
           <div className="lbl">Capacity</div>
         </div>
         <div className={`stat-tile${stats.over > 0 ? " tone-red" : ""}`}>
-          <div className="num">{Math.max(0, stats.capacity - stats.seated)}</div>
+          <div className="num">{Math.max(0, stats.capacity - stats.confirmedSeated - stats.possibleSeated)}</div>
           <div className="lbl">Free seats</div>
         </div>
       </div>
@@ -492,7 +602,7 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
         {/* ── Left: still to seat ── */}
         <div>
           <h3 className="admin-h2" style={{ fontSize: 15, marginTop: 0 }}>
-            To seat ({stats.unseated})
+            To seat ({listedPeople})
           </h3>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
             <input
@@ -618,7 +728,11 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {unseatedList.length === 0 && (
               <div style={{ fontFamily: "var(--sans)", fontSize: 13, color: "var(--brown-soft)", padding: "8px 0" }}>
-                {stats.people === 0 ? "No guests to seat yet." : "Everyone here has a seat 🎉"}
+                {stats.confirmed + stats.possible === 0
+                  ? "No guests to seat yet."
+                  : statusFilter === "accepted" && stats.possible > 0
+                    ? "Every accepted guest has a seat 🎉 — switch the filter to place the rest."
+                    : "Everyone here has a seat 🎉"}
               </div>
             )}
             {unseatedList.map(({ g, remaining }) => {
@@ -704,6 +818,21 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
             <h3 className="admin-h2" style={{ fontSize: 15, margin: 0, flex: "1 1 auto" }}>
               Tables ({plan.tables.length})
             </h3>
+            {(["list", "map"] as const).map((v) => (
+              <button
+                key={v}
+                className="mini-btn"
+                style={view === v ? { background: "var(--gold)", color: "#fffdf8", borderColor: "var(--gold)" } : undefined}
+                onClick={() => {
+                  setView(v);
+                  setMapTableId(null);
+                }}
+                title={v === "list" ? "Table cards with occupants and settings" : "Arrange the tables in the room"}
+                type="button"
+              >
+                {v === "list" ? "List" : "Map"}
+              </button>
+            ))}
             <input
               className="text-input"
               type="number"
@@ -724,6 +853,142 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
             </div>
           )}
 
+          {/* ── Map: arrange the room ── */}
+          {view === "map" && plan.tables.length > 0 && (
+            <>
+              <p style={{ fontFamily: "var(--sans)", fontSize: 12, color: "var(--brown-soft)", margin: "0 0 10px", lineHeight: 1.6 }}>
+                {selectedParties.length > 0
+                  ? "Click a table to seat the guests you picked."
+                  : mapTableId
+                    ? "Now click an empty cell to move it there."
+                    : "Drag a table to move it, or click one and then an empty cell. Leave gaps for the dance floor."}
+              </p>
+              <div
+                onPointerUp={() => {
+                  setMapDragId(null);
+                  setMapHover(null);
+                }}
+                onPointerLeave={() => setMapHover(null)}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: `repeat(${MAP_COLS}, minmax(0, 1fr))`,
+                  gap: 4,
+                  padding: 8,
+                  borderRadius: 14,
+                  border: "1px solid var(--gold-soft)",
+                  background: "rgba(191,155,95,.05)",
+                  touchAction: "none", // let pointer drags work on touch
+                }}
+              >
+                {Array.from({ length: mapRows * MAP_COLS }, (_, cell) => {
+                  const x = cell % MAP_COLS;
+                  const y = Math.floor(cell / MAP_COLS);
+                  const here = plan.tables.find((t) => {
+                    const pos = mapPos.get(t.id);
+                    return pos && pos.x === x && pos.y === y;
+                  });
+                  const cellKey = `${x},${y}`;
+                  const isHover = mapHover === cellKey && mapDragId !== null;
+                  if (!here) {
+                    return (
+                      <button
+                        key={cellKey}
+                        type="button"
+                        onPointerEnter={() => mapDragId && setMapHover(cellKey)}
+                        onPointerUp={() => {
+                          if (mapDragId) placeTable(mapDragId, x, y);
+                          setMapDragId(null);
+                          setMapHover(null);
+                        }}
+                        onClick={() => {
+                          if (mapTableId) {
+                            placeTable(mapTableId, x, y);
+                            setMapTableId(null);
+                          }
+                        }}
+                        title={mapTableId ? "Move the selected table here" : "Empty space"}
+                        style={{
+                          aspectRatio: "1 / 1",
+                          borderRadius: 8,
+                          border: `1px dashed ${isHover ? "var(--gold)" : "rgba(191,155,95,.35)"}`,
+                          background: isHover ? "rgba(191,155,95,.22)" : "transparent",
+                          cursor: mapTableId || mapDragId ? "pointer" : "default",
+                        }}
+                      />
+                    );
+                  }
+                  const used = tableUsed(here.id, plan.assignments);
+                  const over = used > here.seats;
+                  const picked = mapTableId === here.id;
+                  return (
+                    <button
+                      key={cellKey}
+                      type="button"
+                      onPointerDown={(e) => {
+                        if (selectedParties.length > 0) return; // seating takes priority
+                        (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+                        setMapDragId(here.id);
+                      }}
+                      onPointerEnter={() => mapDragId && setMapHover(cellKey)}
+                      onPointerUp={() => {
+                        if (mapDragId && mapDragId !== here.id) placeTable(mapDragId, x, y);
+                        setMapDragId(null);
+                        setMapHover(null);
+                      }}
+                      onClick={() => {
+                        // With guests picked, a tile seats them — same as the list.
+                        if (selectedParties.length > 0) {
+                          seatSelected(here.id);
+                          return;
+                        }
+                        setMapTableId((cur) => (cur === here.id ? null : here.id));
+                      }}
+                      title={
+                        selectedParties.length > 0
+                          ? `Seat the selection at ${here.name}`
+                          : `${here.name} — ${used}/${here.seats} seats`
+                      }
+                      style={{
+                        aspectRatio: "1 / 1",
+                        borderRadius: 10,
+                        border: `1px solid ${picked || isHover ? "var(--gold)" : over ? "rgba(168,50,50,.55)" : "var(--gold-soft)"}`,
+                        boxShadow: picked ? "0 0 0 2px var(--gold) inset" : undefined,
+                        background: over ? "rgba(168,50,50,.1)" : "rgba(255,253,248,.95)",
+                        opacity: mapDragId === here.id ? 0.5 : 1,
+                        cursor: selectedParties.length > 0 ? "pointer" : "grab",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 2,
+                        padding: 4,
+                        fontFamily: "var(--sans)",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: "var(--brown)",
+                          textAlign: "center",
+                          lineHeight: 1.15,
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {here.name}
+                      </span>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: over ? "#a83232" : "var(--brown-soft)" }}>
+                        {used}/{here.seats}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {view === "list" && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
             {plan.tables.map((t, idx) => {
               const used = tableUsed(t.id, plan.assignments);
@@ -917,6 +1182,7 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
               );
             })}
           </div>
+          )}
         </div>
       </div>
     </div>
