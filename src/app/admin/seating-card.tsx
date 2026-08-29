@@ -24,6 +24,8 @@ export type SeatTable = {
   id: string;
   name: string;
   seats: number;
+  /** Optional override; otherwise the table is numbered by its position. */
+  number?: number;
   /** Reserved for a future drag-around floor plan; unused by the grid. */
   x?: number;
   y?: number;
@@ -37,6 +39,8 @@ export type SeatingPlan = {
   assignments: Record<string, Record<string, number>>;
   /** invitationId -> headcount override */
   heads: Record<string, number>;
+  /** invitationId -> individual attendee names, for the printed venue list */
+  people: Record<string, string[]>;
 };
 
 /** Map grid: fixed columns, rows grow with the plan. */
@@ -81,7 +85,37 @@ const EMPTY_PLAN: Omit<SeatingPlan, "id"> = {
   tables: [],
   assignments: {},
   heads: {},
+  people: {},
 };
+
+/** Guest names are Turkish, so collate with Turkish rules (ç, ğ, ı, ö, ş, ü). */
+export const byName = (a: string, b: string) => a.localeCompare(b, "tr");
+
+/** The number shown for a table: an explicit override, else its position. */
+export function tableNumber(t: SeatTable, index: number): number {
+  return Number.isFinite(t.number) && (t.number as number) > 0 ? (t.number as number) : index + 1;
+}
+
+/** "Table 3 — Family", or just "Table 3" when the name adds nothing. */
+export function tableLabel(t: SeatTable, index: number): string {
+  const n = tableNumber(t, index);
+  const name = (t.name ?? "").trim();
+  return !name || name.toLowerCase() === `table ${n}` ? `Table ${n}` : `Table ${n} — ${name}`;
+}
+
+/**
+ * The individual people an invitation brings, for the printed list. Uses the
+ * names typed into the Print view when present, padded or trimmed to the
+ * headcount so the list can never disagree with the seat counts. With no names
+ * typed it falls back to one line naming the invitation and its size.
+ */
+export function attendeesOf(inv: Invitation, heads: number, people: Record<string, string[]>): string[] {
+  const typed = (people[String(inv.id)] ?? []).map((n) => n.trim()).filter(Boolean);
+  if (typed.length === 0) return [heads > 1 ? `${inv.name} (${heads})` : inv.name];
+  const out = typed.slice(0, heads);
+  while (out.length < heads) out.push(`${inv.name} (guest ${out.length + 1})`);
+  return out;
+}
 
 /**
  * Force a row from Supabase into the shape the UI assumes. jsonb columns come
@@ -104,10 +138,17 @@ function normalizePlan(row: unknown): SeatingPlan | null {
           // off-grid where it would be invisible and unrecoverable.
           x: Number.isFinite(t.x) ? Math.max(0, Math.min(MAP_COLS - 1, Math.floor(t.x as number))) : undefined,
           y: Number.isFinite(t.y) ? Math.max(0, Math.min(MAP_MAX_ROWS - 1, Math.floor(t.y as number))) : undefined,
+          number: Number.isFinite(t.number) && (t.number as number) > 0 ? Math.floor(t.number as number) : undefined,
         }))
       : [],
     assignments: obj(r.assignments) as SeatingPlan["assignments"],
     heads: obj(r.heads) as SeatingPlan["heads"],
+    // Only keep string arrays; a malformed value must not reach the print view.
+    people: Object.fromEntries(
+      Object.entries(obj(r.people)).flatMap(([k, v]) =>
+        Array.isArray(v) ? [[k, (v as unknown[]).filter((n): n is string => typeof n === "string")]] : []
+      )
+    ),
   };
 }
 
@@ -145,7 +186,16 @@ export function tableUsed(tableId: string, assignments: SeatingPlan["assignments
   return Object.values(perTable).reduce((sum, n) => sum + n, 0);
 }
 
-export function SeatingCard({ invitations, pending }: { invitations: Invitation[]; pending: boolean }) {
+export function SeatingCard({
+  invitations,
+  pending,
+  coupleNames = "",
+}: {
+  invitations: Invitation[];
+  pending: boolean;
+  /** Shown as the heading of the printed venue list. */
+  coupleNames?: string;
+}) {
   const [plan, setPlan] = useState<SeatingPlan | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -167,7 +217,7 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
   const [dragOver, setDragOver] = useState<number | null>(null);
 
   // ── Map view ──
-  const [view, setView] = useState<"list" | "map">("list");
+  const [view, setView] = useState<"list" | "map" | "print">("list");
   /** Table picked for moving (only when no guests are selected). */
   const [mapTableId, setMapTableId] = useState<string | null>(null);
   /** Table being dragged across the map, and the cell under the pointer. */
@@ -220,6 +270,7 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
           tables: plan.tables,
           assignments: plan.assignments,
           heads: plan.heads,
+          people: plan.people,
           updated_at: new Date().toISOString(),
         })
         .eq("id", plan.id);
@@ -304,6 +355,49 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
     return Math.max(maxY + 2, Math.ceil(count / MAP_COLS) + 1, 3);
   }, [mapPos, plan]);
 
+  /**
+   * The printable list. Each table with its attendees (alphabetical), plus a
+   * flat A-Z index of everyone with the table they sit at. Both come from the
+   * same pass so they can never disagree.
+   */
+  const printDoc = useMemo(() => {
+    if (!plan) return { tables: [], index: [], seated: 0 };
+    const index: { person: string; table: string; number: number }[] = [];
+    const tables = plan.tables.map((t, idx) => {
+      const label = tableLabel(t, idx);
+      const number = tableNumber(t, idx);
+      const people: string[] = [];
+      for (const [invId, seats] of Object.entries(plan.assignments[t.id] ?? {})) {
+        const inv = byId.get(Number(invId));
+        if (!inv) continue;
+        // Only the seats taken at THIS table, so a split party appears at each.
+        const names = attendeesOf(inv, headsFor(inv, plan.heads), plan.people).slice(0, seats);
+        while (names.length < seats) names.push(inv.name);
+        people.push(...names);
+      }
+      people.sort(byName);
+      for (const person of people) index.push({ person, table: label, number });
+      return { id: t.id, label, number, seats: t.seats, people };
+    });
+    index.sort((a, b) => byName(a.person, b.person));
+    return { tables, index, seated: index.length };
+  }, [plan, byId]);
+
+  /** Multi-person invitations, for typing individual names into. */
+  const namableGuests = useMemo(() => {
+    if (!plan) return [] as { inv: Invitation; heads: number }[];
+    return guests
+      .map((g) => ({ inv: g, heads: headsFor(g, plan.heads) }))
+      .filter(({ heads }) => heads > 1)
+      .sort((a, b) => byName(a.inv.name, b.inv.name));
+  }, [guests, plan]);
+
+  const setPeople = (invId: number, raw: string) =>
+    mutate((p) => ({
+      ...p,
+      people: { ...p.people, [String(invId)]: raw.split(",").map((n) => n.trim()).filter(Boolean) },
+    }));
+
   /** People in the rows actually listed, so the heading always matches them. */
   const listedPeople = useMemo(
     () => unseatedList.reduce((sum, { remaining }) => sum + remaining, 0),
@@ -356,6 +450,14 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
 
   const renameTable = (id: string, name: string) =>
     mutate((p) => ({ ...p, tables: p.tables.map((t) => (t.id === id ? { ...t, name } : t)) }));
+
+  const renumberTable = (id: string, raw: string) =>
+    mutate((p) => ({
+      ...p,
+      tables: p.tables.map((t) =>
+        t.id === id ? { ...t, number: raw.trim() === "" ? undefined : Math.max(1, Number.parseInt(raw, 10) || 1) } : t
+      ),
+    }));
 
   const resizeTable = (id: string, seats: number) =>
     mutate((p) => ({
@@ -527,6 +629,27 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
           </span>
         </h2>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+            {(["list", "map", "print"] as const).map((v) => (
+              <button
+                key={v}
+                className="mini-btn"
+                style={view === v ? { background: "var(--gold)", color: "#fffdf8", borderColor: "var(--gold)" } : undefined}
+                onClick={() => {
+                  setView(v);
+                  setMapTableId(null);
+                }}
+                title={
+                  v === "list"
+                    ? "Table cards with occupants and settings"
+                    : v === "map"
+                      ? "Arrange the tables in the room"
+                      : "A printable list for the venue"
+                }
+                type="button"
+              >
+                {v === "list" ? "List" : v === "map" ? "Map" : "Print"}
+              </button>
+            ))}
           <button className="mini-btn" onClick={autoSeat} disabled={pending || !plan.tables.length} type="button">
             Auto-seat remaining
           </button>
@@ -543,7 +666,8 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
         Pick a guest, choose how many of their party to seat, then click a table. The numbers
         below count <strong>accepted</strong> guests only — those are the ones you actually have
         to seat. Anyone who hasn&apos;t replied is kept separate as a worst case; switch the
-        status filter to place them early.
+        status filter to place them early. An invitation covering several people can be split —
+        pick it, choose how many, and seat the rest at another table.
       </p>
 
       {/* Stats — accepted guests drive everything except the muted "if all reply" tile */}
@@ -598,6 +722,140 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
         </div>
       )}
 
+      {/* ── Print: the venue list ── */}
+      {view === "print" && (
+        <div className="seating-print-wrap">
+          <div className="no-print" style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 14 }}>
+            <button className="submit-btn" style={{ padding: "8px 18px", fontSize: 13 }} onClick={() => window.print()} type="button">
+              Print / Save as PDF
+            </button>
+            <span style={{ fontFamily: "var(--sans)", fontSize: 12, color: "var(--brown-soft)" }}>
+              Your browser&apos;s print dialogue can save this as a PDF to send the venue.
+            </span>
+          </div>
+
+          {/* Individual names — hidden on paper, this is the editor */}
+          {namableGuests.length > 0 && (
+            <div
+              className="no-print"
+              style={{
+                border: "1px solid var(--gold-soft)",
+                borderRadius: 12,
+                padding: "12px 14px",
+                marginBottom: 16,
+                background: "rgba(191,155,95,.06)",
+              }}
+            >
+              <h3 className="admin-h2" style={{ fontSize: 14, margin: "0 0 4px" }}>
+                Who&apos;s coming
+              </h3>
+              <p style={{ fontFamily: "var(--sans)", fontSize: 12, color: "var(--brown-mid)", margin: "0 0 10px", lineHeight: 1.6 }}>
+                Optional. Type the individual names for an invitation that covers several people,
+                separated by commas, and the list below names each person instead of the
+                invitation. Leave blank to print &ldquo;Name (2)&rdquo;.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {namableGuests.map(({ inv, heads }) => (
+                  <div key={inv.id} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ flex: "0 0 190px", fontFamily: "var(--sans)", fontSize: 12, color: "var(--brown)", fontWeight: 600 }}>
+                      {inv.name} <span style={{ color: "var(--brown-soft)", fontWeight: 400 }}>({heads})</span>
+                    </span>
+                    <input
+                      className="text-input"
+                      style={{ flex: "1 1 220px", padding: "5px 10px", fontSize: 12 }}
+                      value={(plan.people[String(inv.id)] ?? []).join(", ")}
+                      onChange={(e) => setPeople(inv.id, e.target.value)}
+                      placeholder={`e.g. ${inv.name.split(/\s*&\s*/)[0] || "Ayşe"}, …`}
+                      aria-label={`Individual names for ${inv.name}`}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── The document ── */}
+          <div className="seating-print">
+            <h1 style={{ fontFamily: "var(--serif)", fontSize: 22, color: "var(--brown)", margin: "0 0 2px" }}>
+              {coupleNames ? `${coupleNames} — Seating plan` : "Seating plan"}
+            </h1>
+            <p style={{ fontFamily: "var(--sans)", fontSize: 12, color: "var(--brown-soft)", margin: "0 0 18px" }}>
+              {plan.tables.length} tables · {printDoc.seated} seated · generated{" "}
+              {new Date().toLocaleDateString()}
+            </p>
+
+            {printDoc.tables.length === 0 && (
+              <p style={{ fontFamily: "var(--sans)", fontSize: 13, color: "var(--brown-soft)" }}>
+                No tables yet — add some in the List view.
+              </p>
+            )}
+
+            {/* Section 1 — by table, for setting the room */}
+            {printDoc.tables.map((t) => (
+              <div key={t.id} className="print-table" style={{ marginBottom: 14 }}>
+                <h2
+                  style={{
+                    fontFamily: "var(--sans)",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: "var(--brown)",
+                    margin: "0 0 4px",
+                    borderBottom: "1px solid var(--gold-soft)",
+                    paddingBottom: 3,
+                  }}
+                >
+                  {t.label}{" "}
+                  <span style={{ fontWeight: 400, color: "var(--brown-soft)" }}>
+                    — {t.people.length}/{t.seats} seats
+                  </span>
+                </h2>
+                {t.people.length === 0 ? (
+                  <div style={{ fontFamily: "var(--sans)", fontSize: 12, color: "var(--brown-soft)" }}>Empty</div>
+                ) : (
+                  <ol style={{ margin: 0, paddingLeft: 22, fontFamily: "var(--sans)", fontSize: 12.5, lineHeight: 1.75, color: "var(--brown-mid)" }}>
+                    {t.people.map((person, i) => (
+                      <li key={`${t.id}-${i}`}>{person}</li>
+                    ))}
+                  </ol>
+                )}
+              </div>
+            ))}
+
+            {/* Section 2 — A-Z, for the door */}
+            {printDoc.index.length > 0 && (
+              <div className="print-index" style={{ marginTop: 22 }}>
+                <h2
+                  style={{
+                    fontFamily: "var(--sans)",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: "var(--brown)",
+                    margin: "0 0 6px",
+                    borderBottom: "1px solid var(--gold-soft)",
+                    paddingBottom: 3,
+                  }}
+                >
+                  Guests A–Z
+                </h2>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--sans)", fontSize: 12.5 }}>
+                  <tbody>
+                    {printDoc.index.map((row, i) => (
+                      <tr key={`${row.person}-${i}`}>
+                        <td style={{ padding: "3px 8px 3px 0", color: "var(--brown-mid)" }}>{row.person}</td>
+                        <td style={{ padding: "3px 0", textAlign: "right", whiteSpace: "nowrap", fontWeight: 600, color: "var(--brown)" }}>
+                          {row.table}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {view !== "print" && (
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 22 }}>
         {/* ── Left: still to seat ── */}
         <div>
@@ -718,7 +976,14 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
               >
                 +
               </button>
-              <span>of {selectedRemaining} — now click a table</span>
+              <span>
+                of {selectedRemaining} — now click a table
+                {selectedRemaining > 1 && (
+                  <em style={{ color: "var(--brown-soft)", fontStyle: "normal" }}>
+                    {" "}· seat some here and the rest at another table
+                  </em>
+                )}
+              </span>
               <button className="mini-btn" onClick={clearSelection} type="button">
                 Cancel
               </button>
@@ -818,21 +1083,6 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
             <h3 className="admin-h2" style={{ fontSize: 15, margin: 0, flex: "1 1 auto" }}>
               Tables ({plan.tables.length})
             </h3>
-            {(["list", "map"] as const).map((v) => (
-              <button
-                key={v}
-                className="mini-btn"
-                style={view === v ? { background: "var(--gold)", color: "#fffdf8", borderColor: "var(--gold)" } : undefined}
-                onClick={() => {
-                  setView(v);
-                  setMapTableId(null);
-                }}
-                title={v === "list" ? "Table cards with occupants and settings" : "Arrange the tables in the room"}
-                type="button"
-              >
-                {v === "list" ? "List" : "Map"}
-              </button>
-            ))}
             <input
               className="text-input"
               type="number"
@@ -883,10 +1133,11 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
                 {Array.from({ length: mapRows * MAP_COLS }, (_, cell) => {
                   const x = cell % MAP_COLS;
                   const y = Math.floor(cell / MAP_COLS);
-                  const here = plan.tables.find((t) => {
+                  const hereIdx = plan.tables.findIndex((t) => {
                     const pos = mapPos.get(t.id);
                     return pos && pos.x === x && pos.y === y;
                   });
+                  const here = hereIdx >= 0 ? plan.tables[hereIdx] : undefined;
                   const cellKey = `${x},${y}`;
                   const isHover = mapHover === cellKey && mapDragId !== null;
                   if (!here) {
@@ -946,7 +1197,7 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
                       title={
                         selectedParties.length > 0
                           ? `Seat the selection at ${here.name}`
-                          : `${here.name} — ${used}/${here.seats} seats`
+                          : `${tableLabel(here, hereIdx)} — ${used}/${here.seats} seats`
                       }
                       style={{
                         aspectRatio: "1 / 1",
@@ -966,11 +1217,14 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
                         overflow: "hidden",
                       }}
                     >
+                      <span style={{ fontSize: 13, fontWeight: 800, color: "var(--brown)", lineHeight: 1 }}>
+                        {tableNumber(here, hereIdx)}
+                      </span>
                       <span
                         style={{
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: "var(--brown)",
+                          fontSize: 10,
+                          fontWeight: 600,
+                          color: "var(--brown-mid)",
                           textAlign: "center",
                           lineHeight: 1.15,
                           wordBreak: "break-word",
@@ -1106,10 +1360,21 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
                       className="text-input"
                       type="number"
                       min={1}
+                      value={t.number ?? ""}
+                      placeholder={String(idx + 1)}
+                      onChange={(e) => renumberTable(t.id, e.target.value)}
+                      title={`Table number for the printed list — leave empty to use its position (${idx + 1})`}
+                      style={{ width: 52, padding: "3px 6px", fontSize: 12, marginLeft: "auto" }}
+                      aria-label="Table number"
+                    />
+                    <input
+                      className="text-input"
+                      type="number"
+                      min={1}
                       value={t.seats}
                       onChange={(e) => resizeTable(t.id, Number.parseInt(e.target.value, 10) || 1)}
                       title="Seats at this table"
-                      style={{ width: 58, padding: "3px 6px", fontSize: 12, marginLeft: "auto" }}
+                      style={{ width: 58, padding: "3px 6px", fontSize: 12 }}
                     />
                   </div>
 
@@ -1185,6 +1450,7 @@ export function SeatingCard({ invitations, pending }: { invitations: Invitation[
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }

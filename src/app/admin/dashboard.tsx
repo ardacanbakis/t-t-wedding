@@ -760,8 +760,10 @@ export function Dashboard() {
 
   return (
     <div className="fade-in" style={{ maxWidth: 1080, margin: "0 auto", padding: "0 18px 80px" }}>
-      {/* Sticky navbar: title + actions + tab switcher */}
+      {/* Sticky navbar: title + actions + tab switcher. `no-print` keeps it off
+          paper when printing the seating plan. */}
       <div
+        className="no-print"
         style={{
           position: "sticky",
           top: 0,
@@ -1547,7 +1549,7 @@ export function Dashboard() {
         reloadSettings={reload}
       />
       )}
-      {tab === "seating" && <SeatingCard invitations={invitations} pending={pending} />}
+      {tab === "seating" && <SeatingCard invitations={invitations} pending={pending} coupleNames={s.coupleNames} />}
       {tab === "general" && <GeneralCard settings={s} onSave={doSaveGeneral} pending={pending} />}
     </div>
   );

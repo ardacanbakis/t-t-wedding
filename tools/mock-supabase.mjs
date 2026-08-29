@@ -384,6 +384,7 @@ const server = http.createServer(async (req, res) => {
           tables: row.tables ?? [],
           assignments: row.assignments ?? {},
           heads: row.heads ?? {},
+          people: row.people ?? {},
           updated_at: new Date().toISOString(),
         };
         db.seating_plans.push(plan);

@@ -512,3 +512,51 @@ body {
 .story-cta.pulse-inline:hover {
   background: linear-gradient(135deg, #d8b477, #c9a568);
 }
+
+/* ── Printing the seating plan ────────────────────────────────────────
+   The admin is a screen tool, so printing anything else from it is noise.
+   Everything outside the seating document is hidden and the document itself
+   drops to ink-friendly black on white. */
+@media print {
+  .no-print,
+  .pill-btn,
+  .stat-tile,
+  .mini-btn,
+  .submit-btn {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  .admin-card {
+    border: none !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .seating-print,
+  .seating-print * {
+    color: #000 !important;
+    background: transparent !important;
+  }
+
+  .seating-print h1,
+  .seating-print h2 {
+    border-color: #999 !important;
+  }
+
+  /* Keep a table and its guest list on one page wherever possible. */
+  .seating-print .print-table {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .seating-print .print-index {
+    break-before: page;
+    page-break-before: always;
+  }
+}

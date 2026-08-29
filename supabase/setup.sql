@@ -399,6 +399,11 @@ create table if not exists public.seating_plans (
   updated_at timestamptz not null default now()
 );
 
+-- Optional individual attendee names for multi-person invitations, so the
+-- printable venue list can name each person: people[invitationId] = ["A", "B"].
+alter table public.seating_plans
+  add column if not exists people jsonb not null default '{}'::jsonb;
+
 alter table public.seating_plans enable row level security;
 
 drop policy if exists "admin full access seating" on public.seating_plans;
