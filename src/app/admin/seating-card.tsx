@@ -103,18 +103,64 @@ export function tableLabel(t: SeatTable, index: number): string {
   return !name || name.toLowerCase() === `table ${n}` ? `Table ${n}` : `Table ${n} — ${name}`;
 }
 
+/** Pad a list of names out to `heads` seats: "Semra Kara", "Semra Kara +1", … */
+function padToSeats(names: string[], heads: number, base: string): string[] {
+  const out = names.slice(0, heads);
+  let extra = 0;
+  while (out.length < heads) out.push(`${base} +${++extra}`);
+  return out;
+}
+
 /**
- * The individual people an invitation brings, for the printed list. Uses the
- * names typed into the Print view when present, padded or trimmed to the
- * headcount so the list can never disagree with the seat counts. With no names
- * typed it falls back to one line naming the invitation and its size.
+ * Guess the individual people behind an invitation name.
+ *
+ * The guest list joins people with "&" or Turkish "ve" and writes the shared
+ * surname only once, on the last name — "Asuman & Yücel Canbakış" is Asuman
+ * Canbakış and Yücel Canbakış. So a single-word segment inherits the surname
+ * from the final segment, while a segment that already has two words is taken
+ * as a complete name and left alone; that is what keeps
+ * "Çiğdem Özgün & Yasemin Kılıç" as two different surnames.
+ *
+ * A trailing "ve Ailesi" ("and family") is not a person — it is dropped and its
+ * seats become numbered extras.
+ */
+export function splitInviteName(name: string, heads: number): string[] {
+  const cleaned = name.replace(/\s+ve\s+ailesi\s*$/iu, "").trim();
+  const base = cleaned || name.trim();
+
+  // Whitespace around "ve" is required so a name merely containing those
+  // letters is never cut in half; "&" needs no spaces ("Emel&Cihat").
+  const segments = base
+    .split(/\s*&\s*|\s+ve\s+/giu)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (segments.length <= 1) return padToSeats([base], heads, base);
+
+  const last = segments[segments.length - 1];
+  const lastWords = last.split(/\s+/);
+  const surname = lastWords.length > 1 ? lastWords[lastWords.length - 1] : "";
+
+  const named = segments.map((seg, i) => {
+    const isLast = i === segments.length - 1;
+    // Only a bare first name inherits; anything with two words already has one.
+    if (!isLast && surname && seg.split(/\s+/).length === 1) return `${seg} ${surname}`;
+    return seg;
+  });
+
+  return padToSeats(named, heads, named[0]);
+}
+
+/**
+ * The individual people an invitation brings, for the printed list. Names typed
+ * into the Print view win outright; otherwise they are derived from the
+ * invitation name. Either way the result is padded or trimmed to the headcount,
+ * so the printed lines can never disagree with the seat counts.
  */
 export function attendeesOf(inv: Invitation, heads: number, people: Record<string, string[]>): string[] {
   const typed = (people[String(inv.id)] ?? []).map((n) => n.trim()).filter(Boolean);
-  if (typed.length === 0) return [heads > 1 ? `${inv.name} (${heads})` : inv.name];
-  const out = typed.slice(0, heads);
-  while (out.length < heads) out.push(`${inv.name} (guest ${out.length + 1})`);
-  return out;
+  if (typed.length === 0) return splitInviteName(inv.name, heads);
+  return padToSeats(typed, heads, typed[0]);
 }
 
 /**
@@ -383,11 +429,31 @@ export function SeatingCard({
     return { tables, index, seated: index.length };
   }, [plan, byId]);
 
-  /** Multi-person invitations, for typing individual names into. */
+  /**
+   * Multi-person invitations, with the names derived from the invitation text.
+   * `stored` says whether these were typed by hand — untouched rows show the
+   * guess, so the panel reads as pre-filled and the print list is already right.
+   * `overflow` marks a name that splits into more people than it has seats.
+   */
   const namableGuests = useMemo(() => {
-    if (!plan) return [] as { inv: Invitation; heads: number }[];
+    if (!plan) return [] as { inv: Invitation; heads: number; value: string; stored: boolean; overflow: boolean }[];
     return guests
-      .map((g) => ({ inv: g, heads: headsFor(g, plan.heads) }))
+      .map((g) => {
+        const heads = headsFor(g, plan.heads);
+        const typed = plan.people[String(g.id)] ?? [];
+        const segments = g.name
+          .replace(/\s+ve\s+ailesi\s*$/iu, "")
+          .split(/\s*&\s*|\s+ve\s+/giu)
+          .map((s) => s.trim())
+          .filter(Boolean);
+        return {
+          inv: g,
+          heads,
+          value: (typed.length ? typed : splitInviteName(g.name, heads)).join(", "),
+          stored: typed.length > 0,
+          overflow: segments.length > heads,
+        };
+      })
       .filter(({ heads }) => heads > 1)
       .sort((a, b) => byName(a.inv.name, b.inv.name));
   }, [guests, plan]);
@@ -397,6 +463,14 @@ export function SeatingCard({
       ...p,
       people: { ...p.people, [String(invId)]: raw.split(",").map((n) => n.trim()).filter(Boolean) },
     }));
+
+  /** Drop a hand-typed list so the row goes back to the derived names. */
+  const resetPeople = (invId: number) =>
+    mutate((p) => {
+      const people = { ...p.people };
+      delete people[String(invId)];
+      return { ...p, people };
+    });
 
   /** People in the rows actually listed, so the heading always matches them. */
   const listedPeople = useMemo(
@@ -750,24 +824,49 @@ export function SeatingCard({
                 Who&apos;s coming
               </h3>
               <p style={{ fontFamily: "var(--sans)", fontSize: 12, color: "var(--brown-mid)", margin: "0 0 10px", lineHeight: 1.6 }}>
-                Optional. Type the individual names for an invitation that covers several people,
-                separated by commas, and the list below names each person instead of the
-                invitation. Leave blank to print &ldquo;Name (2)&rdquo;.
+                Already filled in for you: names joined with <strong>&amp;</strong> or{" "}
+                <strong>ve</strong> are split apart, and a shared surname written once at the end
+                is given to everyone — &ldquo;Asuman &amp; Yücel Canbakış&rdquo; becomes Asuman
+                Canbakış and Yücel Canbakış. Correct any of them here; <em>Reset</em> puts the
+                guess back.
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {namableGuests.map(({ inv, heads }) => (
+                {namableGuests.map(({ inv, heads, value, stored, overflow }) => (
                   <div key={inv.id} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     <span style={{ flex: "0 0 190px", fontFamily: "var(--sans)", fontSize: 12, color: "var(--brown)", fontWeight: 600 }}>
                       {inv.name} <span style={{ color: "var(--brown-soft)", fontWeight: 400 }}>({heads})</span>
+                      {overflow && (
+                        <span
+                          title={`This name splits into more people than its ${heads} seats — the extras are trimmed. Raise the guest count in the To seat list, or edit the names here.`}
+                          style={{ color: "#a83232", fontWeight: 700, marginLeft: 4 }}
+                        >
+                          ⚠
+                        </span>
+                      )}
                     </span>
                     <input
                       className="text-input"
-                      style={{ flex: "1 1 220px", padding: "5px 10px", fontSize: 12 }}
-                      value={(plan.people[String(inv.id)] ?? []).join(", ")}
+                      style={{
+                        flex: "1 1 220px",
+                        padding: "5px 10px",
+                        fontSize: 12,
+                        // A guess reads lighter than something you typed.
+                        color: stored ? "var(--brown)" : "var(--brown-soft)",
+                      }}
+                      value={value}
                       onChange={(e) => setPeople(inv.id, e.target.value)}
                       placeholder={`e.g. ${inv.name.split(/\s*&\s*/)[0] || "Ayşe"}, …`}
                       aria-label={`Individual names for ${inv.name}`}
                     />
+                    <button
+                      className="mini-btn"
+                      style={{ padding: "3px 10px", fontSize: 11, visibility: stored ? "visible" : "hidden" }}
+                      onClick={() => resetPeople(inv.id)}
+                      title="Go back to the names derived from the invitation"
+                      type="button"
+                    >
+                      Reset
+                    </button>
                   </div>
                 ))}
               </div>
