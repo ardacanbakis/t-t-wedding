@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "node tools/write-story-config.mjs && next dev",
     "build": "node tools/write-story-config.mjs && next build && node tools/write-og.mjs",
-    "start": "next start"
+    "start": "next start",
+    "seed:sync": "node tools/sync-seed.mjs",
+    "check": "tsc --noEmit && node tools/sync-seed.mjs --check"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.3",

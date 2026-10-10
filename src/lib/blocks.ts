@@ -62,6 +62,8 @@ export const BLOCK_LABELS: Record<BlockId, string> = {
   closing: "Closing motto",
 };
 
+// The live card's order: the countdown sits under the RSVP, the schedule
+// between the date and the venue.
 export const DEFAULT_ORDER: BlockId[] = [
   "kicker",
   "names",
@@ -69,13 +71,13 @@ export const DEFAULT_ORDER: BlockId[] = [
   "greeting",
   "inviteLine",
   "personalNote",
-  "countdown",
   "date",
+  "schedule",
   "venue",
   "mapButton",
-  "schedule",
   "dividerBottom",
   "rsvp",
+  "countdown",
   "closing",
 ];
 
@@ -102,19 +104,19 @@ export const FONT_CHOICES: { label: string; value: string }[] = [
 
 export const DEFAULT_LAYOUT: Layout = {
   order: DEFAULT_ORDER,
-  hiddenTexts: [],
+  hiddenTexts: ["editUntil", "notePlaceholder", "rsvpTitle"],
   blocks: {
-    kicker: block(),
-    names: block(),
-    dividerTop: block(),
-    greeting: block(),
+    kicker: block({ spaceAbove: -15 }),
+    names: block({ spaceBelow: -25 }),
+    dividerTop: block({ spaceBelow: -15 }),
+    greeting: block({ fontSize: 17.5 }),
     inviteLine: block({ spaceAbove: 6 }),
     personalNote: block({ spaceAbove: 10 }),
-    countdown: block(),
-    date: block({ spaceAbove: 20 }),
+    countdown: block({ spaceAbove: 25 }),
+    date: block({ spaceAbove: 15, spaceBelow: -5 }),
     venue: block({ spaceAbove: 14 }),
     mapButton: block({ spaceAbove: 10 }),
-    schedule: block({ spaceAbove: 22 }),
+    schedule: block({ spaceAbove: 15, fontSize: 20, fontFamily: "var(--script)" }),
     dividerBottom: block(),
     rsvp: block({ align: "left" }),
     closing: block({ spaceAbove: 30 }),
@@ -123,7 +125,8 @@ export const DEFAULT_LAYOUT: Layout = {
 
 /** Parse the stored JSON, filling in anything missing or newly added. */
 export function parseLayout(raw: string): Layout {
-  let stored: Partial<Layout> = {};
+  // Nothing saved yet → the default layout, hidden texts included.
+  let stored: Partial<Layout> = DEFAULT_LAYOUT;
   try {
     if (raw) stored = JSON.parse(raw);
   } catch {}

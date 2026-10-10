@@ -1,0 +1,484 @@
+{
+  "$comment": "Defaults for a fresh install: what setup.sql seeds (tools/sync-seed.mjs keeps its seed block in step), what the mock serves, and what the story page shows before live data loads. Snapshot of the live site on 2026-10-10. Never put anything private here — settings are world-readable.",
+  "settings": {
+    "eventDate": "2026-08-29T19:00:00+03:00",
+    "rsvpDeadline": "2026-08-30T23:59:00+03:00",
+    "venueName": "Mango Garden",
+    "venueAddress": "Incek,Ankara",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Mango+Garden+%C4%B0ncek+Ankara",
+    "schedule": "19:00 | Nikah Töreni | Ceremony",
+    "storyUrl": "/story/",
+    "coupleNames": "Tansu & Arda",
+    "cardTilt": "0",
+    "dateStyle": "date",
+    "nightFrom": "9",
+    "showLangPicker": "true",
+    "showInviteLang": "true",
+    "defaultLang": "auto",
+    "invitePulse": "true",
+    "inviteFade": "true",
+    "inviteConfirm": "true",
+    "inviteTopSpace": "0",
+    "hideNavMobile": "true",
+    "autoCycle": "true",
+    "autoCycleSecs": "3",
+    "mobileImages": "true",
+    "contactWhatsapp": "905469660256",
+    "ogTitle": "Tansu & Arda — Düğün Davetiyesi",
+    "ogDescription": "Düğünümüze davetlisiniz · 29 Ağustos 2026 · Ankara",
+    "inviteMessage": "Sevgili {name},\n\nEn özel günümüzde sizi aramızda görmekten büyük mutluluk duyarız. ❤️\n\nSize özel hazırlanan dijital davetiyenizi aşağıdaki bağlantıdan görüntüleyebilir ve katılım durumunuzu birkaç saniye içinde bize iletebilirsiniz.\n\n29 Ağustos 2026 Cumartesi günü Mango Garden İncek'te görüşmek dileğiyle.\n\n🔗 {link}",
+    "reminderMessage": "Sevgili {name},\n\nDüğünümüzde sizleri aramızda görmeyi sabırsızlıkla bekliyoruz! 💛\n\nKüçük bir hatırlatma: Havanın serin ve yağışlı olma ihtimaline karşı hazırlıklı gelmenizi öneririz. ☔️🧥\n\nDüğün mekanının konum bilgisini aşağıdaki linkte paylaştık.\n\nGörüşmek üzere! 🥰\n\n🔗 https://share.google/kBBaEBsBwO3WWojbp\n\n",
+    "storyTr": "{\"navStory\":\"Hikâyemiz\",\"navTimeline\":\"Zaman Tüneli\",\"scroll\":\"kaydır\",\"top\":\"başa dön\",\"heroKicker\":\"bir aşk hikâyesi\",\"heroTagline\":\"Ad astra per aspera — küçük, sıradan mucizelerle yazılmış bir hikâye.\",\"navStart\":\"T&T\",\"navEnd\":\"Sonsuza\",\"closeSub\":\"…devam edecek.\",\"closeCredit\":\"Tansu & Arda — ve tabii ki Hecate ile Didi\",\"closeBtn\":\"kedileri salıver\"}",
+    "storyEn": "{\"navStory\":\"Our Story\",\"navTimeline\":\"Timeline\",\"scroll\":\"scroll\",\"top\":\"back to the beginning\",\"heroKicker\":\"the story of\",\"heroTagline\":\"Ad astra per aspera — a story written in small, ordinary miracles.\",\"navStart\":\"Start\",\"navEnd\":\"Forever\",\"closeSub\":\"…to be continued.\",\"closeCredit\":\"Tansu & Arda — and Hecate & Didi, of course\",\"closeBtn\":\"release the cats\"}"
+  },
+  "chapters": [
+    {
+      "slug": "c1",
+      "position": 1,
+      "visible": true,
+      "night": false,
+      "photos": [
+        "firstDateWithGentleBear.jpg"
+      ],
+      "photo_layout": "carousel",
+      "photo_fit": "cover",
+      "tilt": -2,
+      "autoplay": false,
+      "autoplay_ms": 4000,
+      "tr": {
+        "tl": "Ankara’da 10 sene boyunca etrafımızda dönüp durup, Kuşadası’nda tanıştık. \n📍Sevgi Plajı",
+        "cap": "",
+        "nav": "Tanışma",
+        "body": "Ankara’da 10 sene boyunca etrafımızda dönüp durup, Kuşadası’nda tanıştık. \n📍Sevgi Plajı",
+        "date": "12 Nisan 2025",
+        "title": "İlk Karşılaşma",
+        "kicker": ""
+      },
+      "en": {
+        "tl": "Ankara’da 10 sene boyunca etrafımızda dönüp durup, Kuşadası’nda tanıştık. \n📍Sevgi Plajı",
+        "cap": "where it all began",
+        "nav": "First Encounter",
+        "body": "We spent 10 years crossing paths in Ankara before finally meeting in Kuşadası.\n📍 Sevgi Beach",
+        "date": "12 April 2025",
+        "title": "First encounter",
+        "kicker": "Chapter One"
+      }
+    },
+    {
+      "slug": "c2",
+      "position": 2,
+      "visible": true,
+      "night": false,
+      "photos": [
+        "guzelCamli.jpg"
+      ],
+      "photo_layout": "carousel",
+      "photo_fit": "cover",
+      "tilt": 1.4,
+      "autoplay": false,
+      "autoplay_ms": 4000,
+      "tr": {
+        "tl": "Doğa yollarımızı güzelleştirmek için, bizimle  adeta yarışıyordu.\n📍Güzelçamlı Yarım Adası",
+        "cap": "",
+        "nav": "Güzelçamlı",
+        "body": "Doğa yollarımızı güzelleştirmek için, bizimle  adeta yarışıyordu.\n📍Güzelçamlı Yarım Adası",
+        "date": "Kısa bir süre sonra",
+        "title": "İlk Randevu",
+        "kicker": ""
+      },
+      "en": {
+        "tl": "As if competing to make our journey even more beautiful, nature surrounded us with its magic.\n📍 Güzelçamlı Peninsula",
+        "cap": "",
+        "nav": "Güzelçamlı",
+        "body": "As if competing to make our journey even more beautiful, nature surrounded us with its magic.\n📍 Güzelçamlı Peninsula",
+        "date": "A Little While Later",
+        "title": "Our First Date",
+        "kicker": ""
+      }
+    },
+    {
+      "slug": "c3",
+      "position": 3,
+      "visible": true,
+      "night": true,
+      "photos": [
+        "fun6.jpg",
+        "us3.jpg",
+        "dostlar.JPEG",
+        "fun6.JPEG",
+        "fun3.jpg",
+        "brokenribs.jpg"
+      ],
+      "photo_layout": "carousel-bare",
+      "photo_fit": "cover",
+      "tilt": -1.8,
+      "autoplay": true,
+      "autoplay_ms": 2500,
+      "tr": {
+        "tl": "Eğlenceyi ve neşemizi paylaştığımız birçok anımız oldu.",
+        "cap": "",
+        "nav": "<3",
+        "body": "Eğlenceyi ve neşemizi paylaştığımız birçok anımız oldu.",
+        "date": "ve devam eder...",
+        "title": "Neşeli Günler",
+        "kicker": ""
+      },
+      "en": {
+        "tl": "",
+        "cap": "",
+        "nav": "",
+        "body": "",
+        "date": "",
+        "title": "",
+        "kicker": ""
+      }
+    },
+    {
+      "slug": "c4",
+      "position": 4,
+      "visible": true,
+      "night": false,
+      "photos": [
+        "hecate.jpg",
+        "hecate2.jpg",
+        "hecate3.jpg"
+      ],
+      "photo_layout": "carousel",
+      "photo_fit": "cover",
+      "tilt": 1.8,
+      "autoplay": true,
+      "autoplay_ms": 2500,
+      "tr": {
+        "tl": "Bizim güzel ay tanrıçamız. Kadife olarak da bilinir.",
+        "cap": "",
+        "nav": "Hecate",
+        "body": "Bizim güzel ay tanrıçamız. Kadife olarak da bilinir.",
+        "date": "",
+        "title": "Hecate ",
+        "kicker": ""
+      },
+      "en": {
+        "tl": "Our beautiful Moon Goddess, also known as Kadife.",
+        "cap": "",
+        "nav": "Hecate",
+        "body": "Our beautiful Moon Goddess, also known as Kadife.",
+        "date": "",
+        "title": "Hecate",
+        "kicker": ""
+      }
+    },
+    {
+      "slug": "c5",
+      "position": 5,
+      "visible": true,
+      "night": false,
+      "photos": [
+        "bafa1.jpg",
+        "bafa2.JPEG",
+        "bafa3.jpg",
+        "bafa5.jpg",
+        "bafa6.jpg"
+      ],
+      "photo_layout": "carousel",
+      "photo_fit": "cover",
+      "tilt": -2.2,
+      "autoplay": true,
+      "autoplay_ms": 2500,
+      "tr": {
+        "tl": "Bafa Gölünün kıyısında muhteşem bir dolunay ışığında kocaman taşlar tırmandık. Gezdik. Dozduk.\n📍Beşparmak Dağları",
+        "cap": "",
+        "nav": "Bafa",
+        "body": "Bafa Gölünün kıyısında muhteşem bir dolunay ışığında kocaman taşlar tırmandık. Gezdik. Dozduk.\n📍Beşparmak Dağları",
+        "date": "",
+        "title": "Bafa Maceraları",
+        "kicker": ""
+      },
+      "en": {
+        "tl": "On the shores of Lake Bafa, beneath the glow of a breathtaking full moon, we climbed towering boulders, explored hidden corners, and embraced the adventure together.\n📍 Beşparmak Mountains",
+        "cap": "",
+        "nav": "Bafa",
+        "body": "On the shores of Lake Bafa, beneath the glow of a breathtaking full moon, we climbed towering boulders, explored hidden corners, and embraced the adventure together.\n📍 Beşparmak Mountains",
+        "date": "",
+        "title": "Bafa Adventures",
+        "kicker": ""
+      }
+    },
+    {
+      "slug": "c7",
+      "position": 6,
+      "visible": true,
+      "night": false,
+      "photos": [
+        "kabak3.jpg",
+        "kabak1.jpg",
+        "kabak2.jpg"
+      ],
+      "photo_layout": "carousel",
+      "photo_fit": "cover",
+      "tilt": -1.6,
+      "autoplay": true,
+      "autoplay_ms": 2500,
+      "tr": {
+        "tl": "‘’Ad Astra Per Aspera’’ \n‘’Zorluklardan yıldızlara’’\n📍Faralya",
+        "cap": "‘’ EVET!! ‘’dedi.",
+        "nav": "Teklif",
+        "body": "Fikirler ve hayaller gerçekleştiğinde birer yıldız olur. Biz yaşayacağımız geceleri beraber aydınlatmaya karar verdik.\n‘’Ad Astra Per Aspera’’ \n‘’Zorluklardan yıldızlara’’\n📍Faralya",
+        "date": "29 Ağustos 2025",
+        "title": "Evlilik Teklifi",
+        "kicker": ""
+      },
+      "en": {
+        "tl": "Ad Astra Per Aspera\n\n\"Through hardships to the stars.\"\n\n📍 Faralya",
+        "cap": "she said \"YES!!\" ",
+        "nav": "The Proposal",
+        "body": "When dreams and hopes become reality, they shine like stars.\nThat night, we chose to light up the nights ahead together.\n\nAd Astra Per Aspera\n\"Through hardships to the stars.\"\n📍 Faralya",
+        "date": "One knee, one question",
+        "title": "The Proposal",
+        "kicker": ""
+      }
+    },
+    {
+      "slug": "c6",
+      "position": 7,
+      "visible": true,
+      "night": false,
+      "photos": [
+        "didi.jpg",
+        "didiRuThere.jpg"
+      ],
+      "photo_layout": "carousel-bare",
+      "photo_fit": "cover",
+      "tilt": 2.2,
+      "autoplay": true,
+      "autoplay_ms": 2500,
+      "tr": {
+        "tl": "Bize Didim’den bir tırın üstünde yolculuk yaparak geldi. Ortalama 10 günlük ve 174 g olan bu küçük mucize şu an 1.5 kg ve Hecate’nin en büyük baş belası.",
+        "cap": "",
+        "nav": "Didi",
+        "body": "Bize Didim’den bir tırın üstünde yolculuk yaparak geldi. Ortalama 10 günlük ve 174 g olan bu küçük mucize şu an 1.5 kg ve Hecate’nin en büyük baş belası.",
+        "date": "16 Nisan 2026",
+        "title": "Didi Geliyor",
+        "kicker": ""
+      },
+      "en": {
+        "tl": "She came to us all the way from Didim, riding on top of a truck. At just around 10 days old and weighing only 174 grams, this little miracle has now grown to 1.5 kg—and has proudly become Hecate's biggest little troublemaker. 🐾",
+        "cap": "",
+        "nav": "Didi",
+        "body": "She came to us all the way from Didim, riding on top of a truck. At just around 10 days old and weighing only 174 grams, this little miracle has now grown to 1.5 kg—and has proudly become Hecate's biggest little troublemaker. 🐾",
+        "date": "16 April 2026",
+        "title": "Enter Didi",
+        "kicker": ""
+      }
+    },
+    {
+      "slug": "c8",
+      "position": 8,
+      "visible": true,
+      "night": false,
+      "photos": [
+        "nisan.jpg",
+        "nisan2.jpeg",
+        "nisan3.jpg",
+        "nisan4.jpg"
+      ],
+      "photo_layout": "carousel",
+      "photo_fit": "cover",
+      "tilt": -1.5,
+      "autoplay": true,
+      "autoplay_ms": 2500,
+      "tr": {
+        "tl": "",
+        "cap": "",
+        "nav": "Nişan",
+        "body": "📍Bartın",
+        "date": "29 Mayıs 2026",
+        "title": "Nişanımız",
+        "kicker": ""
+      },
+      "en": {
+        "tl": "📍Bartın",
+        "cap": "",
+        "nav": "Engagement",
+        "body": "📍Bartın",
+        "date": "29 May 2026",
+        "title": "Our Engagement",
+        "kicker": ""
+      }
+    },
+    {
+      "slug": "c10",
+      "position": 9,
+      "visible": true,
+      "night": true,
+      "photos": [
+        "invitation.png"
+      ],
+      "photo_layout": "single",
+      "photo_fit": "cover",
+      "tilt": 1.8,
+      "autoplay": false,
+      "autoplay_ms": 4000,
+      "tr": {
+        "tl": "",
+        "cap": "",
+        "nav": "Davetiye",
+        "body": "",
+        "date": "",
+        "title": "Nikah Davetiyemiz",
+        "kicker": ""
+      },
+      "en": {
+        "tl": "",
+        "cap": "",
+        "nav": "Our Nikah Invitation",
+        "body": "",
+        "date": "",
+        "title": "Our Nikah Invitation",
+        "kicker": ""
+      }
+    },
+    {
+      "slug": "c9",
+      "position": 10,
+      "visible": true,
+      "night": true,
+      "photos": [
+        "nikah.png",
+        "nikah.jpg"
+      ],
+      "photo_layout": "carousel-bare",
+      "photo_fit": "cover",
+      "tilt": -1.4,
+      "autoplay": true,
+      "autoplay_ms": 3000,
+      "tr": {
+        "tl": "Birbirimize olan sevgimizi devlet nezdinde makul bir zemine oturtma işi.\n📍Germencik",
+        "cap": "",
+        "nav": "Nikah",
+        "body": "Birbirimize olan sevgimizi devlet nezdinde makul bir zemine oturtma işi.\n📍Germencik",
+        "date": "28 Haziran 2026",
+        "title": "Nikahımız",
+        "kicker": ""
+      },
+      "en": {
+        "tl": "The day we made our love legally binding. Bureaucracy never looked so romantic. 💍\n📍 Germencik",
+        "cap": "",
+        "nav": "Nikah ",
+        "body": "The day we made our love legally binding. Bureaucracy never looked so romantic. 💍\n📍 Germencik",
+        "date": "28 June 2026",
+        "title": "Our \"Nikah\"",
+        "kicker": ""
+      }
+    },
+    {
+      "slug": "c12",
+      "position": 11,
+      "visible": false,
+      "night": true,
+      "photos": [],
+      "photo_layout": "carousel",
+      "photo_fit": "cover",
+      "tilt": -1.8,
+      "autoplay": false,
+      "autoplay_ms": 4000,
+      "tr": {},
+      "en": {}
+    },
+    {
+      "slug": "c11",
+      "position": 12,
+      "visible": true,
+      "night": true,
+      "photos": [
+        "best.jpg",
+        "notkabak.jpg",
+        "fun7.jpg",
+        "fun5.jpg",
+        "us.jpg"
+      ],
+      "photo_layout": "carousel-bare",
+      "photo_fit": "cover",
+      "tilt": 2,
+      "autoplay": true,
+      "autoplay_ms": 3000,
+      "tr": {
+        "tl": "En iyilerini tabiki en sona sakladık :)",
+        "cap": "",
+        "nav": "GOLD",
+        "body": "En iyilerini en sona sakladık :)",
+        "date": "",
+        "title": "Altın zamanlar",
+        "kicker": ""
+      },
+      "en": {
+        "tl": "We saved the best to last :)",
+        "cap": "",
+        "nav": "GOLD",
+        "body": "We saved the best to last :)",
+        "date": "",
+        "title": "Golden Times",
+        "kicker": ""
+      }
+    },
+    {
+      "slug": "c13",
+      "position": 13,
+      "visible": false,
+      "night": true,
+      "photos": [],
+      "photo_layout": "carousel",
+      "photo_fit": "cover",
+      "tilt": 2,
+      "autoplay": false,
+      "autoplay_ms": 4000,
+      "tr": {},
+      "en": {}
+    },
+    {
+      "slug": "c14",
+      "position": 14,
+      "visible": true,
+      "night": true,
+      "photos": [
+        "davetiye-vertical.png"
+      ],
+      "photo_layout": "carousel-bare",
+      "photo_fit": "cover",
+      "tilt": -1.5,
+      "autoplay": false,
+      "autoplay_ms": 4000,
+      "tr": {
+        "tl": "Hikayemizin bu bölümünde sizleri de aramızda görmekten mutluluk duyarız..\n📍Ankara",
+        "cap": "",
+        "nav": "Düğün",
+        "body": "Hikayemizin bu bölümünde sizleri de aramızda görmekten mutluluk duyarız..\n📍Ankara",
+        "date": "29 Ağustos 2026",
+        "title": "Düğünümüz",
+        "kicker": ""
+      },
+      "en": {
+        "tl": "We would be delighted to have you with us as we begin this new chapter of our story.\n📍 Ankara",
+        "cap": "",
+        "nav": "Wedding",
+        "body": "We would be delighted to have you with us as we begin this new chapter of our story.\n📍 Ankara",
+        "date": "29 August 2026",
+        "title": "Our Wedding Ceremony",
+        "kicker": ""
+      }
+    },
+    {
+      "slug": "c15",
+      "position": 15,
+      "visible": false,
+      "night": true,
+      "photos": [],
+      "photo_layout": "carousel",
+      "photo_fit": "cover",
+      "tilt": 1.4,
+      "autoplay": false,
+      "autoplay_ms": 4000,
+      "tr": {},
+      "en": {}
+    }
+  ]
+}

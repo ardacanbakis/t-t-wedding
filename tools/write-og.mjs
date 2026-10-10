@@ -33,10 +33,8 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
 const supaUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supaKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
-const DEFAULTS = {
-  ogTitle: "Tansu & Arda — Düğün Davetiyesi",
-  ogDescription: "Düğünümüze davetlisiniz · 28 Haziran 2026 · Germencik, Aydın",
-};
+// Fallbacks when Supabase isn't reachable at build time: the seeded values.
+const DEFAULTS = JSON.parse(fs.readFileSync(path.join(process.cwd(), "supabase", "seed.json"), "utf8")).settings;
 
 function esc(s) {
   return String(s)

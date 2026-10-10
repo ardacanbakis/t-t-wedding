@@ -2,6 +2,7 @@
 // lives in supabase/setup.sql — everything here is UX-side convenience).
 
 import { defaultTexts, type GuestTexts, type Lang } from "./i18n";
+import seed from "../../supabase/seed.json";
 
 // ── General (universal, no-RSVP) invitation texts ───────────────────
 export type GeneralTexts = {
@@ -125,24 +126,10 @@ export type SiteSettings = {
 };
 
 /** The default WhatsApp message template for personal invitations. */
-export const DEFAULT_INVITE_MESSAGE = `Sevgili {name},
-
-En özel günümüzde sizi aramızda görmekten büyük mutluluk duyarız. ❤️
-
-Size özel hazırlanan dijital davetiyenizi aşağıdaki bağlantıdan görüntüleyebilir ve katılım durumunuzu birkaç saniye içinde bize iletebilirsiniz.
-
-29 Ağustos 2026 Cumartesi günü Mango Garden İncek'te görüşmek dileğiyle.
-
-🔗 {link}`;
+export const DEFAULT_INVITE_MESSAGE = seed.settings.inviteMessage;
 
 /** The default WhatsApp reminder message for personal invitations. */
-export const DEFAULT_REMINDER_MESSAGE = `Sevgili {name},
-
-Düğünümüz yaklaşırken kibarca hatırlatmak istedik. 💛 Henüz katılım durumunuzu iletmediyseniz, dijital davetiyeniz üzerinden birkaç saniyede bize bildirebilirsiniz.
-
-Sizi aramızda görmeyi çok isteriz.
-
-🔗 {link}`;
+export const DEFAULT_REMINDER_MESSAGE = seed.settings.reminderMessage;
 
 /** Fill an invite message template: {name} → guest name, {link} → invite URL. */
 export function fillInviteMessage(template: string, name: string, link: string): string {
@@ -212,46 +199,19 @@ export function normalizeChapter(row: Partial<StoryChapter>): StoryChapter {
   };
 }
 
-// Defaults pulled from the timeline site (Chapter Ten): 28 June 2026, 14:30,
-// Germencik Belediyesi · Aydın. setup.sql seeds the same values; the admin
-// dashboard edits them.
+// Defaults come from supabase/seed.json — the same values setup.sql seeds and
+// the mock serves (a snapshot of the live site). Keys the seed leaves out stay
+// empty, which means "use the built-in default" (texts, layout, placeholders,
+// general-invite texts). A key missing from the seed is a type error here.
 export const DEFAULT_SETTINGS: SiteSettings = {
-  eventDate: "2026-06-28T14:30:00+03:00",
-  rsvpDeadline: "2026-06-14T23:59:00+03:00",
-  venueName: "Germencik Belediyesi",
-  venueAddress: "Germencik, Aydın",
-  mapsUrl: "https://maps.google.com/?q=Germencik+Belediyesi,+Ayd%C4%B1n",
-  schedule: "14:30 | Nikah Töreni | Ceremony",
-  storyUrl: "/story/",
-  coupleNames: "Tansu & Arda",
-  cardTilt: "0",
-  dateStyle: "date",
   textsTr: "",
   textsEn: "",
   layout: "",
   varsTr: "",
   varsEn: "",
-  storyTr: "",
-  storyEn: "",
-  nightFrom: "9",
-  showLangPicker: "true",
-  showInviteLang: "true",
-  defaultLang: "auto",
-  invitePulse: "true",
-  inviteFade: "true",
-  inviteConfirm: "true",
-  inviteTopSpace: "24",
-  hideNavMobile: "false",
-  autoCycle: "false",
-  autoCycleSecs: "3",
-  mobileImages: "true",
   generalTr: "",
   generalEn: "",
-  ogTitle: "Tansu & Arda — Düğün Davetiyesi",
-  ogDescription: "Düğünümüze davetlisiniz · 28 Haziran 2026 · Germencik, Aydın",
-  inviteMessage: DEFAULT_INVITE_MESSAGE,
-  reminderMessage: DEFAULT_REMINDER_MESSAGE,
-  contactWhatsapp: "905469660256",
+  ...seed.settings,
 };
 
 /** General invitation texts for a language: overrides merged over defaults. */

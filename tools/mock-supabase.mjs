@@ -11,8 +11,16 @@
 //   NEXT_PUBLIC_SUPABASE_ANON_KEY=mock-anon
 //
 // Mock admin login: admin@example.com / test-pass-123
+//
+// Starts from supabase/seed.json (the same defaults setup.sql seeds) plus three
+// demo guests: /i/?t=demo-pending, /i/?t=demo-accepted, /i/?t=demo-declined.
+// The seed's wedding date is in the past; MOCK_OPEN_RSVP=1 moves the wedding
+// and the RSVP deadline a month ahead so the RSVP form can be exercised.
 
+import fs from "node:fs";
 import http from "node:http";
+
+const seed = JSON.parse(fs.readFileSync(new URL("../supabase/seed.json", import.meta.url), "utf8"));
 
 const PORT = Number(process.env.MOCK_SUPABASE_PORT || 54321);
 const ADMIN_EMAIL = "admin@example.com";
@@ -22,53 +30,33 @@ const ACCESS_TOKEN = "mock-access-token";
 let nextId = 1;
 let nextChapterId = 1;
 let nextPlanId = 1;
+
+const settings = new Map(Object.entries(seed.settings));
+if (process.env.MOCK_OPEN_RSVP === "1") {
+  const month = 30 * 86400000;
+  settings.set("eventDate", new Date(Date.now() + month).toISOString());
+  settings.set("rsvpDeadline", new Date(Date.now() + month - 86400000).toISOString());
+}
+
+function demoInvitation(token, name, max, status, party, note) {
+  const now = new Date().toISOString();
+  return {
+    id: nextId++, token, name, max_guests: max, status, party_size: party, note,
+    personal_note: null, invite_group: "Demo", sent: true, opened_at: null, invite_lang: "auto",
+    responded_at: status === "pending" ? null : now, created_at: now, updated_at: now,
+  };
+}
+
 const db = {
-  invitations: [],
-  story_chapters: [
-    {
-      id: nextChapterId++, position: 1, slug: "c1", photos: [], photo_layout: "carousel",
-      photo_fit: "cover", tilt: -2, visible: true, night: false, autoplay: false, autoplay_ms: 4000,
-      tr: { nav: "Tanışma", kicker: "Birinci Bölüm", date: "Sonbahar 2019", title: "İlk Karşılaşma", cap: "her şeyin başladığı yer", body: "Kalabalık bir oda…", tl: "Kalabalık bir oda." },
-      en: { nav: "Meet", kicker: "Chapter One", date: "Autumn 2019", title: "First Meet", cap: "where it all began", body: "A crowded room…", tl: "A crowded room." },
-    },
-    {
-      id: nextChapterId++, position: 2, slug: "c2", photos: [], photo_layout: "carousel",
-      photo_fit: "cover", tilt: 2, visible: true, night: true, autoplay: false, autoplay_ms: 4000,
-      tr: { nav: "Düğün", kicker: "İkinci Bölüm", date: "28 Haziran 2026", title: "Düğünümüz", cap: "en kolay evet", body: "Sıcak bir haziran…", tl: "En kolay evet." },
-      en: { nav: "Wedding", kicker: "Chapter Two", date: "28 June 2026", title: "Our Wedding", cap: "the easiest yes", body: "On a warm June afternoon…", tl: "The easiest yes." },
-    },
+  invitations: [
+    demoInvitation("demo-pending", "Ayşe & Mehmet Yılmaz", 2, "pending", null, null),
+    demoInvitation("demo-accepted", "Elif Demir", 3, "accepted", 2, "Çok heyecanlıyız!"),
+    demoInvitation("demo-declined", "John Smith", 1, "declined", 0, null),
   ],
+  story_chapters: seed.chapters.map((c) => ({ id: nextChapterId++, ...c })),
   general_stats: { opens: 0, yes: 0 },
   seating_plans: [],
-  settings: new Map([
-    ["eventDate", "2026-06-28T14:30:00+03:00"],
-    ["rsvpDeadline", "2027-06-14T23:59:00+03:00"],
-    ["venueName", "Germencik Belediyesi"],
-    ["venueAddress", "Germencik, Aydın"],
-    ["mapsUrl", "https://maps.google.com/?q=Germencik+Belediyesi,+Ayd%C4%B1n"],
-    ["schedule", "14:30 | Nikah Töreni | Ceremony"],
-    ["storyUrl", "/story/"],
-    ["coupleNames", "Tansu & Arda"],
-    ["cardTilt", "0"],
-    ["dateStyle", "date"],
-    ["nightFrom", "9"],
-    ["showLangPicker", "true"],
-    ["showInviteLang", "true"],
-    ["defaultLang", "auto"],
-    ["invitePulse", "true"],
-    ["inviteFade", "true"],
-    ["inviteConfirm", "true"],
-    ["inviteTopSpace", "24"],
-    ["hideNavMobile", "false"],
-    ["autoCycle", "false"],
-    ["autoCycleSecs", "3"],
-    ["mobileImages", "true"],
-    ["contactWhatsapp", "905469660256"],
-    ["inviteMessage", "Sevgili {name},\n\nDijital davetiyeniz: {link}"],
-    ["reminderMessage", "Sevgili {name},\n\nHatırlatma: {link}"],
-    ["ogTitle", "Tansu & Arda — Düğün Davetiyesi"],
-    ["ogDescription", "Düğünümüze davetlisiniz · 28 Haziran 2026 · Germencik, Aydın"],
-  ]),
+  settings,
 };
 
 const CORS = {

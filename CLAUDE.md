@@ -25,8 +25,9 @@ guest-facing RSVP UX (pulse, fade, confirm popup, thank-you/story popup).
 
 - **`model.ts`** — `SiteSettings` (the whole key/value settings surface, with
   `DEFAULT_SETTINGS`), `Invitation`, `StoryChapter`, general-invite texts,
-  `settingsFromRows`, `fillInviteMessage`, message-template defaults. Adding a
-  setting = add to `SiteSettings` + `DEFAULT_SETTINGS` here first.
+  `settingsFromRows`, `fillInviteMessage`, message-template defaults.
+  `DEFAULT_SETTINGS` = `supabase/seed.json` + a few keys left empty on purpose
+  (a seed missing a `SiteSettings` key is a type error).
 - **`i18n.ts`** — `GuestTexts` (every guest-facing string), `defaultTexts`
   (tr/en), `TEXT_FIELDS` (drives the admin Texts editor), formatters.
 - **`blocks.ts`** — the invitation card's block layout model (order / show /
@@ -45,8 +46,10 @@ strings), typed by `SiteSettings`. In the dashboard:
 
 So: a new setting is either (a) added to `CARD_OWNED` + its own `doSave*`, or
 (b) left out of `CARD_OWNED` and bound to `s` in the Styling "Settings"
-section. Thread every new setting through: `model.ts`, `supabase/setup.sql`
-seed, `tools/mock-supabase.mjs` seed, and the admin UI.
+section. Thread every new setting through: `SiteSettings` in `model.ts`, its
+default in **`supabase/seed.json`** (then `npm run seed:sync` rewrites the
+generated seed block of `setup.sql`), and the admin UI. The mock and the story
+page read `seed.json` directly; `npm run check` fails if `setup.sql` drifts.
 
 ## Supabase (`supabase/setup.sql`, idempotent)
 
@@ -63,7 +66,10 @@ A single self-contained file: a small **"dc-runtime" template engine**
 (`<sc-if>`, `<sc-for>`, `{{ }}`) compiled to a React app (React is vendored in
 `public/story/vendor/`, no CDN). It reads chapters + settings live from
 Supabase via `window.__TT_CONFIG` (written at build by
-`tools/write-story-config.mjs`).
+`tools/write-story-config.mjs`). The same `config.js` carries `seed.json` as
+`window.__TT_SEED`, rendered before live data arrives (and kept if Supabase is
+down) — `_applyData()` applies either. The hard-coded `_L` chapters are only
+a last resort when `config.js` is missing.
 
 Gotchas when editing it:
 - `on*` handlers work as `{{ }}` bindings inside their scope (`ch.`, `s.`,
@@ -93,7 +99,10 @@ Gotchas when editing it:
 ## Testing (no framework; Playwright scripts)
 
 `tools/mock-supabase.mjs` is an in-memory PostgREST/GoTrue subset (admin login
-`admin@example.com` / `test-pass-123`). E2E scripts live in the session
+`admin@example.com` / `test-pass-123`), started from `seed.json` plus demo
+guests (`/i/?t=demo-pending|demo-accepted|demo-declined`). The seed's wedding
+is in the past; `MOCK_OPEN_RSVP=1` moves it a month ahead to exercise the RSVP
+form. `npm run check` = `tsc --noEmit` + the seed-sync check. E2E scripts live in the session
 scratchpad and are run via `run-e2e.sh <suite>` (restarts the mock fresh, then
 runs the script against `out/` served at root). Keep the mock's seeds/handlers
 in sync with `setup.sql`. Continuously-animated buttons need Playwright
@@ -103,8 +112,8 @@ in sync with `setup.sql`. Continuously-animated buttons need Playwright
 
 - Bilingual: every guest-facing string flows through `GuestTexts`/`TEXT_FIELDS`
   (or the general-invite texts); admin UI is English-only.
-- Keep `setup.sql`, `mock-supabase.mjs`, `model.ts` (+ admin wiring) in lockstep
-  when touching data.
+- Defaults live in `supabase/seed.json` only; schema + RPCs in `setup.sql` and
+  the mock's handlers still need keeping in step by hand.
 - Money-shot files: `invite-view.tsx`, `admin/dashboard.tsx`,
   `public/story/index.html`.
 
@@ -131,8 +140,9 @@ columns into shape on load, so a malformed row can't take down the admin page.
 - **`settingsFromRows` silently drops unknown keys** (`if (row.key in out)`). A
   setting missing from `SiteSettings`/`DEFAULT_SETTINGS` reads back as absent
   with no error — the easiest footgun in the codebase.
-- **Three-way manual lockstep** between `supabase/setup.sql`,
-  `tools/mock-supabase.mjs` and `src/lib/model.ts`; drift fails silently.
+- **Schema/RPC lockstep is manual**: a new column or RPC has to be mirrored in
+  `tools/mock-supabase.mjs` by hand (seed *values* no longer do — see
+  `seed.json`).
 - **`dashboard.tsx` is ~1550 lines** — filters, sorting, column visibility, bulk
   edit, CSV export, stats and every settings save handler in one component.
 - **No committed tests** — Playwright suites live in the session scratchpad and

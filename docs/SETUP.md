@@ -110,9 +110,10 @@ drop in a replacement.
 
 ## 5. Things to double-check
 
-- **Event details** default to 28 June 2026, 14:30, Germencik Belediyesi ·
-  Aydın. Change them (and the RSVP deadline) in **/admin → Invitation Styling →
-  Settings**.
+- **Defaults** (event details, texts, story chapters) come from
+  [`supabase/seed.json`](../supabase/seed.json) — a snapshot of the live site
+  (29 Aug 2026, Mango Garden · İncek, Ankara). Change the live values in
+  **/admin**; change the defaults in `seed.json`, then `npm run seed:sync`.
 - **WhatsApp templates** (invite + reminder) and the **contact number** are at
   the bottom of the Invitations tab / in Settings.
 

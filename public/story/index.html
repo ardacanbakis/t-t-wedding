@@ -883,6 +883,12 @@ class Component extends DCLogic {
       const re = /-mobile(\.[a-z0-9]+)(\?.*)?$/i;
       if (re.test(src)) el.setAttribute('src', src.replace(re, '$1$2'));
     };
+    // The seed (supabase/seed.json, written into config.js at build) is the
+    // real story: render it straight away rather than the stand-in chapters
+    // above, so live data swaps in without a flash of placeholder text — and
+    // the page still tells the story if Supabase is unreachable or paused.
+    const seed = window.__TT_SEED;
+    if (seed) this._applyData(seed.chapters, seed.settings, true);
     this._syncChapters();
   }
 
@@ -905,50 +911,12 @@ class Component extends DCLogic {
       get('settings?select=key,value')
     ]).then((res) => {
       const rows = res[0], settings = res[1];
-      if (Array.isArray(rows) && rows.length) {
-        this._chapters = rows.map((r) => ({
-          slug: String(r.slug || ''),
-          photos: Array.isArray(r.photos) ? r.photos.filter((x) => typeof x === 'string' && x.trim()) : [],
-          photoLayout: ['carousel', 'carousel-bare', 'stack', 'grid', 'single'].indexOf(r.photo_layout) >= 0 ? r.photo_layout : 'carousel',
-          photoFit: r.photo_fit === 'contain' ? 'contain' : 'cover',
-          tilt: typeof r.tilt === 'number' ? r.tilt : 0,
-          visible: r.visible !== false,
-          night: !!r.night,
-          autoplay: !!r.autoplay,
-          autoplayMs: (typeof r.autoplay_ms === 'number' && r.autoplay_ms >= 1000) ? r.autoplay_ms : 4000,
-          tr: r.tr || {}, en: r.en || {}
-        })).filter((c) => c.slug);
-        this._syncChapters();
-      }
+      let map = null;
       if (Array.isArray(settings)) {
-        const map = {};
+        map = {};
         settings.forEach((row) => { map[row.key] = row.value; });
-        const nf = parseInt(map.nightFrom, 10);
-        if (Number.isFinite(nf) && nf >= 1) this._nightFrom = nf;
-        this._showLang = map.showLangPicker !== 'false';
-        // Apply the site-wide default language when the visitor hasn't chosen
-        // one: "en" starts English, "auto" follows the browser, anything else
-        // (incl. the default) starts Turkish.
-        if (!this._langStored) {
-          const dl = map.defaultLang;
-          let start = 'tr';
-          if (dl === 'en') start = 'en';
-          else if (dl === 'auto' && typeof navigator !== 'undefined' && (navigator.language || '').toLowerCase().indexOf('en') === 0) start = 'en';
-          if (start !== this.state.lang) this.setState({ lang: start });
-        }
-        this._hideNavMobile = map.hideNavMobile === 'true';
-        this._autoCycle = map.autoCycle === 'true';
-        this._mobileImages = map.mobileImages !== 'false';
-        { const sec = parseFloat(map.autoCycleSecs); if (Number.isFinite(sec) && sec >= 1) this._cycleSecs = sec; }
-        ['tr', 'en'].forEach((lang) => {
-          const raw = map[lang === 'tr' ? 'storyTr' : 'storyEn'];
-          if (!raw) return;
-          try {
-            const o = JSON.parse(raw);
-            Object.keys(o).forEach((k) => { if (typeof o[k] === 'string' && o[k]) this._site[lang][k] = o[k]; });
-          } catch (e) {}
-        });
       }
+      this._applyData(rows, map, false);
       this.setState({ dataVer: this.state.dataVer + 1, photoIdx: {} }, () => {
         requestAnimationFrame(() => {
           this._setupReveals();
@@ -959,6 +927,56 @@ class Component extends DCLogic {
         });
       });
     }).catch(() => {});
+  }
+
+  // Take chapter rows and a {key: value} settings map — from the seed or from
+  // Supabase. `initial` = called from the constructor, before mount, where
+  // state is assigned directly instead of through setState.
+  _applyData(rows, map, initial) {
+    if (Array.isArray(rows) && rows.length) {
+      this._chapters = rows.map((r) => ({
+        slug: String(r.slug || ''),
+        photos: Array.isArray(r.photos) ? r.photos.filter((x) => typeof x === 'string' && x.trim()) : [],
+        photoLayout: ['carousel', 'carousel-bare', 'stack', 'grid', 'single'].indexOf(r.photo_layout) >= 0 ? r.photo_layout : 'carousel',
+        photoFit: r.photo_fit === 'contain' ? 'contain' : 'cover',
+        tilt: typeof r.tilt === 'number' ? r.tilt : 0,
+        visible: r.visible !== false,
+        night: !!r.night,
+        autoplay: !!r.autoplay,
+        autoplayMs: (typeof r.autoplay_ms === 'number' && r.autoplay_ms >= 1000) ? r.autoplay_ms : 4000,
+        tr: r.tr || {}, en: r.en || {}
+      })).filter((c) => c.slug);
+      this._syncChapters();
+    }
+    if (!map) return;
+    const nf = parseInt(map.nightFrom, 10);
+    if (Number.isFinite(nf) && nf >= 1) this._nightFrom = nf;
+    this._showLang = map.showLangPicker !== 'false';
+    // Apply the site-wide default language when the visitor hasn't chosen
+    // one: "en" starts English, "auto" follows the browser, anything else
+    // (incl. the default) starts Turkish.
+    if (!this._langStored) {
+      const dl = map.defaultLang;
+      let start = 'tr';
+      if (dl === 'en') start = 'en';
+      else if (dl === 'auto' && typeof navigator !== 'undefined' && (navigator.language || '').toLowerCase().indexOf('en') === 0) start = 'en';
+      if (start !== this.state.lang) {
+        if (initial) this.state.lang = start;
+        else this.setState({ lang: start });
+      }
+    }
+    this._hideNavMobile = map.hideNavMobile === 'true';
+    this._autoCycle = map.autoCycle === 'true';
+    this._mobileImages = map.mobileImages !== 'false';
+    { const sec = parseFloat(map.autoCycleSecs); if (Number.isFinite(sec) && sec >= 1) this._cycleSecs = sec; }
+    ['tr', 'en'].forEach((lang) => {
+      const raw = map[lang === 'tr' ? 'storyTr' : 'storyEn'];
+      if (!raw) return;
+      try {
+        const o = JSON.parse(raw);
+        Object.keys(o).forEach((k) => { if (typeof o[k] === 'string' && o[k]) this._site[lang][k] = o[k]; });
+      } catch (e) {}
+    });
   }
 
   // ── Photo navigation within one chapter's frame ──

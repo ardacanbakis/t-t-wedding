@@ -58,65 +58,8 @@ values
   ('tansubicakcioglu@gmail.com')
 on conflict do nothing;
 
--- Default event settings (edit later from the admin dashboard).
-insert into public.settings (key, value) values
-  ('eventDate',    '2026-06-28T14:30:00+03:00'),
-  ('rsvpDeadline', '2026-06-14T23:59:00+03:00'),
-  ('venueName',    'Germencik Belediyesi'),
-  ('venueAddress', 'Germencik, Aydın'),
-  ('mapsUrl',      'https://maps.google.com/?q=Germencik+Belediyesi,+Ayd%C4%B1n'),
-  ('schedule',     '14:30 | Nikah Töreni | Ceremony'),
-  ('storyUrl',     '/story/'),
-  ('coupleNames',  'Tansu & Arda'),
-  ('cardTilt',     '0'),
-  ('dateStyle',    'date'),
-  ('nightFrom',    '9'),
-  ('showLangPicker','true'),
-  ('showInviteLang','true'),
-  ('defaultLang','auto'),
-  ('invitePulse','true'),
-  ('inviteFade','true'),
-  ('inviteConfirm','true'),
-  ('inviteTopSpace','24'),
-  ('hideNavMobile','false'),
-  ('autoCycle','false'),
-  ('autoCycleSecs','3'),
-  ('mobileImages','true'),
-  ('contactWhatsapp','905469660256'),
-  ('ogTitle',      'Tansu & Arda — Düğün Davetiyesi'),
-  ('ogDescription','Düğünümüze davetlisiniz · 28 Haziran 2026 · Germencik, Aydın')
-on conflict do nothing;
-
--- Default WhatsApp message template for personal invites ({name} / {link}).
-insert into public.settings (key, value) values
-  ('inviteMessage', $md$Sevgili {name},
-
-En özel günümüzde sizi aramızda görmekten büyük mutluluk duyarız. ❤️
-
-Size özel hazırlanan dijital davetiyenizi aşağıdaki bağlantıdan görüntüleyebilir ve katılım durumunuzu birkaç saniye içinde bize iletebilirsiniz.
-
-29 Ağustos 2026 Cumartesi günü Mango Garden İncek'te görüşmek dileğiyle.
-
-🔗 {link}$md$)
-on conflict do nothing;
-
--- Default WhatsApp reminder message for personal invites ({name} / {link}).
-insert into public.settings (key, value) values
-  ('reminderMessage', $md$Sevgili {name},
-
-Düğünümüz yaklaşırken kibarca hatırlatmak istedik. 💛 Henüz katılım durumunuzu iletmediyseniz, dijital davetiyeniz üzerinden birkaç saniyede bize bildirebilirsiniz.
-
-Sizi aramızda görmeyi çok isteriz.
-
-🔗 {link}$md$)
-on conflict do nothing;
-
--- Story-site strings that don't belong to a single chapter (nav labels,
--- hero kicker, closing lines). Edited from the dashboard's Story editor.
-insert into public.settings (key, value) values
-('storyTr', '{"navStory":"Hikâyemiz","navTimeline":"Zaman Tüneli","scroll":"kaydır","top":"başa dön","heroKicker":"bir aşk hikâyesi","heroTagline":"Ad astra per aspera — küçük, sıradan mucizelerle yazılmış bir hikâye.","navStart":"Başlangıç","navEnd":"Sonsuza","closeSub":"…devam edecek.","closeCredit":"Tansu & Arda — ve tabii ki Hecate ile Didi","closeBtn":"kedileri salıver"}'),
-  ('storyEn', '{"navStory":"Our Story","navTimeline":"Timeline","scroll":"scroll","top":"back to the beginning","heroKicker":"the story of","heroTagline":"Ad astra per aspera — a story written in small, ordinary miracles.","navStart":"Start","navEnd":"Forever","closeSub":"…to be continued.","closeCredit":"Tansu & Arda — and Hecate & Didi, of course","closeBtn":"release the cats"}')
-on conflict do nothing;
+-- Default settings + story chapters are seeded further down, once the
+-- story_chapters table and its later columns exist (see the seed block).
 
 
 -- Story / timeline chapters. Each row is one chapter of the love story,
@@ -141,19 +84,6 @@ create table if not exists public.story_chapters (
   updated_at timestamptz not null default now()
 );
 
-insert into public.story_chapters (position, slug, photos, photo_fit, tilt, night, tr, en) values
-  (1, 'c1', '[]'::jsonb, 'cover', -2, false, '{"nav":"Tanışma","kicker":"Birinci Bölüm","date":"Sonbahar 2019","title":"İlk Karşılaşma","cap":"her şeyin başladığı yer","body":"Kalabalık bir oda, ortak bir şaka ve söylediklerini birden unutan iki kişi. İlk kim konuştu, ikimiz de hatırlamıyoruz — yalnızca akşamın fazlasıyla kısa geldiğini. Bazı hikâyeler havai fişeklerle başlamaz; bizimki kalıcı bir gülümsemeyle başladı.","tl":"Kalabalık bir oda, ortak bir şaka ve fazlasıyla kısa gelen bir akşam."}'::jsonb, '{"nav":"Meet","kicker":"Chapter One","date":"Autumn 2019","title":"First Meet","cap":"where it all began","body":"A crowded room, a shared joke, and two people who suddenly forgot what they had been saying. Neither of us remembers who spoke first — only that the evening felt far too short. Some stories don’t begin with fireworks; ours began with a smile that stayed.","tl":"A crowded room, a shared joke, and an evening that felt far too short."}'::jsonb),
-  (2, 'c2', '[]'::jsonb, 'cover', 2, false, '{"nav":"Buluşma","kicker":"İkinci Bölüm","date":"Birkaç hafta sonra","title":"İlk Buluşma","cap":"en uzun kısa akşam","body":"Bir kahve yemeğe, yemek de hiçbirimizin bitmesini istemediği yavaş bir yürüyüşe dönüştü. Kafe etrafımızda kapandı, fark etmedik bile. Kimin daha heyecanlı olduğunu hâlâ tatlı tatlı tartışıyoruz.","tl":"Bir kahve yemeğe, yemek de bitmesin istediğimiz bir yürüyüşe dönüştü."}'::jsonb, '{"nav":"Date","kicker":"Chapter Two","date":"A few weeks later","title":"First Date","cap":"the longest short evening","body":"One coffee became dinner, and dinner became a slow walk that neither of us wanted to end. The café closed around us and we barely noticed. We still argue, gently, about who was more nervous.","tl":"One coffee became dinner, and dinner became a walk neither of us wanted to end."}'::jsonb),
-  (3, 'c3', '[]'::jsonb, 'cover', -1.5, false, '{"nav":"Öpücük","kicker":"Üçüncü Bölüm","date":"Kısa bir süre sonra","title":"İlk Öpücük","cap":"nazik bir sokak lambasının altında","body":"Acele etmeyen bir iyi geceler. Sokak sessizdi, hava serindi ve uzun bir saniye boyunca bütün şehir kibarca başka tarafa baktı. Ondan sonra geri dönüş yoktu — istemedik de.","tl":"Acele etmeyen bir iyi geceler, nazik bir sokak lambasının altında."}'::jsonb, '{"nav":"Kiss","kicker":"Chapter Three","date":"Not long after","title":"First Kiss","cap":"under a kind streetlight","body":"A goodnight that took its time. The street was quiet, the air was cool, and for one long second the whole city seemed to look away politely. After that, there was no going back — and we never wanted to.","tl":"A goodnight that took its time, under a kind streetlight."}'::jsonb),
-  (4, 'c4', '["hecate.jpeg"]'::jsonb, 'cover', 1.8, false, '{"nav":"Hecate","kicker":"Dördüncü Bölüm","date":"Bizi seçtiği gün","title":"Hecate Geliyor","cap":"Hecate, evin bekçisi","body":"Altın gözlü, küçük kırmızı çıngıraklı kara bir gölge. Kara kedilerin insanlarını seçtiğini söylerler — Hecate içeri yürüdü, bizi iyice teftiş etti ve idare edeceğimize karar verdi. İki, üç oldu.","tl":"Altın gözlü kara bir gölge içeri girdi, bizi teftiş etti ve kalmaya karar verdi."}'::jsonb, '{"nav":"Hecate","kicker":"Chapter Four","date":"The day she chose us","title":"Enter Hecate","cap":"Hecate, keeper of the house","body":"A black shadow with golden eyes and a small red bell. They say black cats choose their people — Hecate simply walked in, inspected us thoroughly, and decided we would do. Two became three.","tl":"A black shadow with golden eyes walked in, inspected us, and decided to stay."}'::jsonb),
-  (5, 'c5', '[]'::jsonb, 'cover', -2.2, false, '{"nav":"Yazlar","kicker":"Beşinci Bölüm","date":"Aradaki yıllar","title":"Ege Yazları","cap":"tuz, çam ve yavaş akşamlar","body":"Kötü çalma listeleri ve iyi arkadaşlıkla yol maceraları. Akşam yemeğinde omuzlarımızda hâlâ kuruyan deniz suyu. O küçük yolculukların arasında bir yerde ev, bir mekân olmaktan çıkıp birbirimiz oldu.","tl":"Yol maceralarının arasında bir yerde ev, birbirimiz oldu."}'::jsonb, '{"nav":"Trips","kicker":"Chapter Five","date":"The years in between","title":"Aegean Summers","cap":"salt, pine, and slow evenings","body":"Road trips with bad playlists and good company. Sea water still drying on our shoulders at dinner. Somewhere between all those small journeys, home stopped being a place and started being each other.","tl":"Somewhere between the road trips, home stopped being a place and became each other."}'::jsonb),
-  (6, 'c6', '["didi.jpeg"]'::jsonb, 'cover', 2.2, false, '{"nav":"Didi","kicker":"Altıncı Bölüm","date":"Küçük, gürültülü bir mucize","title":"Didi Geliyor","cap":"Didi, küçük ama yetkili","body":"Avuç içi kadar, biberonla beslenen ve evi kendisinin yönettiğine emin. Didi bir çay fincanından hafif geldi ve evdeki gürültüyü anında ikiye katladı. Hecate tam bir hafta boyunca onaylamıyormuş gibi yaptı.","tl":"Avuç içi kadar, biberonla beslenen ve evi yönettiğine emin."}'::jsonb, '{"nav":"Didi","kicker":"Chapter Six","date":"A tiny, loud miracle","title":"Enter Didi","cap":"Didi, small but in charge","body":"Palm-sized, bottle-fed, and utterly convinced she runs the place. Didi arrived weighing less than a teacup and immediately doubled the noise in the house. Hecate pretended to disapprove for exactly one week.","tl":"Palm-sized, bottle-fed, and utterly convinced she runs the place."}'::jsonb),
-  (7, 'c7', '[]'::jsonb, 'cover', -1.6, false, '{"nav":"Teklif","kicker":"Yedinci Bölüm","date":"Tek diz, tek soru","title":"Evlilik Teklifi","cap":"evet dedi","body":"Yüzük haftalarca saklandı; hazırlanan konuşma ise anında buharlaştı. Sonunda dört titrek kelime ve son derece emin bir cevap kaldı. Zorluklardan yıldızlara.","tl":"Dört titrek kelime ve emin bir cevap. Zorluklardan yıldızlara."}'::jsonb, '{"nav":"Proposal","kicker":"Chapter Seven","date":"One knee, one question","title":"The Proposal","cap":"she said yes","body":"The ring had been hiding for weeks; the speech evaporated on arrival. In the end it was four shaky words and one certain answer. Zorluklardan yıldızlara — through hardships, to the stars.","tl":"Four shaky words and one certain answer. Zorluklardan yıldızlara."}'::jsonb),
-  (8, 'c8', '[]'::jsonb, 'cover', 1.4, false, '{"nav":"Yeni","kicker":"Sekizinci Bölüm","date":"Cesur bir karar","title":"Yeni Bir Sayfa","cap":"birlikte kuruyoruz","body":"Tansu bir kapıyı kapatıp bizimkini araladı: kendi işimizi birlikte kurmak için işinden ayrıldı. Bir sıçrayıştı — ve bu hikâyedeki her güzel sıçrayış gibi, el ele atladık.","tl":"Tansu bir kapıyı kapatıp bizimkini araladı — el ele atladık."}'::jsonb, '{"nav":"Anew","kicker":"Chapter Eight","date":"A brave decision","title":"A New Chapter","cap":"building it together","body":"Tansu closed one door to open ours: she left her job to build something of our own, together. It was a leap — and like every good leap in this story, we took it holding hands.","tl":"Tansu closed one door to open ours — a leap we took holding hands."}'::jsonb),
-  (9, 'c9', '["invitation.png"]'::jsonb, 'contain', -1.4, true, '{"nav":"Davetiye","kicker":"Dokuzuncu Bölüm","date":"Ad astra per aspera","title":"Davetiye","cap":"","body":"Hikâyemizi yıldızlara çizdik — tarot kartları, roketler, bir kara kedi ve bir küçük kedi — ve dünyaya gönderdik. Hecate ve Didi de tabii ki posterde: aileyi zaten onlar yönetiyor.","tl":"Yıldızlara çizilmiş hikâyemiz — posterde Hecate ve Didi ile."}'::jsonb, '{"nav":"Invite","kicker":"Chapter Nine","date":"Ad astra per aspera","title":"The Invitation","cap":"","body":"We drew our story in the stars — tarot cards, rockets, one black cat and one small one — and sent it out into the world. Hecate and Didi made the poster, of course. They practically run the family.","tl":"Our story drawn in the stars — with Hecate and Didi on the poster, naturally."}'::jsonb),
-  (10, 'c10', '[]'::jsonb, 'cover', 1.8, true, '{"nav":"Düğün","kicker":"Onuncu Bölüm","date":"28 Haziran 2026","title":"Düğünümüz","cap":"en kolay evet","body":"Sıcak bir haziran öğleden sonrasında, sevdiğimiz herkesin arasında hayatımızın en kolay evet’ini söyledik. Yedi yılın küçük, sıradan mucizeleri; saat iki buçukta imzalandı ve mühürlendi.","tl":"Germencik Belediyesi, Aydın — hayatımızın en kolay evet’i."}'::jsonb, '{"nav":"Wedding","kicker":"Chapter Ten","date":"28 June 2026","title":"Our Wedding","cap":"the easiest yes","body":"On a warm June afternoon, surrounded by everyone we love, we said the easiest yes of our lives. Seven years of small ordinary miracles, signed and sealed at half past two.","tl":"Germencik Belediyesi, Aydın — the easiest yes of our lives."}'::jsonb)
-on conflict (slug) do nothing;
-
 -- Widen the photo layout check for projects created before 'single' existed.
 alter table public.story_chapters drop constraint if exists story_chapters_photo_layout_check;
 alter table public.story_chapters add constraint story_chapters_photo_layout_check
@@ -163,17 +93,80 @@ alter table public.story_chapters add constraint story_chapters_photo_layout_che
 alter table public.story_chapters add column if not exists autoplay boolean not null default false;
 alter table public.story_chapters add column if not exists autoplay_ms integer not null default 4000;
 
+-- Seed: default settings and the story chapters (a snapshot of the live
+-- site). `on conflict do nothing` keeps anything already edited.
+-- >>> seed: generated from supabase/seed.json by `npm run seed:sync` — edit the JSON, not this block
+insert into public.settings (key, value) values
+  ('eventDate', '2026-08-29T19:00:00+03:00'),
+  ('rsvpDeadline', '2026-08-30T23:59:00+03:00'),
+  ('venueName', 'Mango Garden'),
+  ('venueAddress', 'Incek,Ankara'),
+  ('mapsUrl', 'https://www.google.com/maps/search/?api=1&query=Mango+Garden+%C4%B0ncek+Ankara'),
+  ('schedule', '19:00 | Nikah Töreni | Ceremony'),
+  ('storyUrl', '/story/'),
+  ('coupleNames', 'Tansu & Arda'),
+  ('cardTilt', '0'),
+  ('dateStyle', 'date'),
+  ('nightFrom', '9'),
+  ('showLangPicker', 'true'),
+  ('showInviteLang', 'true'),
+  ('defaultLang', 'auto'),
+  ('invitePulse', 'true'),
+  ('inviteFade', 'true'),
+  ('inviteConfirm', 'true'),
+  ('inviteTopSpace', '0'),
+  ('hideNavMobile', 'true'),
+  ('autoCycle', 'true'),
+  ('autoCycleSecs', '3'),
+  ('mobileImages', 'true'),
+  ('contactWhatsapp', '905469660256'),
+  ('ogTitle', 'Tansu & Arda — Düğün Davetiyesi'),
+  ('ogDescription', 'Düğünümüze davetlisiniz · 29 Ağustos 2026 · Ankara'),
+  ('inviteMessage', 'Sevgili {name},
 
--- Five extra chapters (hidden). Toggle them on and fill them in from the
--- dashboard when you want more than ten. Kept empty so they never show
--- until enabled.
-insert into public.story_chapters (position, slug, photos, photo_fit, tilt, night, visible, tr, en) values
-  (11, 'c11', '[]'::jsonb, 'cover',  1.6, true, false, '{}'::jsonb, '{}'::jsonb),
-  (12, 'c12', '[]'::jsonb, 'cover', -1.8, true, false, '{}'::jsonb, '{}'::jsonb),
-  (13, 'c13', '[]'::jsonb, 'cover',  2.0, true, false, '{}'::jsonb, '{}'::jsonb),
-  (14, 'c14', '[]'::jsonb, 'cover', -1.5, true, false, '{}'::jsonb, '{}'::jsonb),
-  (15, 'c15', '[]'::jsonb, 'cover',  1.4, true, false, '{}'::jsonb, '{}'::jsonb)
+En özel günümüzde sizi aramızda görmekten büyük mutluluk duyarız. ❤️
+
+Size özel hazırlanan dijital davetiyenizi aşağıdaki bağlantıdan görüntüleyebilir ve katılım durumunuzu birkaç saniye içinde bize iletebilirsiniz.
+
+29 Ağustos 2026 Cumartesi günü Mango Garden İncek''te görüşmek dileğiyle.
+
+🔗 {link}'),
+  ('reminderMessage', 'Sevgili {name},
+
+Düğünümüzde sizleri aramızda görmeyi sabırsızlıkla bekliyoruz! 💛
+
+Küçük bir hatırlatma: Havanın serin ve yağışlı olma ihtimaline karşı hazırlıklı gelmenizi öneririz. ☔️🧥
+
+Düğün mekanının konum bilgisini aşağıdaki linkte paylaştık.
+
+Görüşmek üzere! 🥰
+
+🔗 https://share.google/kBBaEBsBwO3WWojbp
+
+'),
+  ('storyTr', '{"navStory":"Hikâyemiz","navTimeline":"Zaman Tüneli","scroll":"kaydır","top":"başa dön","heroKicker":"bir aşk hikâyesi","heroTagline":"Ad astra per aspera — küçük, sıradan mucizelerle yazılmış bir hikâye.","navStart":"T&T","navEnd":"Sonsuza","closeSub":"…devam edecek.","closeCredit":"Tansu & Arda — ve tabii ki Hecate ile Didi","closeBtn":"kedileri salıver"}'),
+  ('storyEn', '{"navStory":"Our Story","navTimeline":"Timeline","scroll":"scroll","top":"back to the beginning","heroKicker":"the story of","heroTagline":"Ad astra per aspera — a story written in small, ordinary miracles.","navStart":"Start","navEnd":"Forever","closeSub":"…to be continued.","closeCredit":"Tansu & Arda — and Hecate & Didi, of course","closeBtn":"release the cats"}')
+on conflict do nothing;
+
+insert into public.story_chapters
+  (position, slug, visible, night, photos, photo_layout, photo_fit, tilt, autoplay, autoplay_ms, tr, en) values
+  (1, 'c1', true, false, '["firstDateWithGentleBear.jpg"]'::jsonb, 'carousel', 'cover', -2, false, 4000, '{"tl":"Ankara’da 10 sene boyunca etrafımızda dönüp durup, Kuşadası’nda tanıştık. \n📍Sevgi Plajı","cap":"","nav":"Tanışma","body":"Ankara’da 10 sene boyunca etrafımızda dönüp durup, Kuşadası’nda tanıştık. \n📍Sevgi Plajı","date":"12 Nisan 2025","title":"İlk Karşılaşma","kicker":""}'::jsonb, '{"tl":"Ankara’da 10 sene boyunca etrafımızda dönüp durup, Kuşadası’nda tanıştık. \n📍Sevgi Plajı","cap":"where it all began","nav":"First Encounter","body":"We spent 10 years crossing paths in Ankara before finally meeting in Kuşadası.\n📍 Sevgi Beach","date":"12 April 2025","title":"First encounter","kicker":"Chapter One"}'::jsonb),
+  (2, 'c2', true, false, '["guzelCamli.jpg"]'::jsonb, 'carousel', 'cover', 1.4, false, 4000, '{"tl":"Doğa yollarımızı güzelleştirmek için, bizimle  adeta yarışıyordu.\n📍Güzelçamlı Yarım Adası","cap":"","nav":"Güzelçamlı","body":"Doğa yollarımızı güzelleştirmek için, bizimle  adeta yarışıyordu.\n📍Güzelçamlı Yarım Adası","date":"Kısa bir süre sonra","title":"İlk Randevu","kicker":""}'::jsonb, '{"tl":"As if competing to make our journey even more beautiful, nature surrounded us with its magic.\n📍 Güzelçamlı Peninsula","cap":"","nav":"Güzelçamlı","body":"As if competing to make our journey even more beautiful, nature surrounded us with its magic.\n📍 Güzelçamlı Peninsula","date":"A Little While Later","title":"Our First Date","kicker":""}'::jsonb),
+  (3, 'c3', true, true, '["fun6.jpg","us3.jpg","dostlar.JPEG","fun6.JPEG","fun3.jpg","brokenribs.jpg"]'::jsonb, 'carousel-bare', 'cover', -1.8, true, 2500, '{"tl":"Eğlenceyi ve neşemizi paylaştığımız birçok anımız oldu.","cap":"","nav":"<3","body":"Eğlenceyi ve neşemizi paylaştığımız birçok anımız oldu.","date":"ve devam eder...","title":"Neşeli Günler","kicker":""}'::jsonb, '{"tl":"","cap":"","nav":"","body":"","date":"","title":"","kicker":""}'::jsonb),
+  (4, 'c4', true, false, '["hecate.jpg","hecate2.jpg","hecate3.jpg"]'::jsonb, 'carousel', 'cover', 1.8, true, 2500, '{"tl":"Bizim güzel ay tanrıçamız. Kadife olarak da bilinir.","cap":"","nav":"Hecate","body":"Bizim güzel ay tanrıçamız. Kadife olarak da bilinir.","date":"","title":"Hecate ","kicker":""}'::jsonb, '{"tl":"Our beautiful Moon Goddess, also known as Kadife.","cap":"","nav":"Hecate","body":"Our beautiful Moon Goddess, also known as Kadife.","date":"","title":"Hecate","kicker":""}'::jsonb),
+  (5, 'c5', true, false, '["bafa1.jpg","bafa2.JPEG","bafa3.jpg","bafa5.jpg","bafa6.jpg"]'::jsonb, 'carousel', 'cover', -2.2, true, 2500, '{"tl":"Bafa Gölünün kıyısında muhteşem bir dolunay ışığında kocaman taşlar tırmandık. Gezdik. Dozduk.\n📍Beşparmak Dağları","cap":"","nav":"Bafa","body":"Bafa Gölünün kıyısında muhteşem bir dolunay ışığında kocaman taşlar tırmandık. Gezdik. Dozduk.\n📍Beşparmak Dağları","date":"","title":"Bafa Maceraları","kicker":""}'::jsonb, '{"tl":"On the shores of Lake Bafa, beneath the glow of a breathtaking full moon, we climbed towering boulders, explored hidden corners, and embraced the adventure together.\n📍 Beşparmak Mountains","cap":"","nav":"Bafa","body":"On the shores of Lake Bafa, beneath the glow of a breathtaking full moon, we climbed towering boulders, explored hidden corners, and embraced the adventure together.\n📍 Beşparmak Mountains","date":"","title":"Bafa Adventures","kicker":""}'::jsonb),
+  (6, 'c7', true, false, '["kabak3.jpg","kabak1.jpg","kabak2.jpg"]'::jsonb, 'carousel', 'cover', -1.6, true, 2500, '{"tl":"‘’Ad Astra Per Aspera’’ \n‘’Zorluklardan yıldızlara’’\n📍Faralya","cap":"‘’ EVET!! ‘’dedi.","nav":"Teklif","body":"Fikirler ve hayaller gerçekleştiğinde birer yıldız olur. Biz yaşayacağımız geceleri beraber aydınlatmaya karar verdik.\n‘’Ad Astra Per Aspera’’ \n‘’Zorluklardan yıldızlara’’\n📍Faralya","date":"29 Ağustos 2025","title":"Evlilik Teklifi","kicker":""}'::jsonb, '{"tl":"Ad Astra Per Aspera\n\n\"Through hardships to the stars.\"\n\n📍 Faralya","cap":"she said \"YES!!\" ","nav":"The Proposal","body":"When dreams and hopes become reality, they shine like stars.\nThat night, we chose to light up the nights ahead together.\n\nAd Astra Per Aspera\n\"Through hardships to the stars.\"\n📍 Faralya","date":"One knee, one question","title":"The Proposal","kicker":""}'::jsonb),
+  (7, 'c6', true, false, '["didi.jpg","didiRuThere.jpg"]'::jsonb, 'carousel-bare', 'cover', 2.2, true, 2500, '{"tl":"Bize Didim’den bir tırın üstünde yolculuk yaparak geldi. Ortalama 10 günlük ve 174 g olan bu küçük mucize şu an 1.5 kg ve Hecate’nin en büyük baş belası.","cap":"","nav":"Didi","body":"Bize Didim’den bir tırın üstünde yolculuk yaparak geldi. Ortalama 10 günlük ve 174 g olan bu küçük mucize şu an 1.5 kg ve Hecate’nin en büyük baş belası.","date":"16 Nisan 2026","title":"Didi Geliyor","kicker":""}'::jsonb, '{"tl":"She came to us all the way from Didim, riding on top of a truck. At just around 10 days old and weighing only 174 grams, this little miracle has now grown to 1.5 kg—and has proudly become Hecate''s biggest little troublemaker. 🐾","cap":"","nav":"Didi","body":"She came to us all the way from Didim, riding on top of a truck. At just around 10 days old and weighing only 174 grams, this little miracle has now grown to 1.5 kg—and has proudly become Hecate''s biggest little troublemaker. 🐾","date":"16 April 2026","title":"Enter Didi","kicker":""}'::jsonb),
+  (8, 'c8', true, false, '["nisan.jpg","nisan2.jpeg","nisan3.jpg","nisan4.jpg"]'::jsonb, 'carousel', 'cover', -1.5, true, 2500, '{"tl":"","cap":"","nav":"Nişan","body":"📍Bartın","date":"29 Mayıs 2026","title":"Nişanımız","kicker":""}'::jsonb, '{"tl":"📍Bartın","cap":"","nav":"Engagement","body":"📍Bartın","date":"29 May 2026","title":"Our Engagement","kicker":""}'::jsonb),
+  (9, 'c10', true, true, '["invitation.png"]'::jsonb, 'single', 'cover', 1.8, false, 4000, '{"tl":"","cap":"","nav":"Davetiye","body":"","date":"","title":"Nikah Davetiyemiz","kicker":""}'::jsonb, '{"tl":"","cap":"","nav":"Our Nikah Invitation","body":"","date":"","title":"Our Nikah Invitation","kicker":""}'::jsonb),
+  (10, 'c9', true, true, '["nikah.png","nikah.jpg"]'::jsonb, 'carousel-bare', 'cover', -1.4, true, 3000, '{"tl":"Birbirimize olan sevgimizi devlet nezdinde makul bir zemine oturtma işi.\n📍Germencik","cap":"","nav":"Nikah","body":"Birbirimize olan sevgimizi devlet nezdinde makul bir zemine oturtma işi.\n📍Germencik","date":"28 Haziran 2026","title":"Nikahımız","kicker":""}'::jsonb, '{"tl":"The day we made our love legally binding. Bureaucracy never looked so romantic. 💍\n📍 Germencik","cap":"","nav":"Nikah ","body":"The day we made our love legally binding. Bureaucracy never looked so romantic. 💍\n📍 Germencik","date":"28 June 2026","title":"Our \"Nikah\"","kicker":""}'::jsonb),
+  (11, 'c12', false, true, '[]'::jsonb, 'carousel', 'cover', -1.8, false, 4000, '{}'::jsonb, '{}'::jsonb),
+  (12, 'c11', true, true, '["best.jpg","notkabak.jpg","fun7.jpg","fun5.jpg","us.jpg"]'::jsonb, 'carousel-bare', 'cover', 2, true, 3000, '{"tl":"En iyilerini tabiki en sona sakladık :)","cap":"","nav":"GOLD","body":"En iyilerini en sona sakladık :)","date":"","title":"Altın zamanlar","kicker":""}'::jsonb, '{"tl":"We saved the best to last :)","cap":"","nav":"GOLD","body":"We saved the best to last :)","date":"","title":"Golden Times","kicker":""}'::jsonb),
+  (13, 'c13', false, true, '[]'::jsonb, 'carousel', 'cover', 2, false, 4000, '{}'::jsonb, '{}'::jsonb),
+  (14, 'c14', true, true, '["davetiye-vertical.png"]'::jsonb, 'carousel-bare', 'cover', -1.5, false, 4000, '{"tl":"Hikayemizin bu bölümünde sizleri de aramızda görmekten mutluluk duyarız..\n📍Ankara","cap":"","nav":"Düğün","body":"Hikayemizin bu bölümünde sizleri de aramızda görmekten mutluluk duyarız..\n📍Ankara","date":"29 Ağustos 2026","title":"Düğünümüz","kicker":""}'::jsonb, '{"tl":"We would be delighted to have you with us as we begin this new chapter of our story.\n📍 Ankara","cap":"","nav":"Wedding","body":"We would be delighted to have you with us as we begin this new chapter of our story.\n📍 Ankara","date":"29 August 2026","title":"Our Wedding Ceremony","kicker":""}'::jsonb),
+  (15, 'c15', false, true, '[]'::jsonb, 'carousel', 'cover', 1.4, false, 4000, '{}'::jsonb, '{}'::jsonb)
 on conflict (slug) do nothing;
+-- <<< seed
 
 -- Counters for the general (universal) invitation link.
 create table if not exists public.general_stats (

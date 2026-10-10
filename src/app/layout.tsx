@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
+import seed from "../../supabase/seed.json";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Tansu & Arda — Düğün",
-  description: "Tansu & Arda — 28 Haziran 2026, Germencik · Aydın",
+  description: seed.settings.ogDescription,
   robots: { index: false, follow: false },
 };
 
