@@ -116,74 +116,84 @@ drop in a replacement.
 - **WhatsApp templates** (invite + reminder) and the **contact number** are at
   the bottom of the Invitations tab / in Settings.
 
-## 6. Backup & restore
+## 6. Backup, restore & a staging copy
 
 The project runs on Supabase's **free tier**, which has **no automatic daily
-backups** and pauses after ~1 week of inactivity. The guest list is
-irreplaceable, so take a manual dump before any schema change (and again close
-to the wedding).
+backups** and pauses after ~1 week of inactivity (a paused project can be
+resumed from the dashboard for 90 days). The guest list is irreplaceable, so
+take a snapshot before any schema change.
 
-**Step 1 — connection string.** Dashboard → *Project Settings → Database →
-Connection string → URI*. If a direct connection fails, use the **Session
-pooler** URI (direct connections are IPv6-only on newer projects). Then:
+The whole site is three things:
 
-```bash
-export SUPABASE_DB_URL='postgresql://postgres:...@...supabase.com:5432/postgres'
-```
+| Part | Where it lives | Covered by |
+| --- | --- | --- |
+| Code, story photos, OG image | git (`public/story/assets/`, `public/og-image.png`) | a git tag (below) |
+| Guests, settings, story text, seating, counters | Supabase `public` schema | `tools/db-snapshot.sh` |
+| Admin logins | Supabase `auth.users` | **not copied** — re-create them (§1.3) |
 
-**Step 2 — match the Postgres version.** Check it under *Settings →
-Infrastructure*. `pg_dump` refuses to dump from a server **newer** than itself,
-so a PG17 project needs pg_dump 17 (or the Supabase CLI, which bundles a
-matching version).
+Supabase Storage isn't used, so there is nothing else to save.
 
-**Step 3 — take both dumps.** Only the `public` schema; `auth` and `storage`
-are Supabase-managed.
+### Snapshot
 
-```bash
-mkdir -p backups
-
-# Data only — the one you'll normally restore.
-pg_dump "$SUPABASE_DB_URL" --schema=public --data-only \
-  --inserts --on-conflict-do-nothing --no-owner --no-privileges \
-  -f backups/tt-data-$(date +%F).sql
-
-# Full schema + data — a snapshot for rebuilding from nothing.
-pg_dump "$SUPABASE_DB_URL" --schema=public \
-  --no-owner --no-privileges -f backups/tt-full-$(date +%F).sql
-```
-
-`--inserts --on-conflict-do-nothing` is what makes the data dump safe to re-run
-against a database that already has rows; a plain `COPY` dump collides on
-primary keys.
-
-**Step 4 — verify it.** An untested backup is not a backup. Compare the row
-counts in the dump against the live database:
+You only need **Docker Desktop**, running. The script runs `pg_dump`/`psql`
+from the `postgres:17` image, so there's nothing to install or version-match.
+Run it from **Git Bash**. In PowerShell, `bash` may start WSL instead.
 
 ```bash
-psql "$SUPABASE_DB_URL" -c "select 'invitations' t, count(*) from invitations
-  union all select 'settings', count(*) from settings
-  union all select 'story_chapters', count(*) from story_chapters
-  union all select 'seating_plans', count(*) from seating_plans;"
-grep -c "^INSERT INTO public.invitations" backups/tt-data-$(date +%F).sql
+bash tools/db-snapshot.sh dump
 ```
 
-**Step 5 — restore.** Into a fresh or reset project:
+It asks for the live project's **Session pooler** URI (Dashboard → **Connect**
+→ *Session pooler*; the direct host is IPv6-only, which Docker can't reach).
+The input is hidden, so the database password stays out of your shell history.
+You get `backups/<date_time>/`:
+
+- `data.sql` — every row of the `public` schema (what a restore loads)
+- `schema.sql` — production's actual schema, to diff against `setup.sql`
+- `counts.txt` — rows per table, which the restore checks against
+
+`backups/` is gitignored. Dumps contain guest names and notes, so never commit
+one.
+
+### Restore / clone into another project
 
 ```bash
-psql "$SUPABASE_DB_URL" -f supabase/setup.sql          # schema, RLS, RPCs, seeds
-psql "$SUPABASE_DB_URL" -f backups/tt-data-<date>.sql  # rows
+bash tools/db-snapshot.sh restore backups/<date_time>
 ```
 
-**Step 6 — keep dumps out of git.** `backups/` is gitignored. Dumps contain
-guest names and notes, and the connection string embeds the database password —
-never commit one.
+It asks for the **target** project's URI and makes you type its project ref.
+Then it runs `setup.sql` (schema, RLS, RPCs), **truncates every public table**,
+loads `data.sql` in one transaction, and compares row counts with the snapshot.
+It refuses to restore into the project the snapshot came from. For a deliberate
+disaster recovery onto that same project, set `ALLOW_SAME_PROJECT=1`.
 
-> ⚠️ **Admin logins are not in the backup.** They live in `auth.users`, outside
-> the `public` schema. After restoring into a *new* project, re-create an admin
-> user (step 1.3 above) for each address in `admin_emails` — that table *is* in
-> `public`, so the allow-list itself restores fine.
+> **Why the truncate:** `setup.sql` seeds default settings, the ten story
+> chapters and the general-invite counters with `on conflict do nothing`.
+> Loading a dump on top of those keeps the *defaults* and silently drops your
+> real event date, venue, texts and story. The script clears the tables first
+> for that reason.
 
-No tooling to hand? **Table Editor → (each table) → Export CSV** is a decent
+If the load fails on a missing table or column, `setup.sql` has drifted from
+production. Compare it with `schema.sql`, fix `setup.sql`, and run it again.
+
+### A staging copy to develop against
+
+Keep the live site untouched while you change things:
+
+1. Create a second Supabase project, e.g. `t-t-wedding-staging` (the free tier
+   allows two active projects).
+2. `bash tools/db-snapshot.sh restore backups/<date_time>` into it.
+3. In the staging project: **Authentication → Users → Add user** for each
+   admin email, and turn off sign-ups (§1.3–1.4).
+4. Put the *staging* Project URL and anon key in `.env.local` (§3), then
+   `npm install` and `npm run dev`. That's a working copy of the real site and
+   data at http://localhost:3000. Nothing reaches production until you merge
+   to `main`.
+
+Guest tokens are copied too, so a staging invite link opens the same guest's
+invitation. RSVPs made there only change staging.
+
+No Docker to hand? **Table Editor → (each table) → Export CSV** is a decent
 belt-and-braces copy, but it carries no schema, RLS or RPCs — you'd re-run
 `setup.sql` and re-import the rows by hand.
 
@@ -192,9 +202,10 @@ belt-and-braces copy, but it carries no schema, RLS or RPCs — you'd re-run
 | Tag | Commit | What it is |
 | --- | --- | --- |
 | `v1-admin-baseline` | `12cd267` | Full admin panel before the Table Planner was added |
+| `live-2026-10-10` | `dbc0609` | The site as it stood after the wedding (29 Aug 2026), before post-wedding work |
 
 ```bash
-git checkout 12cd267          # inspect the baseline
-git tag -a v1-admin-baseline 12cd267 -m "Baseline before the seating simulator"
-git push origin v1-admin-baseline
+git tag -a live-2026-10-10 dbc0609 -m "Live site after the wedding"
+git push origin --tags        # tags only exist locally until pushed
+git checkout live-2026-10-10  # inspect / rebuild that exact version
 ```

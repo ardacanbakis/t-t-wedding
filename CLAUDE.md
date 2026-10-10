@@ -138,8 +138,10 @@ columns into shape on load, so a malformed row can't take down the admin page.
 - **No committed tests** — Playwright suites live in the session scratchpad and
   are lost between sessions; nothing runs in CI.
 - **Admin view state is in-memory**: column/filter/sort choices reset on reload.
-- **Free-tier Supabase has no automatic backups.** See the Backup & restore
-  section of [docs/SETUP.md](docs/SETUP.md) — and note admin logins live in
+- **Free-tier Supabase has no automatic backups.** `tools/db-snapshot.sh
+  dump|restore` (Docker-only) snapshots prod and clones it into a staging
+  project; see §6 of [docs/SETUP.md](docs/SETUP.md). Restore must TRUNCATE
+  before loading, or `setup.sql`'s seeded defaults win. Admin logins live in
   `auth.users`, outside a `public`-schema dump.
 
 Setup instructions live in **[docs/SETUP.md](docs/SETUP.md)**, not here.
