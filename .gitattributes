@@ -1,1 +1,4 @@
 *.sh text eol=lf
+# Loaded with Subresource Integrity hashes (public/story/support.js): any
+# line-ending conversion on checkout breaks the hash and the story page.
+public/story/vendor/** -text
