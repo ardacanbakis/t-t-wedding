@@ -29,7 +29,12 @@
     "inviteMessage": "Sevgili {name},\n\nEn özel günümüzde sizi aramızda görmekten büyük mutluluk duyarız. ❤️\n\nSize özel hazırlanan dijital davetiyenizi aşağıdaki bağlantıdan görüntüleyebilir ve katılım durumunuzu birkaç saniye içinde bize iletebilirsiniz.\n\n29 Ağustos 2026 Cumartesi günü Mango Garden İncek'te görüşmek dileğiyle.\n\n🔗 {link}",
     "reminderMessage": "Sevgili {name},\n\nDüğünümüzde sizleri aramızda görmeyi sabırsızlıkla bekliyoruz! 💛\n\nKüçük bir hatırlatma: Havanın serin ve yağışlı olma ihtimaline karşı hazırlıklı gelmenizi öneririz. ☔️🧥\n\nDüğün mekanının konum bilgisini aşağıdaki linkte paylaştık.\n\nGörüşmek üzere! 🥰\n\n🔗 https://share.google/kBBaEBsBwO3WWojbp\n\n",
     "storyTr": "{\"navStory\":\"Hikâyemiz\",\"navTimeline\":\"Zaman Tüneli\",\"scroll\":\"kaydır\",\"top\":\"başa dön\",\"heroKicker\":\"bir aşk hikâyesi\",\"heroTagline\":\"Ad astra per aspera — küçük, sıradan mucizelerle yazılmış bir hikâye.\",\"navStart\":\"T&T\",\"navEnd\":\"Sonsuza\",\"closeSub\":\"…devam edecek.\",\"closeCredit\":\"Tansu & Arda — ve tabii ki Hecate ile Didi\",\"closeBtn\":\"kedileri salıver\"}",
-    "storyEn": "{\"navStory\":\"Our Story\",\"navTimeline\":\"Timeline\",\"scroll\":\"scroll\",\"top\":\"back to the beginning\",\"heroKicker\":\"the story of\",\"heroTagline\":\"Ad astra per aspera — a story written in small, ordinary miracles.\",\"navStart\":\"Start\",\"navEnd\":\"Forever\",\"closeSub\":\"…to be continued.\",\"closeCredit\":\"Tansu & Arda — and Hecate & Didi, of course\",\"closeBtn\":\"release the cats\"}"
+    "storyEn": "{\"navStory\":\"Our Story\",\"navTimeline\":\"Timeline\",\"scroll\":\"scroll\",\"top\":\"back to the beginning\",\"heroKicker\":\"the story of\",\"heroTagline\":\"Ad astra per aspera — a story written in small, ordinary miracles.\",\"navStart\":\"Start\",\"navEnd\":\"Forever\",\"closeSub\":\"…to be continued.\",\"closeCredit\":\"Tansu & Arda — and Hecate & Didi, of course\",\"closeBtn\":\"release the cats\"}",
+    "sitePhase": "auto",
+    "photosUrl": "",
+    "photosUploadUrl": "",
+    "wishesOpen": "true",
+    "thankYouMessage": "Sevgili {name},\n\nDüğünümüzde bizimle olduğunuz için çok teşekkür ederiz. 💛 O günü sizinle paylaşmak bizim için çok özeldi.\n\nFotoğraflara göz atmak ve bize küçük bir not bırakmak isterseniz:\n\n🔗 {link}"
   },
   "chapters": [
     {

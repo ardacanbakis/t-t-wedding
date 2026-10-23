@@ -65,6 +65,7 @@ const PAGES = [
   ["index.html", "/"],
   ["i/index.html", "/i/"],
   ["welcome/index.html", "/welcome/"],
+  ["wishes/index.html", "/wishes/"],
   ["story/index.html", "/story/"],
   ["404.html", "/"],
 ];

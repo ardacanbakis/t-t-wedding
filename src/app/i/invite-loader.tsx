@@ -14,7 +14,7 @@ import { NotFoundView } from "./not-found-view";
 
 type Guest = Pick<
   Invitation,
-  "name" | "max_guests" | "status" | "party_size" | "note" | "personal_note" | "invite_lang"
+  "name" | "max_guests" | "status" | "party_size" | "note" | "personal_note" | "invite_lang" | "thank_you_note"
 >;
 
 type State =
@@ -100,6 +100,7 @@ export function InviteLoader() {
       partySize={state.guest.party_size}
       note={state.guest.note}
       personalNote={state.guest.personal_note}
+      thankYouNote={state.guest.thank_you_note}
       locked={deadlinePassed(state.settings)}
       settings={state.settings}
       inviteLang={state.guest.invite_lang}

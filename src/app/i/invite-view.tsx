@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { blockStyle, parseLayout, type BlockId } from "@/lib/blocks";
 import { fmt, formatDeadline, formatEventDate, type GuestTexts, type Lang } from "@/lib/i18n";
-import { mergeGeneral, mergeTexts, parseSchedule, parseVars, type GeneralTexts, type SiteSettings } from "@/lib/model";
+import { afterWedding, mergeGeneral, mergeTexts, parseSchedule, parseVars, type GeneralTexts, type SiteSettings } from "@/lib/model";
 import { getSupabase, withBase } from "@/lib/supabase";
+import { GuestbookForm, WallLink } from "../wishes/guestbook-form";
 
 type Props = {
   token: string;
@@ -14,6 +15,8 @@ type Props = {
   partySize: number | null;
   note: string | null;
   personalNote: string | null;
+  /** The couple's thank-you for this guest, shown instead of personalNote after the wedding */
+  thankYouNote?: string | null;
   locked: boolean;
   settings: SiteSettings;
   /** Per-invite language: "auto" (bilingual) or "tr"/"en" locked to one. */
@@ -48,7 +51,7 @@ function Thread() {
 }
 
 /** "Tansu & Arda" with the ampersand in script-gold, whatever the names are. */
-function CoupleNames({ value }: { value: string }) {
+export function CoupleNames({ value }: { value: string }) {
   const idx = value.indexOf("&");
   if (idx < 0) return <>{value}</>;
   return (
@@ -60,7 +63,7 @@ function CoupleNames({ value }: { value: string }) {
   );
 }
 
-function Divider({ beating }: { beating?: boolean }) {
+export function Divider({ beating }: { beating?: boolean }) {
   return (
     <div className="divider">
       <div className="line-l" />
@@ -137,6 +140,9 @@ export function InviteView(props: Props) {
   const schedule = useMemo(() => parseSchedule(s.schedule), [s.schedule]);
   const layout = useMemo(() => parseLayout(s.layout), [s.layout]);
   const tilt = Number.parseFloat(s.cardTilt) || 0;
+  // After the wedding the same card turns into a thank-you (see afterWedding).
+  const after = useMemo(() => afterWedding(s), [s]);
+  const [wishOpen, setWishOpen] = useState(false);
   // A "tr"/"en" invite is locked to that language (no toggle). "auto" (or the
   // general link) is bilingual and defaults to the visitor's language.
   const forcedLang: Lang | null =
@@ -372,6 +378,51 @@ export function InviteView(props: Props) {
     </div>
   );
 
+  // ── After the wedding: photo links, the story and the guestbook take the
+  // RSVP's place. A link (or its button text) left empty hides that button.
+  const afterBlock: ReactNode = (
+    <div style={{ textAlign: "center", maxWidth: 440, margin: "0 auto" }}>
+      <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+        {s.photosUrl && t.photosButton && (
+          <a className="pill-btn" href={s.photosUrl} target="_blank" rel="noopener noreferrer">
+            📷 {t.photosButton}
+          </a>
+        )}
+        {s.photosUploadUrl && t.uploadButton && (
+          <a className="pill-btn" href={s.photosUploadUrl} target="_blank" rel="noopener noreferrer">
+            ＋ {t.uploadButton}
+          </a>
+        )}
+        {t.storyButton && (
+          <a className="pill-btn" href={withBase(s.storyUrl)}>
+            {t.storyButton} ♥
+          </a>
+        )}
+      </div>
+      <div style={{ marginTop: 26 }}>
+        {s.wishesOpen === "false" ? null : wishOpen ? (
+          <div style={{ maxWidth: 440, margin: "0 auto 14px" }}>
+            {t.wishTitle && (
+              <h2 style={{ fontFamily: "var(--serif)", fontWeight: 600, fontSize: 22, color: "var(--brown)", margin: "0 0 12px" }}>
+                {t.wishTitle}
+              </h2>
+            )}
+            <GuestbookForm token={props.token} defaultName={props.guestName} t={t} />
+          </div>
+        ) : (
+          t.wishButton && (
+            <button className="submit-btn" style={{ fontSize: 15, marginBottom: 14 }} onClick={() => setWishOpen(true)} type="button">
+              ✍️ {t.wishButton}
+            </button>
+          )
+        )}
+        <div>
+          <WallLink t={t} />
+        </div>
+      </div>
+    </div>
+  );
+
   // ── Blocks. Each returns null when it has nothing to show, so an empty
   // schedule or a guest without a personal message doesn't leave a gap.
   const rsvpBlock: ReactNode = props.locked ? (
@@ -525,10 +576,14 @@ export function InviteView(props: Props) {
     </div>
   );
 
+  const kicker = after ? t.afterKicker : t.kicker;
+  const intro = !after ? (isGeneral ? "" : t.inviteLine) : !isGeneral && props.status !== "accepted" ? t.afterLineMissed : t.afterLine;
+  const cardNote = after ? props.thankYouNote : props.personalNote;
+
   const content: Record<BlockId, ReactNode> = {
-    kicker: t.kicker ? (
+    kicker: kicker ? (
       <div className="kicker" style={{ fontSize: "var(--blk-fs, clamp(20px, 3vw, 26px))", fontFamily: "var(--blk-ff, var(--script))", color: "var(--blk-color, var(--gold))" }}>
-        {t.kicker}
+        {kicker}
       </div>
     ) : null,
     names: (
@@ -547,7 +602,7 @@ export function InviteView(props: Props) {
     ),
     dividerTop: <Divider />,
     greeting: isGeneral ? (
-      g.welcome ? (
+      g.welcome && !after ? (
         <p style={{ fontFamily: "var(--blk-ff, var(--sans))", fontWeight: 300, fontSize: "var(--blk-fs, 16px)", lineHeight: 1.8, color: "var(--blk-color, var(--brown-mid))", margin: 0, whiteSpace: "pre-wrap" }}>
           {g.welcome}
         </p>
@@ -560,12 +615,12 @@ export function InviteView(props: Props) {
         <strong style={{ fontWeight: 600, color: "var(--brown)", fontSize: "1.3em" }}>{props.guestName}</strong>
       </p>
     ) : null,
-    inviteLine: !isGeneral && t.inviteLine ? (
+    inviteLine: intro ? (
       <p style={{ fontFamily: "var(--blk-ff, var(--sans))", fontWeight: 300, fontSize: "var(--blk-fs, 16px)", lineHeight: 1.8, color: "var(--blk-color, var(--brown-mid))", margin: 0 }}>
-        {t.inviteLine}
+        {intro}
       </p>
     ) : null,
-    personalNote: props.personalNote ? (
+    personalNote: cardNote ? (
       <p
         style={{
           fontFamily: "var(--blk-ff, var(--script))",
@@ -577,10 +632,10 @@ export function InviteView(props: Props) {
           whiteSpace: "pre-wrap",
         }}
       >
-        {props.personalNote}
+        {cardNote}
       </p>
     ) : null,
-    countdown: <Countdown target={s.eventDate} t={t} />,
+    countdown: after ? null : <Countdown target={s.eventDate} t={t} />,
     date: (
       <>
         {t.dateLabel && (
@@ -606,12 +661,12 @@ export function InviteView(props: Props) {
         </div>
       </>
     ),
-    mapButton: (
+    mapButton: after ? null : (
       <a className="pill-btn" href={s.mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: "var(--blk-fs, 12px)", fontFamily: "var(--blk-ff, var(--sans))" }}>
         📍 {t.mapButton}
       </a>
     ),
-    schedule: schedule.length ? (
+    schedule: schedule.length && !after ? (
       <>
         {t.scheduleLabel && (
           <div className="field-label" style={{ margin: "0 0 10px" }}>
@@ -633,7 +688,7 @@ export function InviteView(props: Props) {
       </>
     ) : null,
     dividerBottom: <Divider beating />,
-    rsvp: isGeneral ? generalBlock : rsvpBlock,
+    rsvp: after ? afterBlock : isGeneral ? generalBlock : rsvpBlock,
     closing: t.closing ? (
       <div style={{ fontFamily: "var(--blk-ff, var(--script))", fontSize: "var(--blk-fs, 20px)", color: "var(--blk-color, var(--gold))" }}>{t.closing}</div>
     ) : null,
@@ -641,7 +696,7 @@ export function InviteView(props: Props) {
 
   // Once an answer is picked, everything except the RSVP block dims away so the
   // guest focuses on sending (toggle in Invitation Styling).
-  const faded = !!answer && !saved && s.inviteFade !== "false";
+  const faded = !after && !!answer && !saved && s.inviteFade !== "false";
 
   const topSpace = Math.max(0, Number(s.inviteTopSpace ?? 24) || 0);
 

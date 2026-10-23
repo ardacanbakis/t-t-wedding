@@ -30,6 +30,7 @@ const ACCESS_TOKEN = "mock-access-token";
 let nextId = 1;
 let nextChapterId = 1;
 let nextPlanId = 1;
+let nextWishId = 1;
 
 const settings = new Map(Object.entries(seed.settings));
 if (process.env.MOCK_OPEN_RSVP === "1") {
@@ -44,6 +45,7 @@ function demoInvitation(token, name, max, status, party, note) {
     id: nextId++, token, name, max_guests: max, status, party_size: party, note,
     personal_note: null, invite_group: "Demo", sent: true, opened_at: null, invite_lang: "auto",
     responded_at: status === "pending" ? null : now, created_at: now, updated_at: now,
+    thank_you_note: null, gift_note: null, thanked_at: null,
   };
 }
 
@@ -56,6 +58,7 @@ const db = {
   story_chapters: seed.chapters.map((c) => ({ id: nextChapterId++, ...c })),
   general_stats: { opens: 0, yes: 0 },
   seating_plans: [],
+  wishes: [],
   settings,
 };
 
@@ -154,6 +157,42 @@ function submitRsvp({ p_token, p_answer, p_party_size, p_note }) {
   return [{ status: inv.status, party_size: inv.party_size }];
 }
 
+// Mirrors submit_wish() in supabase/setup.sql.
+function submitWish({ p_token, p_name, p_message }) {
+  const message = String(p_message ?? "").trim().slice(0, 1000);
+  let name = String(p_name ?? "").trim().slice(0, 80);
+  if (!message) throw new Error("empty");
+  if (db.settings.get("wishesOpen") === "false") throw new Error("closed");
+  const minuteAgo = Date.now() - 60000;
+  if (db.wishes.filter((w) => Date.parse(w.created_at) > minuteAgo).length >= 30) throw new Error("busy");
+  let invitationId = null;
+  if (p_token) {
+    const inv = db.invitations.find((i) => i.token === p_token);
+    if (!inv) throw new Error("invalid");
+    if (db.wishes.filter((w) => w.invitation_id === inv.id).length >= 5) throw new Error("limit");
+    invitationId = inv.id;
+    if (!name) name = inv.name;
+  } else {
+    if (!name) throw new Error("name");
+    if (db.wishes.filter((w) => w.invitation_id == null && !w.approved).length >= 200) throw new Error("limit");
+  }
+  db.wishes.push({
+    id: nextWishId++, invitation_id: invitationId, name, message, approved: false,
+    created_at: new Date().toISOString(),
+  });
+}
+
+// PostgREST id filters: id=eq.N or id=in.(a,b,c).
+function idMatcher(url) {
+  const f = url.searchParams.get("id") ?? "";
+  if (f.startsWith("eq.")) return (v) => v === Number(f.slice(3));
+  if (f.startsWith("in.")) {
+    const list = f.slice(3).replace(/^\(|\)$/g, "").split(",").map((x) => Number(x.replace(/"/g, "")));
+    return (v) => list.includes(v);
+  }
+  return () => false;
+}
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   const { pathname } = url;
@@ -199,6 +238,7 @@ const server = http.createServer(async (req, res) => {
               note: inv.note,
               personal_note: inv.personal_note,
               invite_lang: inv.invite_lang ?? "auto",
+              thank_you_note: inv.thank_you_note ?? null,
             },
           ]
         : []
@@ -227,6 +267,22 @@ const server = http.createServer(async (req, res) => {
       { kind: "opens", count: db.general_stats.opens },
       { kind: "yes", count: db.general_stats.yes },
     ]);
+  }
+  if (pathname === "/rest/v1/rpc/submit_wish" && req.method === "POST") {
+    const body = await readBody(req);
+    try {
+      submitWish(body ?? {});
+      return send(res, 204);
+    } catch (e) {
+      return pgError(res, e.message);
+    }
+  }
+  if (pathname === "/rest/v1/rpc/get_wishes" && req.method === "POST") {
+    const rows = db.wishes
+      .filter((w) => w.approved)
+      .sort((a, b) => a.created_at.localeCompare(b.created_at))
+      .map(({ name, message, created_at }) => ({ name, message, created_at }));
+    return send(res, 200, rows);
   }
   if (pathname === "/rest/v1/rpc/submit_rsvp" && req.method === "POST") {
     const body = await readBody(req);
@@ -320,6 +376,9 @@ const server = http.createServer(async (req, res) => {
           opened_at: null,
           invite_lang: row.invite_lang ?? "auto",
           responded_at: null,
+          thank_you_note: row.thank_you_note ?? null,
+          gift_note: row.gift_note ?? null,
+          thanked_at: row.thanked_at ?? null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
@@ -390,6 +449,27 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === "DELETE") {
       db.seating_plans = db.seating_plans.filter((x) => x.id !== pid);
+      return send(res, 204);
+    }
+  }
+
+  // ── PostgREST: wishes (admin only — mirrors the real RLS) ──
+  if (pathname === "/rest/v1/wishes") {
+    if (!isAdmin(req)) {
+      if (req.method === "GET") return send(res, 200, []);
+      return pgError(res, "new row violates row-level security policy", 401);
+    }
+    if (req.method === "GET") {
+      return send(res, 200, [...db.wishes].sort((a, b) => b.created_at.localeCompare(a.created_at)));
+    }
+    const match = idMatcher(url);
+    if (req.method === "PATCH") {
+      const body = await readBody(req);
+      for (const w of db.wishes) if (match(w.id)) Object.assign(w, body);
+      return send(res, 204);
+    }
+    if (req.method === "DELETE") {
+      db.wishes = db.wishes.filter((w) => !match(w.id));
       return send(res, 204);
     }
   }

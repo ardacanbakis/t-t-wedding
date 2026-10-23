@@ -4,10 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "node tools/write-story-config.mjs && next dev",
+    "dev:mock": "node tools/dev-mock.mjs",
     "build": "node tools/write-story-config.mjs && next build && node tools/write-og.mjs",
     "start": "next start",
     "seed:sync": "node tools/sync-seed.mjs",
-    "check": "tsc --noEmit && node tools/sync-seed.mjs --check"
+    "test:sql": "node tests/sql/run.mjs",
+    "check": "tsc --noEmit && node tools/sync-seed.mjs --check && node tests/sql/run.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.3",
@@ -16,6 +18,7 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.2.17",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",

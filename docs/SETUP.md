@@ -117,6 +117,20 @@ drop in a replacement.
 - **WhatsApp templates** (invite + reminder) and the **contact number** are at
   the bottom of the Invitations tab / in Settings.
 
+## 5b. After the wedding
+
+**/admin → AFTER THE WEDDING.** From the morning after the wedding (or whenever
+you pin it) every invitation link shows a thank-you card instead of the RSVP.
+Set the photo-gallery and shared-album links there, write personal thank-you
+notes, tick guests off as you thank them, and approve guestbook notes for the
+public wall at `/wishes/`.
+
+**Upgrading a live project:** these features need new columns, a `wishes`
+table and two functions. **Run `supabase/setup.sql` again in the SQL editor
+before merging the code** — it's idempotent and keeps your data (the seeded
+defaults use `on conflict do nothing`). If the code ships first, the tab shows
+a "run setup.sql" note and the guestbook stays empty until you do.
+
 ## 6. Backup, restore & a staging copy
 
 The project runs on Supabase's **free tier**, which has **no automatic daily

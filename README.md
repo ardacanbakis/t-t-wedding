@@ -20,6 +20,7 @@ and a handful of locked-down SQL functions.
 | `/i/?t=<token>` | A guest's personal invitation + RSVP (TR/EN) |
 | `/welcome/` | The general, no-RSVP invitation — one link for anyone |
 | `/story/` | The animated love-story + timeline site |
+| `/wishes/` | The guestbook: notes the couple approved, and a form to leave one |
 | `/admin/` | The couple's dashboard |
 | `/` | Small landing page |
 
@@ -36,6 +37,16 @@ and a handful of locked-down SQL functions.
 - Countdown, date, venue with a Maps link, optional schedule, and a Turkish /
   English toggle shared with the story site.
 - A friendly WhatsApp contact + a link into the story if a link is ever wrong.
+
+## After the wedding
+
+- The morning after the wedding every link turns into a **thank-you card**
+  (automatically, or pinned from the dashboard): guests who came get a warm
+  thank-you, guests who couldn't a "we missed you", plus the couple's personal
+  thank-you note, buttons for the **photo gallery** and a **shared album** to
+  add their own photos, the story, and the **guestbook**.
+- **Guestbook** (`/wishes/`): guests leave a note from their link or the public
+  page; the couple approves which ones go on the wall.
 
 ## The story / timeline site
 
@@ -66,6 +77,9 @@ and a handful of locked-down SQL functions.
   language picker, auto-cycle, and mobile-image handling.
 - **General invitation:** one universal link with open / "I'll be there"
   tracking, plus its own editable texts.
+- **After the wedding:** switch the guest pages to thank-you mode, set the photo
+  links, track the **thank-you round** (gift memo, personal thank-you note,
+  thanked ✓, a WhatsApp thank-you template) and moderate the **guestbook**.
 - **Social preview:** the title/description baked into link previews.
 
 ## Tech at a glance
@@ -73,3 +87,15 @@ and a handful of locked-down SQL functions.
 Next.js (App Router, static export) · Supabase (Postgres + RLS + RPCs) ·
 a small self-contained template runtime for the story site · GitHub Actions →
 GitHub Pages. No external runtime services, no CDNs.
+
+## Trying it locally
+
+```bash
+npm install
+npm run dev:mock     # http://localhost:3000 against an in-memory mock backend
+npm run check        # typecheck + seed-sync check + SQL tests (PGlite, no Docker)
+```
+
+The mock starts from `supabase/seed.json` (the live site's content) with demo
+guests at `/i/?t=demo-accepted`, `demo-pending` and `demo-declined`; admin login
+`admin@example.com` / `test-pass-123`.

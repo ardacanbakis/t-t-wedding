@@ -15,11 +15,20 @@ There is no server to run. The app is 100% static (`output: "export"`).
 | `/` | `page.tsx` | Landing page |
 | `/i/?t=<token>` | `i/page.tsx` → `i/invite-loader.tsx` → `i/invite-view.tsx` | Personal invitation + RSVP. `not-found-view.tsx` for bad tokens |
 | `/welcome/` | `welcome/page.tsx` → `welcome/welcome-loader.tsx` | General (no-RSVP) invite — reuses `InviteView` with `mode="general"` |
-| `/admin/` | `admin/page.tsx` → `admin/dashboard.tsx` (+ `*-card.tsx`) | Login-gated dashboard: Invitations, Table Planner, Styling, Story, General |
+| `/admin/` | `admin/page.tsx` → `admin/dashboard.tsx` (+ `*-card.tsx`) | Login-gated dashboard: Invitations, After the wedding, Table Planner, Styling, Story, General |
+| `/wishes/` | `wishes/page.tsx` → `wishes/wishes-view.tsx` | Guestbook wall (approved notes) + leave-a-note form |
 | `/story/` | `public/story/index.html` | Story + timeline (NOT a Next route — plain static file) |
 
 `invite-view.tsx` renders both personal and general invites and holds all the
 guest-facing RSVP UX (pulse, fade, confirm popup, thank-you/story popup).
+
+**Thank-you mode.** `afterWedding(settings)` (model.ts) is true when
+`sitePhase` is `"after"`, or `"auto"` and it's 12h past `eventDate`. Then
+`invite-view` swaps block *content*, not the layout: kicker → `afterKicker`,
+intro → `afterLine` / `afterLineMissed` (declined or never answered),
+personal note → `thank_you_note`, countdown / schedule / map button hidden,
+RSVP block → photos + story + guestbook (`wishes/guestbook-form.tsx`). The
+landing page (`home-view.tsx`) follows the same switch.
 
 ## Core libraries (`src/lib/`)
 
@@ -54,11 +63,21 @@ page read `seed.json` directly; `npm run check` fails if `setup.sql` drifts.
 ## Supabase (`supabase/setup.sql`, idempotent)
 
 Tables: `invitations`, `settings`, `admin_emails`, `story_chapters`,
-`general_stats`, `seating_plans`. RLS: tables are admin-only (email in `admin_emails`, checked
+`general_stats`, `seating_plans`, `wishes`. RLS: tables are admin-only (email in `admin_emails`, checked
 by `is_admin()`); guests only reach data through `SECURITY DEFINER` RPCs:
 `get_invitation`, `submit_rsvp`, `general_track`, `general_reset` (admin),
-`mark_invitation_opened`. All pin `search_path`. Re-running the file is safe;
+`mark_invitation_opened`, `submit_wish`, `get_wishes`. All pin `search_path`. Re-running the file is safe;
 new columns use `add column if not exists`.
+
+`invitations.gift_note` is admin-only and must never be added to
+`get_invitation`; `thank_you_note` is, on purpose. `submit_wish` caps notes
+(5 per invitation, 200 unreviewed anonymous, 30/minute overall) because the
+anon key is public; `get_wishes` returns approved notes only.
+
+**SQL tests:** `tests/sql/*.test.mjs` run `setup.sql` on PGlite (real Postgres
+in WASM, no Docker) with Supabase's roles + `auth.jwt()` stubbed
+(`harness.mjs`), so RLS and the RPCs behave as in production. Add a check there
+with any SQL change; `npm run test:sql`.
 
 ## Story / timeline site (`public/story/index.html`)
 
@@ -96,13 +115,16 @@ Gotchas when editing it:
   `out/` at the root; Next-page assets 404 under a base path, though the story
   page survives via relative paths).
 
-## Testing (no framework; Playwright scripts)
+## Testing
 
 `tools/mock-supabase.mjs` is an in-memory PostgREST/GoTrue subset (admin login
 `admin@example.com` / `test-pass-123`), started from `seed.json` plus demo
 guests (`/i/?t=demo-pending|demo-accepted|demo-declined`). The seed's wedding
 is in the past; `MOCK_OPEN_RSVP=1` moves it a month ahead to exercise the RSVP
-form. `npm run check` = `tsc --noEmit` + the seed-sync check. E2E scripts live in the session
+form. `npm run dev:mock` (`tools/dev-mock.mjs`, also `.claude/launch.json`)
+starts the mock + `next dev` against it. Note `next dev` serves the story at
+`/story/index.html`, not `/story/`. `npm run check` = `tsc --noEmit` + the
+seed-sync check + the SQL tests. Browser E2E scripts live in the session
 scratchpad and are run via `run-e2e.sh <suite>` (restarts the mock fresh, then
 runs the script against `out/` served at root). Keep the mock's seeds/handlers
 in sync with `setup.sql`. Continuously-animated buttons need Playwright
@@ -145,9 +167,13 @@ columns into shape on load, so a malformed row can't take down the admin page.
   `seed.json`).
 - **`dashboard.tsx` is ~1550 lines** — filters, sorting, column visibility, bulk
   edit, CSV export, stats and every settings save handler in one component.
-- **No committed tests** — Playwright suites live in the session scratchpad and
-  are lost between sessions; nothing runs in CI.
-- **Admin view state is in-memory**: column/filter/sort choices reset on reload.
+- **Browser tests aren't committed** — only the SQL suite is (`tests/sql/`);
+  Playwright suites live in the session scratchpad. Nothing runs in CI.
+- **Admin view state is per browser** (localStorage `tt-admin-view`: tab,
+  columns, filters, sort) — not shared between the couple's devices.
+- **Line endings:** `.gitattributes` keeps `public/story/vendor/**` byte-exact
+  (its files are loaded with SRI hashes; a CRLF checkout broke the story page
+  locally) and `*.sh` LF.
 - **Free-tier Supabase has no automatic backups.** `tools/db-snapshot.sh
   dump|restore` (Docker-only) snapshots prod and clones it into a staging
   project; see §6 of [docs/SETUP.md](docs/SETUP.md). Restore must TRUNCATE

@@ -53,6 +53,23 @@ export type Invitation = {
   /** Invite language: "auto" (bilingual), or "tr"/"en" locked to one language */
   invite_lang: "auto" | "tr" | "en";
   responded_at: string | null;
+  /** After the wedding: the couple's personal thank-you, shown on the guest's link */
+  thank_you_note?: string | null;
+  /** Admin-only memo of the gift (never sent to guests) */
+  gift_note?: string | null;
+  /** When the couple sent their thank-you (null = still to thank) */
+  thanked_at?: string | null;
+};
+
+/** A guestbook note. Guests write through submit_wish(); admins moderate. */
+export type Wish = {
+  id: number;
+  invitation_id: number | null;
+  name: string;
+  message: string;
+  /** Approved notes appear on the public wall (/wishes/) */
+  approved: boolean;
+  created_at: string;
 };
 
 export type SiteSettings = {
@@ -123,6 +140,19 @@ export type SiteSettings = {
   reminderMessage: string;
   /** WhatsApp contact number (digits, country code, no +) for help links */
   contactWhatsapp: string;
+  /**
+   * "auto" switches the guest pages from invitation to thank-you mode the day
+   * after the wedding; "invite" / "after" pin one of them.
+   */
+  sitePhase: string;
+  /** After the wedding: link to the photo gallery (e.g. the photographer's) */
+  photosUrl: string;
+  /** After the wedding: shared album guests can add their own photos to */
+  photosUploadUrl: string;
+  /** "true"/"false" — accept new guestbook notes */
+  wishesOpen: string;
+  /** WhatsApp thank-you message template — {name} and {link} */
+  thankYouMessage: string;
 };
 
 /** The default WhatsApp message template for personal invitations. */
@@ -130,6 +160,9 @@ export const DEFAULT_INVITE_MESSAGE = seed.settings.inviteMessage;
 
 /** The default WhatsApp reminder message for personal invitations. */
 export const DEFAULT_REMINDER_MESSAGE = seed.settings.reminderMessage;
+
+/** The default WhatsApp thank-you message, sent after the wedding. */
+export const DEFAULT_THANK_YOU_MESSAGE = seed.settings.thankYouMessage;
 
 /** Fill an invite message template: {name} → guest name, {link} → invite URL. */
 export function fillInviteMessage(template: string, name: string, link: string): string {
@@ -265,6 +298,18 @@ export function settingsFromRows(rows: { key: string; value: string }[]): SiteSe
     if (row.key in out) (out as Record<string, string>)[row.key] = row.value;
   }
   return out;
+}
+
+/**
+ * Whether guest pages show the after-the-wedding (thank-you) mode. "auto"
+ * flips 12 hours after the ceremony starts — the morning after an evening
+ * wedding — so nobody sees a thank-you while the party is still on.
+ */
+export function afterWedding(s: SiteSettings, now = new Date()): boolean {
+  if (s.sitePhase === "after") return true;
+  if (s.sitePhase === "invite") return false;
+  const d = new Date(s.eventDate);
+  return !Number.isNaN(d.getTime()) && now.getTime() > d.getTime() + 12 * 3600 * 1000;
 }
 
 export function deadlinePassed(s: SiteSettings, now = new Date()): boolean {

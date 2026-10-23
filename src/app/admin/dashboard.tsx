@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { GuestTexts } from "@/lib/i18n";
 import {
   DEFAULT_SETTINGS,
-  fillInviteMessage,
   newToken,
   parseImportLines,
   parseMaxGuests,
@@ -14,19 +13,22 @@ import {
 } from "@/lib/model";
 import type { GeneralTexts } from "@/lib/model";
 import { parseLayout, type Layout } from "@/lib/blocks";
-import { BASE_PATH, getSupabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
+import { AfterCard } from "./after-card";
 import { GeneralCard } from "./general-card";
 import { SeatingCard } from "./seating-card";
+import { CopyLinkButton, CopyMessageButton, inviteUrl, MessageTemplateCard } from "./share";
 import { LayoutCard } from "./layout-card";
 import { SocialCard } from "./social-card";
 import { StoryCard } from "./story-card";
 import { TextsCard } from "./texts-card";
 import { VarsCard } from "./vars-card";
 
-type Tab = "invitations" | "seating" | "styling" | "story" | "general";
+type Tab = "invitations" | "after" | "seating" | "styling" | "story" | "general";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "invitations", label: "INVITATIONS" },
+  { id: "after", label: "AFTER THE WEDDING" },
   { id: "seating", label: "TABLE PLANNER" },
   { id: "styling", label: "INVITATION STYLING" },
   { id: "story", label: "STORY & TIMELINE" },
@@ -97,136 +99,36 @@ const DEFAULT_FILTERS_VIS: Record<FilterKey, boolean> = {
   search: true, language: false, sent: false, opened: true, group: true, status: true,
 };
 
+// The open tab, column/filter choices and sort survive a reload (per browser).
+const VIEW_KEY = "tt-admin-view";
+type SavedView = { tab: Tab; cols: Record<ColKey, boolean>; filtersVis: Record<FilterKey, boolean>; sortKey: SortKey; sortDir: "asc" | "desc" };
+function loadView(): SavedView {
+  let raw: Partial<SavedView> = {};
+  try {
+    raw = JSON.parse(localStorage.getItem(VIEW_KEY) || "{}") ?? {};
+  } catch {}
+  const flags = <K extends string>(defaults: Record<K, boolean>, stored: unknown): Record<K, boolean> => {
+    const out = { ...defaults };
+    if (stored && typeof stored === "object")
+      for (const k of Object.keys(out) as K[]) {
+        const v = (stored as Record<string, unknown>)[k];
+        if (typeof v === "boolean") out[k] = v;
+      }
+    return out;
+  };
+  const sortKeys: SortKey[] = ["name", "group", "max", "status", "party", "note", "sent", "opened", "responded"];
+  return {
+    tab: TABS.some((t) => t.id === raw.tab) ? (raw.tab as Tab) : "invitations",
+    cols: flags(DEFAULT_COLS, raw.cols),
+    filtersVis: flags(DEFAULT_FILTERS_VIS, raw.filtersVis),
+    sortKey: sortKeys.includes(raw.sortKey as SortKey) ? (raw.sortKey as SortKey) : "responded",
+    sortDir: raw.sortDir === "asc" ? "asc" : "desc",
+  };
+}
+
 function StatusBadge({ status }: { status: Invitation["status"] }) {
   const label = status === "accepted" ? "Accepted" : status === "declined" ? "Declined" : "No response";
   return <span className={`status-badge status-${status}`}>{label}</span>;
-}
-
-function inviteUrl(token: string): string {
-  return `${window.location.origin}${BASE_PATH}/i/?t=${token}`;
-}
-
-function CopyLinkButton({ token }: { token: string }) {
-  const [copied, setCopied] = useState(false);
-  const copy = async () => {
-    const url = inviteUrl(token);
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch {
-      window.prompt("Copy the link:", url);
-    }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
-  return (
-    <button className="mini-btn" onClick={copy} type="button">
-      {copied ? "Copied ✓" : "Copy link"}
-    </button>
-  );
-}
-
-function CopyMessageButton({
-  name,
-  token,
-  template,
-  label = "Copy message",
-}: {
-  name: string;
-  token: string;
-  template: string;
-  label?: string;
-}) {
-  const [copied, setCopied] = useState(false);
-  const copy = async () => {
-    const msg = fillInviteMessage(template, name, inviteUrl(token));
-    try {
-      await navigator.clipboard.writeText(msg);
-    } catch {
-      window.prompt("Copy the message:", msg);
-    }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
-  };
-  return (
-    <button className="mini-btn" onClick={copy} type="button" title={`${label} — with this guest's name + link`}>
-      {copied ? "Copied ✓" : label}
-    </button>
-  );
-}
-
-function MessageTemplateCard({
-  value,
-  onSave,
-  title,
-  buttonLabel,
-  description,
-}: {
-  value: string;
-  onSave: (v: string) => Promise<void>;
-  title: string;
-  buttonLabel: string;
-  description: ReactNode;
-}) {
-  const [text, setText] = useState(value);
-  const [seed, setSeed] = useState(value);
-  if (seed !== value) {
-    setSeed(value);
-    setText(value);
-  }
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const preview = fillInviteMessage(text, "Ayşe & Mehmet", "https://ardacanbakis.github.io/t-t-wedding/i/?t=…");
-  return (
-    <div className="admin-card" style={{ marginBottom: 22 }}>
-      <h2 className="admin-h2">{title}</h2>
-      <p style={{ fontFamily: "var(--sans)", fontSize: 13, color: "var(--brown-mid)", margin: "0 0 12px", lineHeight: 1.6 }}>
-        {description}
-      </p>
-      <textarea
-        className="textarea-input"
-        style={{ minHeight: 200, fontSize: 14, lineHeight: 1.6 }}
-        value={text}
-        onChange={(e) => {
-          setText(e.target.value);
-          setSaved(false);
-        }}
-      />
-      <label className="field-label">Preview</label>
-      <div
-        style={{
-          background: "rgba(191,155,95,.06)",
-          border: "1px solid var(--gold-soft)",
-          borderRadius: 10,
-          padding: "12px 14px",
-          fontFamily: "var(--sans)",
-          fontSize: 13,
-          color: "var(--brown-mid)",
-          lineHeight: 1.6,
-          whiteSpace: "pre-wrap",
-        }}
-      >
-        {preview}
-      </div>
-      <button
-        className="submit-btn"
-        style={{ marginTop: 14 }}
-        onClick={async () => {
-          setSaving(true);
-          try {
-            await onSave(text);
-            setSaved(true);
-            setTimeout(() => setSaved(false), 2000);
-          } finally {
-            setSaving(false);
-          }
-        }}
-        disabled={saving}
-        type="button"
-      >
-        {saving ? "Saving…" : saved ? "Saved ✓" : buttonLabel}
-      </button>
-    </div>
-  );
 }
 
 function EditRow({
@@ -351,7 +253,7 @@ function toCsv(invitations: Invitation[]): string {
     const v = value == null ? "" : String(value);
     return /[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
   };
-  const header = ["Name", "Group", "Language", "Status", "Party size", "Max guests", "Sent", "Opened at", "Note", "Personal message", "Responded at", "Link"];
+  const header = ["Name", "Group", "Language", "Status", "Party size", "Max guests", "Sent", "Opened at", "Note", "Personal message", "Responded at", "Gift", "Thanked at", "Thank-you note", "Link"];
   const rows = invitations.map((inv) => [
     cell(inv.name),
     cell(inv.invite_group),
@@ -364,6 +266,9 @@ function toCsv(invitations: Invitation[]): string {
     cell(inv.note),
     cell(inv.personal_note),
     cell(inv.responded_at),
+    cell(inv.gift_note),
+    cell(inv.thanked_at),
+    cell(inv.thank_you_note),
     cell(inviteUrl(inv.token)),
   ]);
   return "\ufeff" + [header.join(","), ...rows.map((r) => r.join(","))].join("\r\n");
@@ -372,7 +277,8 @@ function toCsv(invitations: Invitation[]): string {
 export function Dashboard() {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>("invitations");
+  const [view] = useState(loadView);
+  const [tab, setTab] = useState<Tab>(view.tab);
   const [filter, setFilter] = useState<Filter>("all");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [importText, setImportText] = useState("");
@@ -392,11 +298,11 @@ export function Dashboard() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkLang, setBulkLang] = useState<"auto" | "tr" | "en">("auto");
   // Default view: newest responses first.
-  const [sortKey, setSortKey] = useState<SortKey>("responded");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [cols, setCols] = useState<Record<ColKey, boolean>>(DEFAULT_COLS);
+  const [sortKey, setSortKey] = useState<SortKey>(view.sortKey);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">(view.sortDir);
+  const [cols, setCols] = useState<Record<ColKey, boolean>>(view.cols);
   const [colsOpen, setColsOpen] = useState(false);
-  const [filtersVis, setFiltersVis] = useState<Record<FilterKey, boolean>>(DEFAULT_FILTERS_VIS);
+  const [filtersVis, setFiltersVis] = useState<Record<FilterKey, boolean>>(view.filtersVis);
   const [filtersMenuOpen, setFiltersMenuOpen] = useState(false);
   const [s, setS] = useState<SiteSettings>(DEFAULT_SETTINGS);
   const [settingsMsg, setSettingsMsg] = useState<string | null>(null);
@@ -423,6 +329,12 @@ export function Dashboard() {
   useEffect(() => {
     reload();
   }, [reload]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(VIEW_KEY, JSON.stringify({ tab, cols, filtersVis, sortKey, sortDir }));
+    } catch {}
+  }, [tab, cols, filtersVis, sortKey, sortDir]);
 
   const run = async (fn: () => Promise<void>) => {
     setPending(true);
@@ -641,6 +553,11 @@ export function Dashboard() {
     "generalEn",
     "ogTitle",
     "ogDescription",
+    "sitePhase",
+    "photosUrl",
+    "photosUploadUrl",
+    "wishesOpen",
+    "thankYouMessage",
   ];
 
   const saveSettingRows = async (rows: { key: string; value: string }[]) => {
@@ -728,6 +645,24 @@ export function Dashboard() {
   const doSaveReminderMessage = async (value: string) => {
     await saveSettingRows([{ key: "reminderMessage", value }]);
     setS((prev) => ({ ...prev, reminderMessage: value }));
+  };
+
+  // After-the-wedding tab: its settings, and the thank-you fields on a row.
+  const doSaveAfter = async (rows: { key: string; value: string }[]) => {
+    await saveSettingRows(rows);
+    setS((prev) => ({ ...prev, ...Object.fromEntries(rows.map((r) => [r.key, r.value])) }));
+  };
+
+  const doUpdateThanks = async (
+    id: number,
+    fields: Partial<Pick<Invitation, "gift_note" | "thank_you_note" | "thanked_at">>
+  ) => {
+    const { error } = await getSupabase()
+      .from("invitations")
+      .update({ ...fields, updated_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) throw new Error(error.message);
+    await reload();
   };
 
   const doSaveSocial = (ogTitle: string, ogDescription: string) =>
@@ -1548,6 +1483,9 @@ export function Dashboard() {
         onSaveMobileImages={doSaveMobileImages}
         reloadSettings={reload}
       />
+      )}
+      {tab === "after" && (
+        <AfterCard settings={s} invitations={invitations} onSaveSettings={doSaveAfter} onUpdateInvitation={doUpdateThanks} />
       )}
       {tab === "seating" && <SeatingCard invitations={invitations} pending={pending} coupleNames={s.coupleNames} />}
       {tab === "general" && <GeneralCard settings={s} onSave={doSaveGeneral} pending={pending} />}

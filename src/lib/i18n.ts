@@ -43,6 +43,21 @@ export type GuestTexts = {
   notFoundTitle: string;
   notFoundBody: string;
   error: string;
+  afterKicker: string;
+  afterLine: string;
+  afterLineMissed: string;
+  photosButton: string;
+  uploadButton: string;
+  wishButton: string;
+  wishTitle: string;
+  wishName: string;
+  wishMessage: string;
+  wishPlaceholder: string;
+  wishThanks: string;
+  wishWall: string;
+  wishClosed: string;
+  wishLimit: string;
+  wallEmpty: string;
 };
 
 export const defaultTexts: Record<Lang, GuestTexts> = {
@@ -86,6 +101,21 @@ export const defaultTexts: Record<Lang, GuestTexts> = {
     notFoundTitle: "Davetiye bulunamadı",
     notFoundBody: "Bu bağlantı geçerli bir davetiyeye ait değil. Lütfen size gönderilen bağlantıyı kontrol edin.",
     error: "Bir şeyler ters gitti, lütfen tekrar deneyin.",
+    afterKicker: "evlendik!",
+    afterLine: "En mutlu günümüzde yanımızda olduğunuz için çok teşekkür ederiz. O günün anılarını sizinle paylaşmak istedik.",
+    afterLineMissed: "O gün sizi aramızda göremesek de kalbimizdeydiniz. Anılarımızı sizinle de paylaşmak istedik.",
+    photosButton: "Düğün fotoğrafları",
+    uploadButton: "Siz de fotoğraf ekleyin",
+    wishButton: "Bize bir not bırakın",
+    wishTitle: "Anı defteri",
+    wishName: "Adınız",
+    wishMessage: "Notunuz",
+    wishPlaceholder: "Bir dilek, bir anı, birkaç güzel söz…",
+    wishThanks: "Teşekkürler! Notunuz bize ulaştı. 💛",
+    wishWall: "Anı defterini okuyun",
+    wishClosed: "Anı defteri şu an kapalı.",
+    wishLimit: "Bu bağlantıdan yeterince not geldi — çok teşekkürler! 💛",
+    wallEmpty: "Henüz not yok — ilk notu siz bırakın!",
   },
   en: {
     kicker: "you are invited to our wedding",
@@ -127,6 +157,21 @@ export const defaultTexts: Record<Lang, GuestTexts> = {
     notFoundTitle: "Invitation not found",
     notFoundBody: "This link doesn't match a valid invitation. Please check the link you were sent.",
     error: "Something went wrong, please try again.",
+    afterKicker: "we're married!",
+    afterLine: "Thank you for being with us on the happiest day of our lives. We'd love to share the memories with you.",
+    afterLineMissed: "We missed you on the day, but you were in our hearts. We'd love to share the memories with you too.",
+    photosButton: "Wedding photos",
+    uploadButton: "Add your photos",
+    wishButton: "Leave us a note",
+    wishTitle: "Guestbook",
+    wishName: "Your name",
+    wishMessage: "Your note",
+    wishPlaceholder: "A wish, a memory, a few kind words…",
+    wishThanks: "Thank you! Your note reached us. 💛",
+    wishWall: "Read the guestbook",
+    wishClosed: "The guestbook is closed for now.",
+    wishLimit: "We've had plenty of notes from this link — thank you! 💛",
+    wallEmpty: "No notes yet — be the first!",
   },
 };
 
@@ -176,6 +221,21 @@ export const TEXT_FIELDS: { key: keyof GuestTexts; label: string; multiline?: bo
   { key: "notFoundTitle", label: "Invalid-link page title" },
   { key: "notFoundBody", label: "Invalid-link page text", multiline: true },
   { key: "error", label: "Generic error message" },
+  { key: "afterKicker", label: "After the wedding — kicker (replaces the invitation kicker)" },
+  { key: "afterLine", label: "After the wedding — intro for guests who came (and the general link)", multiline: true },
+  { key: "afterLineMissed", label: "After the wedding — intro for guests who couldn't come", multiline: true },
+  { key: "photosButton", label: "After the wedding — photo gallery button" },
+  { key: "uploadButton", label: "After the wedding — “add your photos” button" },
+  { key: "wishButton", label: "Guestbook — button that opens the note form" },
+  { key: "wishTitle", label: "Guestbook — title" },
+  { key: "wishName", label: "Guestbook — name field" },
+  { key: "wishMessage", label: "Guestbook — note field" },
+  { key: "wishPlaceholder", label: "Guestbook — note placeholder" },
+  { key: "wishThanks", label: "Guestbook — thank-you after sending" },
+  { key: "wishWall", label: "Guestbook — link to the wall of notes" },
+  { key: "wishClosed", label: "Guestbook — closed message" },
+  { key: "wishLimit", label: "Guestbook — too-many-notes message" },
+  { key: "wallEmpty", label: "Guestbook — wall with no notes yet" },
 ];
 
 export function formatEventDate(iso: string, lang: Lang, withTime = true): string {
